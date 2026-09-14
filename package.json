@@ -1,0 +1,18 @@
+{
+  "name": "huedimo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HueDiMo workspace root runner",
+    "scripts": {
+    "dev": "concurrently -k -p \"[{name}]\" -n \"BACKEND,FRONTEND\" -c \"blue.bold,cyan.bold\" \"pnpm --dir back-end dev\" \"pnpm --dir my-app dev\"",
+    "dev:backend": "pnpm --dir back-end dev",
+    "dev:frontend": "pnpm --dir my-app dev",
+    "build": "pnpm --dir back-end build && pnpm --dir my-app build",
+    "build:backend": "pnpm --dir back-end build",
+    "build:frontend": "pnpm --dir my-app build",
+    "install:all": "pnpm install && pnpm --dir back-end install && pnpm --dir my-app install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
