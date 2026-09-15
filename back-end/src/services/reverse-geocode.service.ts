@@ -123,8 +123,9 @@ export class ReverseGeocodeService {
           cached: false,
         };
       }
-    } catch (err) {
-      console.warn("[ReverseGeocode] Nominatim failed, trying fallback:", err);
+    } catch (err: any) {
+      const reason = err?.cause?.code || err?.code || err?.message || "unknown";
+      console.warn(`[ReverseGeocode] Nominatim lookup failed (${reason}), switching to BigDataCloud fallback.`);
     }
 
     // 2. Dự phòng BigDataCloud

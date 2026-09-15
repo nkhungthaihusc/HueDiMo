@@ -17,6 +17,7 @@ router.delete("/places/:id", admin_controller_1.AdminController.deletePlace);
 // Users Management & RBAC
 router.get("/users", admin_controller_1.AdminController.getUsers);
 router.patch("/users/:id/role", admin_controller_1.AdminController.updateUserRole);
+router.patch("/users/:id/status", admin_controller_1.AdminController.updateUserStatus);
 // Reviews Moderation
 router.get("/reviews", admin_controller_1.AdminController.getReviews);
 router.delete("/reviews/:id", admin_controller_1.AdminController.deleteReview);

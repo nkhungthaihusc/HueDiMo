@@ -56,6 +56,12 @@ exports.AuthService = {
             });
         }
         else {
+            // Kiểm tra tài khoản có bị khóa không (cả OAuth)
+            if (user.status === "banned") {
+                const bannedError = new Error("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.");
+                bannedError.code = "FORBIDDEN";
+                throw bannedError;
+            }
             if (avatarUrl && !user.avatar_url) {
                 await user_model_1.UserModel.update(user.id, { avatar_url: avatarUrl });
                 user.avatar_url = avatarUrl;
@@ -100,6 +106,12 @@ exports.AuthService = {
             const authError = new Error("Email hoặc mật khẩu không chính xác.");
             authError.code = "UNAUTHORIZED";
             throw authError;
+        }
+        // Kiểm tra tài khoản có bị khóa không
+        if (user.status === "banned") {
+            const bannedError = new Error("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.");
+            bannedError.code = "FORBIDDEN";
+            throw bannedError;
         }
         const isMatch = await bcryptjs_1.default.compare(password, user.password_hash);
         if (!isMatch) {

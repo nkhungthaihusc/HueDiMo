@@ -20,6 +20,10 @@ exports.AuthController = {
             (0, response_1.sendSuccess)(res, result, 200);
         }
         catch (error) {
+            if (error.code === "FORBIDDEN") {
+                (0, response_1.sendError)(res, "FORBIDDEN", error.message, 403);
+                return;
+            }
             next(error);
         }
     },
@@ -74,6 +78,10 @@ exports.AuthController = {
         catch (error) {
             if (error.code === "UNAUTHORIZED") {
                 (0, response_1.sendError)(res, "UNAUTHORIZED", error.message, 401);
+                return;
+            }
+            if (error.code === "FORBIDDEN") {
+                (0, response_1.sendError)(res, "FORBIDDEN", error.message, 403);
                 return;
             }
             next(error);

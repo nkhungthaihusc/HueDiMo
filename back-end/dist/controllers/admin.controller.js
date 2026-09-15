@@ -381,7 +381,7 @@ exports.AdminController = {
             const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
             const countRes = await db_1.pool.query(`SELECT count(*)::int as total FROM public.users ${whereSql}`, values);
             const total = countRes.rows[0]?.total || 0;
-            const usersRes = await db_1.pool.query(`SELECT id, name, email, avatar_url, role, created_at, updated_at 
+            const usersRes = await db_1.pool.query(`SELECT id, name, email, avatar_url, role, COALESCE(status, 'active') as status, created_at, updated_at 
          FROM public.users 
          ${whereSql} 
          ORDER BY created_at DESC 
@@ -425,8 +425,45 @@ exports.AdminController = {
             const updateRes = await db_1.pool.query(`UPDATE public.users 
          SET role = $1, updated_at = NOW() 
          WHERE id = $2 
-         RETURNING id, name, email, avatar_url, role, created_at, updated_at`, [role, id]);
+         RETURNING id, name, email, avatar_url, role, COALESCE(status, 'active') as status, created_at, updated_at`, [role, id]);
             (0, response_1.sendSuccess)(res, updateRes.rows[0]);
+        }
+        catch (error) {
+            next(error);
+        }
+    },
+    /**
+     * PATCH /api/admin/users/:id/status
+     * Khóa (banned) hoặc kích hoạt lại (active) tài khoản người dùng
+     * Thay thế cho DELETE – không xóa dữ liệu, chỉ tắt quyền đăng nhập
+     */
+    async updateUserStatus(req, res, next) {
+        try {
+            const { id } = req.params;
+            const { status } = req.body;
+            if (!status || (status !== "active" && status !== "banned")) {
+                (0, response_1.sendError)(res, "VALIDATION_ERROR", "Trạng thái (status) không hợp lệ. Chỉ chấp nhận 'active' hoặc 'banned'.", 422);
+                return;
+            }
+            // Admin không thể tự khóa chính mình
+            if (req.user?.id === id && status === "banned") {
+                (0, response_1.sendError)(res, "VALIDATION_ERROR", "Bạn không thể tự khóa tài khoản của chính mình.", 422);
+                return;
+            }
+            const userCheck = await db_1.pool.query("SELECT id, name, email, role, COALESCE(status, 'active') as status FROM public.users WHERE id = $1", [id]);
+            if (userCheck.rows.length === 0) {
+                (0, response_1.sendError)(res, "NOT_FOUND", `Không tìm thấy người dùng với id '${id}'.`, 404);
+                return;
+            }
+            const updateRes = await db_1.pool.query(`UPDATE public.users 
+         SET status = $1, updated_at = NOW() 
+         WHERE id = $2 
+         RETURNING id, name, email, avatar_url, role, COALESCE(status, 'active') as status, created_at, updated_at`, [status, id]);
+            const action = status === "banned" ? "khóa" : "kích hoạt lại";
+            (0, response_1.sendSuccess)(res, {
+                ...updateRes.rows[0],
+                message: `Đã ${action} tài khoản '${userCheck.rows[0].name}' thành công.`,
+            });
         }
         catch (error) {
             next(error);
