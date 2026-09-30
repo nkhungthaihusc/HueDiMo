@@ -4,6 +4,8 @@ exports.ItineraryService = exports.TRANSPORT_OPTIONS = void 0;
 exports.getTransportOption = getTransportOption;
 exports.parseItinerary = parseItinerary;
 exports.capToBudget = capToBudget;
+exports.callGemini = callGemini;
+exports.callAI = callAI;
 exports.callZen = callZen;
 const settings_model_1 = require("../models/settings.model");
 exports.TRANSPORT_OPTIONS = [
@@ -198,6 +200,92 @@ Hãy trả lời đúng định dạng JSON đã quy định.${retryHint ? `\n\n
         { role: "user", content: userPrompt },
     ];
 }
+async function callGemini(apiKey, messages, options) {
+    // Lấy tên model sạch, ví dụ: "gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"
+    let modelToUse = options?.model || "gemini-1.5-flash";
+    if (modelToUse.includes("/")) {
+        modelToUse = modelToUse.split("/").pop() || modelToUse;
+    }
+    // Nếu model đang là big-pickle hoặc không thuộc gemini, mặc định về gemini-1.5-flash
+    if (!modelToUse.toLowerCase().includes("gemini")) {
+        modelToUse = "gemini-1.5-flash";
+    }
+    const tempToUse = typeof options?.temperature === "number" ? options.temperature : 0.4;
+    const tokensToUse = typeof options?.maxTokens === "number" ? options.maxTokens : 4096;
+    // Gom system instruction và user prompt theo format của Google Gemini
+    const systemMsg = messages.find((m) => m.role === "system");
+    const userMsgs = messages.filter((m) => m.role === "user");
+    const contents = userMsgs.map((m) => ({
+        role: "user",
+        parts: [{ text: m.content }],
+    }));
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${apiKey}`;
+    try {
+        const res = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                ...(systemMsg
+                    ? {
+                        systemInstruction: {
+                            parts: [{ text: systemMsg.content }],
+                        },
+                    }
+                    : {}),
+                contents,
+                generationConfig: {
+                    temperature: tempToUse,
+                    maxOutputTokens: tokensToUse,
+                    responseMimeType: "application/json",
+                },
+            }),
+            signal: AbortSignal.timeout(60_000),
+        });
+        if (!res.ok) {
+            const errText = await res.text().catch(() => "");
+            return { ok: false, status: res.status, error: errText };
+        }
+        const data = (await res.json());
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+        return { ok: true, text, modelUsed: modelToUse };
+    }
+    catch (err) {
+        return { ok: false, status: 0, error: err?.message || "Lỗi kết nối tới Google Gemini API" };
+    }
+}
+async function callAI(config, messages) {
+    const geminiKey = config.geminiApiKey || process.env.GEMINI_API_KEY;
+    const zenKey = process.env.OPENCODE_ZEN_API_KEY;
+    // Nếu người dùng chọn provider Google hoặc có Gemini API Key
+    if (config.provider === "google" || (geminiKey && !config.provider)) {
+        if (!geminiKey) {
+            return { ok: false, status: 400, error: "Chưa cấu hình Google Gemini API Key. Vui lòng nhập API Key trong trang Admin hoặc file .env." };
+        }
+        return callGemini(geminiKey, messages, {
+            model: config.model || "gemini-1.5-flash",
+            temperature: config.temperature,
+            maxTokens: config.maxTokens,
+        });
+    }
+    // Mặc định hoặc khi chọn Zen
+    if (zenKey) {
+        return callZen(zenKey, messages, {
+            model: config.model,
+            temperature: config.temperature,
+            maxTokens: config.maxTokens,
+        });
+    }
+    if (geminiKey) {
+        return callGemini(geminiKey, messages, {
+            model: config.model || "gemini-1.5-flash",
+            temperature: config.temperature,
+            maxTokens: config.maxTokens,
+        });
+    }
+    return { ok: false, status: 500, error: "Chưa có API key nào được cấu hình (Cần GEMINI_API_KEY hoặc OPENCODE_ZEN_API_KEY)." };
+}
 async function callZen(apiKey, messages, options) {
     const modelToUse = options?.model || ZEN_MODEL;
     const tempToUse = typeof options?.temperature === "number" ? options.temperature : 0.4;
@@ -251,10 +339,6 @@ function parseZenText(text) {
 }
 class ItineraryService {
     static async generate(req) {
-        const apiKey = process.env.OPENCODE_ZEN_API_KEY;
-        if (!apiKey) {
-            throw new Error("CONFIG_MISSING: OPENCODE_ZEN_API_KEY is not configured.");
-        }
         // Đọc cấu hình model và tham số từ Database (do Admin thiết lập)
         const aiConfig = await settings_model_1.SettingsModel.getAIConfig();
         for (const retry of [false, true]) {
@@ -262,11 +346,13 @@ class ItineraryService {
                 ? "Lần trước bạn trả về lộ trình không hợp lệ: có placeId ngoài catalog, địa điểm bị lặp, hoặc tổng chi phí vượt ngân sách hoặc sai cấu trúc JSON. Hãy tự kiểm tra lại: mỗi placeId chỉ xuất hiện 1 lần, mọi estimatedCost lấy đúng giá (price) trong catalog nếu có, tổng ≤ ngân sách, và chỉ trả đúng JSON theo cấu trúc quy định."
                 : undefined;
             const messages = buildMessages(req, aiConfig.customInstruction, hint);
-            const result = await callZen(apiKey, messages, {
+            const result = await callAI({
+                provider: aiConfig.provider,
                 model: aiConfig.model,
+                geminiApiKey: aiConfig.geminiApiKey,
                 temperature: aiConfig.temperature,
                 maxTokens: aiConfig.maxTokens,
-            });
+            }, messages);
             if (!result.ok) {
                 throw new Error(`UPSTREAM_AI_ERROR: Status ${result.status || "timeout"}${result.error ? ` - ${result.error}` : ""}`);
             }

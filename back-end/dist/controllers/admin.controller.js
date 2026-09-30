@@ -46,6 +46,18 @@ exports.AdminController = {
         FROM public.reviews
       `);
             const { total_reviews, avg_rating } = reviewsStatsRes.rows[0] || { total_reviews: 0, avg_rating: 0 };
+            // 4.1 Thống kê Lộ trình du lịch & Đánh giá lộ trình
+            const itinerariesStatsRes = await db_1.pool.query(`
+        SELECT 
+          count(*)::int as total_itineraries,
+          count(*) FILTER (WHERE is_public = true)::int as public_itineraries
+        FROM public.itineraries
+      `);
+            const { total_itineraries, public_itineraries } = itinerariesStatsRes.rows[0] || { total_itineraries: 0, public_itineraries: 0 };
+            const itineraryCommentsStatsRes = await db_1.pool.query(`
+        SELECT count(*)::int as total_itinerary_comments FROM public.itinerary_comments
+      `);
+            const totalItineraryComments = itineraryCommentsStatsRes.rows[0]?.total_itinerary_comments || 0;
             // 5. Địa điểm mới nhất
             const recentPlacesRes = await db_1.pool.query(`
         SELECT id, name, category, rating, price, is_local, status, image_url, created_at, updated_at
@@ -60,6 +72,9 @@ exports.AdminController = {
                     totalUsers,
                     totalReviews: total_reviews,
                     avgRating: Number(avg_rating),
+                    totalItineraries: total_itineraries,
+                    publicItineraries: public_itineraries,
+                    totalItineraryComments,
                 },
                 categoryDistribution: categoryDistributionRes.rows,
                 recentPlaces: recentPlacesRes.rows,
@@ -525,6 +540,182 @@ exports.AdminController = {
         }
     },
     /**
+     * GET /api/admin/itineraries
+     * Lấy danh sách toàn bộ lộ trình trong hệ thống (cả riêng tư và công khai) phục vụ quản trị
+     */
+    async getItineraries(req, res, next) {
+        try {
+            const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+            const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
+            const offset = (page - 1) * limit;
+            const { q, isPublic } = req.query;
+            const whereClauses = [];
+            const values = [];
+            let idx = 1;
+            if (q && typeof q === "string" && q.trim()) {
+                whereClauses.push(`(i.title ILIKE $${idx} OR i.summary ILIKE $${idx} OR u.name ILIKE $${idx})`);
+                values.push(`%${q.trim()}%`);
+                idx++;
+            }
+            if (isPublic !== undefined && isPublic !== "") {
+                whereClauses.push(`i.is_public = $${idx}`);
+                values.push(isPublic === "true");
+                idx++;
+            }
+            const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+            const countRes = await db_1.pool.query(`SELECT count(*)::int as total FROM public.itineraries i LEFT JOIN public.users u ON i.user_id = u.id ${whereSql}`, values);
+            const total = countRes.rows[0]?.total || 0;
+            const listRes = await db_1.pool.query(`SELECT 
+           i.*,
+           u.name as author_name,
+           u.email as author_email,
+           u.avatar_url as author_avatar,
+           (i.end_date - i.start_date + 1) as days_count,
+           (SELECT count(*)::int FROM public.itinerary_comments c WHERE c.itinerary_id = i.id) as comments_count
+         FROM public.itineraries i
+         LEFT JOIN public.users u ON i.user_id = u.id
+         ${whereSql}
+         ORDER BY i.created_at DESC
+         LIMIT $${idx} OFFSET $${idx + 1}`, [...values, limit, offset]);
+            (0, response_1.sendSuccess)(res, {
+                items: listRes.rows,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    totalPages: Math.ceil(total / limit),
+                },
+            });
+        }
+        catch (error) {
+            next(error);
+        }
+    },
+    /**
+     * PATCH /api/admin/itineraries/:id/visibility
+     * Admin bật/tắt quyền hiển thị công khai lộ trình (hạ quyền công khai nếu vi phạm tiêu chuẩn)
+     */
+    async toggleItineraryVisibility(req, res, next) {
+        try {
+            const { id } = req.params;
+            const { isPublic } = req.body;
+            if (typeof isPublic !== "boolean") {
+                (0, response_1.sendError)(res, "VALIDATION_ERROR", "Tham số isPublic phải là true hoặc false.", 422);
+                return;
+            }
+            const check = await db_1.pool.query("SELECT id, title FROM public.itineraries WHERE id = $1", [id]);
+            if (check.rows.length === 0) {
+                (0, response_1.sendError)(res, "NOT_FOUND", "Không tìm thấy lịch trình.", 404);
+                return;
+            }
+            const updateRes = await db_1.pool.query("UPDATE public.itineraries SET is_public = $1, updated_at = NOW() WHERE id = $2 RETURNING *", [isPublic, id]);
+            (0, response_1.sendSuccess)(res, {
+                itinerary: updateRes.rows[0],
+                message: isPublic
+                    ? "Đã cho phép lộ trình hiển thị công khai trên cộng đồng."
+                    : "Đã chuyển lộ trình về chế độ riêng tư (ẩn khỏi cộng đồng).",
+            });
+        }
+        catch (error) {
+            next(error);
+        }
+    },
+    /**
+     * DELETE /api/admin/itineraries/:id
+     * Admin xóa lộ trình vi phạm
+     */
+    async deleteItinerary(req, res, next) {
+        try {
+            const { id } = req.params;
+            const check = await db_1.pool.query("SELECT id, title FROM public.itineraries WHERE id = $1", [id]);
+            if (check.rows.length === 0) {
+                (0, response_1.sendError)(res, "NOT_FOUND", "Không tìm thấy lịch trình.", 404);
+                return;
+            }
+            await db_1.pool.query("DELETE FROM public.itineraries WHERE id = $1", [id]);
+            (0, response_1.sendSuccess)(res, {
+                id,
+                deleted: true,
+                message: `Đã xóa lịch trình "${check.rows[0].title}" thành công.`,
+            });
+        }
+        catch (error) {
+            next(error);
+        }
+    },
+    /**
+     * GET /api/admin/itinerary-comments
+     * Lấy danh sách toàn bộ nhận xét và đánh giá sao lộ trình cộng đồng
+     */
+    async getItineraryComments(req, res, next) {
+        try {
+            const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+            const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
+            const offset = (page - 1) * limit;
+            const countRes = await db_1.pool.query("SELECT count(*)::int as total FROM public.itinerary_comments");
+            const total = countRes.rows[0]?.total || 0;
+            const commentsRes = await db_1.pool.query(`SELECT 
+           c.id,
+           c.itinerary_id,
+           i.title as itinerary_title,
+           c.content,
+           c.rating,
+           c.created_at,
+           u.name as user_name,
+           u.email as user_email,
+           u.avatar_url as user_avatar
+         FROM public.itinerary_comments c
+         LEFT JOIN public.itineraries i ON c.itinerary_id = i.id
+         LEFT JOIN public.users u ON c.user_id = u.id
+         ORDER BY c.created_at DESC
+         LIMIT $1 OFFSET $2`, [limit, offset]);
+            (0, response_1.sendSuccess)(res, {
+                items: commentsRes.rows,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    totalPages: Math.ceil(total / limit),
+                },
+            });
+        }
+        catch (error) {
+            next(error);
+        }
+    },
+    /**
+     * DELETE /api/admin/itinerary-comments/:id
+     * Admin xóa nhận xét lộ trình vi phạm hoặc spam
+     */
+    async deleteItineraryComment(req, res, next) {
+        try {
+            const { id } = req.params;
+            const check = await db_1.pool.query("SELECT id, itinerary_id FROM public.itinerary_comments WHERE id = $1", [id]);
+            if (check.rows.length === 0) {
+                (0, response_1.sendError)(res, "NOT_FOUND", "Không tìm thấy bình luận này.", 404);
+                return;
+            }
+            const itineraryId = check.rows[0].itinerary_id;
+            await db_1.pool.query("DELETE FROM public.itinerary_comments WHERE id = $1", [id]);
+            // Tính lại điểm trung bình
+            await db_1.pool.query(`UPDATE public.itineraries
+         SET rating = (
+           SELECT ROUND(AVG(rating)::numeric, 1)
+           FROM public.itinerary_comments
+           WHERE itinerary_id = $1 AND rating IS NOT NULL
+         )
+         WHERE id = $1`, [itineraryId]);
+            (0, response_1.sendSuccess)(res, {
+                id,
+                deleted: true,
+                message: "Đã xóa nhận xét lộ trình thành công.",
+            });
+        }
+        catch (error) {
+            next(error);
+        }
+    },
+    /**
      * GET /api/admin/logs
      * Lấy lịch sử các requests gọi vào hệ thống (HTTP API Requests Log)
      */
@@ -941,24 +1132,32 @@ exports.AdminController = {
     async getAISettings(_req, res, next) {
         try {
             const config = await settings_model_1.SettingsModel.getAIConfig();
-            const apiKey = process.env.OPENCODE_ZEN_API_KEY || "";
-            const maskedApiKey = apiKey
-                ? `${apiKey.slice(0, 7)}...${apiKey.slice(-4)}`
-                : "CHƯA_CẤU_HÌNH";
+            const zenApiKey = process.env.OPENCODE_ZEN_API_KEY || "";
+            const geminiApiKey = config.geminiApiKey || process.env.GEMINI_API_KEY || "";
+            const maskKey = (key) => key ? `${key.slice(0, 7)}...${key.slice(-4)}` : "CHƯA_CẤU_HÌNH";
             (0, response_1.sendSuccess)(res, {
-                config,
+                config: {
+                    ...config,
+                    geminiApiKey: geminiApiKey ? maskKey(geminiApiKey) : "",
+                },
                 defaultConfig: settings_model_1.DEFAULT_AI_CONFIG,
                 apiKeyStatus: {
-                    configured: !!apiKey,
-                    maskedKey: maskedApiKey,
+                    gemini: {
+                        configured: !!geminiApiKey,
+                        maskedKey: maskKey(geminiApiKey),
+                    },
+                    zen: {
+                        configured: !!zenApiKey,
+                        maskedKey: maskKey(zenApiKey),
+                    },
                 },
                 supportedPresets: [
-                    { id: "big-pickle", name: "Big Pickle (Mặc định HueDiMo - Nhanh & Tối ưu)", provider: "opencode-zen" },
-                    { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash (Tốc độ cao, suy luận sắc bén)", provider: "google" },
-                    { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro (Độ chính xác cao, hiểu ngữ cảnh sâu)", provider: "google" },
-                    { id: "gpt-4o-mini", name: "GPT-4o Mini (Phản hồi nhanh, giá tối ưu)", provider: "openai" },
-                    { id: "gpt-4o", name: "GPT-4o (Đỉnh cao lý luận & đa nhiệm)", provider: "openai" },
-                    { id: "claude-3-5-sonnet", name: "Claude 3.5 Sonnet (Văn phong mượt, chi tiết)", provider: "anthropic" },
+                    { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash (Google AI Studio - Miễn phí, Ổn định & Nhanh)", provider: "google" },
+                    { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash (Google AI Studio - Thế hệ mới)", provider: "google" },
+                    { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro (Google AI Studio - Ngữ cảnh siêu sâu)", provider: "google" },
+                    { id: "big-pickle", name: "Big Pickle (OpenCode Zen)", provider: "opencode-zen" },
+                    { id: "gpt-4o-mini", name: "GPT-4o Mini (OpenCode Zen)", provider: "opencode-zen" },
+                    { id: "claude-3-5-sonnet", name: "Claude 3.5 Sonnet (OpenCode Zen)", provider: "opencode-zen" },
                 ],
             });
         }
@@ -972,7 +1171,7 @@ exports.AdminController = {
      */
     async updateAISettings(req, res, next) {
         try {
-            const { model, temperature, maxTokens, customInstruction, provider } = req.body || {};
+            const { model, temperature, maxTokens, customInstruction, provider, geminiApiKey } = req.body || {};
             if (model !== undefined && (typeof model !== "string" || !model.trim())) {
                 (0, response_1.sendError)(res, "VALIDATION_ERROR", "Tên model không được để trống.", 422);
                 return;
@@ -991,12 +1190,21 @@ exports.AdminController = {
                     return;
                 }
             }
+            // Nếu truyền geminiApiKey là dạng masked (ví dụ AIzaSy...xxxx) thì không ghi đè giá trị cũ
+            let keyToSave = undefined;
+            if (typeof geminiApiKey === "string") {
+                const trimmed = geminiApiKey.trim();
+                if (!trimmed.includes("...")) {
+                    keyToSave = trimmed;
+                }
+            }
             const updated = await settings_model_1.SettingsModel.saveAIConfig({
                 model: model ? model.trim() : undefined,
                 temperature: temperature !== undefined ? Number(temperature) : undefined,
                 maxTokens: maxTokens !== undefined ? Number(maxTokens) : undefined,
                 customInstruction: typeof customInstruction === "string" ? customInstruction : undefined,
                 provider: typeof provider === "string" ? provider.trim() : undefined,
+                geminiApiKey: keyToSave,
             });
             (0, response_1.sendSuccess)(res, {
                 config: updated,
@@ -1013,15 +1221,15 @@ exports.AdminController = {
      */
     async testAIModel(req, res, next) {
         try {
-            const apiKey = process.env.OPENCODE_ZEN_API_KEY;
-            if (!apiKey) {
-                (0, response_1.sendError)(res, "INTERNAL_ERROR", "Máy chủ chưa được cấu hình OPENCODE_ZEN_API_KEY.", 500);
-                return;
-            }
-            const { model, temperature } = req.body || {};
-            const rawModel = (typeof model === "string" && model.trim()) ? model.trim() : (await settings_model_1.SettingsModel.getAIConfig()).model;
+            const { model, temperature, provider, geminiApiKey } = req.body || {};
+            const currentConfig = await settings_model_1.SettingsModel.getAIConfig();
+            const rawModel = (typeof model === "string" && model.trim()) ? model.trim() : currentConfig.model;
             const testModel = (0, settings_model_1.normalizeModelName)(rawModel);
             const testTemp = typeof temperature === "number" ? temperature : 0.4;
+            const testProvider = typeof provider === "string" ? provider.trim() : (testModel.includes("gemini") ? "google" : currentConfig.provider);
+            const effectiveGeminiKey = (typeof geminiApiKey === "string" && geminiApiKey.trim() && !geminiApiKey.includes("..."))
+                ? geminiApiKey.trim()
+                : currentConfig.geminiApiKey;
             const startTime = Date.now();
             const testMessages = [
                 {
@@ -1033,11 +1241,13 @@ exports.AdminController = {
                     content: "Kiểm tra kết nối và khả năng sinh lịch trình du lịch Huế.",
                 },
             ];
-            const result = await (0, itinerary_service_1.callZen)(apiKey, testMessages, {
+            const result = await (0, itinerary_service_1.callAI)({
+                provider: testProvider,
                 model: testModel,
+                geminiApiKey: effectiveGeminiKey,
                 temperature: testTemp,
                 maxTokens: 512,
-            });
+            }, testMessages);
             const latencyMs = Date.now() - startTime;
             if (!result.ok) {
                 (0, response_1.sendError)(res, "UPSTREAM_ERROR", `Model "${testModel}" phản hồi thất bại: Mã HTTP ${result.status || "timeout"}${result.error ? ` (${result.error})` : ""}.`, 502);

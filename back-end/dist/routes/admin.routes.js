@@ -24,6 +24,12 @@ router.patch("/users/:id/status", admin_controller_1.AdminController.updateUserS
 // Reviews Moderation
 router.get("/reviews", admin_controller_1.AdminController.getReviews);
 router.delete("/reviews/:id", admin_controller_1.AdminController.deleteReview);
+// Itineraries Management & Moderation
+router.get("/itineraries", admin_controller_1.AdminController.getItineraries);
+router.patch("/itineraries/:id/visibility", admin_controller_1.AdminController.toggleItineraryVisibility);
+router.delete("/itineraries/:id", admin_controller_1.AdminController.deleteItinerary);
+router.get("/itinerary-comments", admin_controller_1.AdminController.getItineraryComments);
+router.delete("/itinerary-comments/:id", admin_controller_1.AdminController.deleteItineraryComment);
 // API Request Logs & Auditing
 router.get("/logs", admin_controller_1.AdminController.getLogs);
 router.delete("/logs", admin_controller_1.AdminController.clearLogs);

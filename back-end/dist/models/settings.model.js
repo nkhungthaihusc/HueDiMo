@@ -4,11 +4,12 @@ exports.SettingsModel = exports.DEFAULT_AI_CONFIG = void 0;
 exports.normalizeModelName = normalizeModelName;
 const db_1 = require("../config/db");
 exports.DEFAULT_AI_CONFIG = {
-    model: "big-pickle",
+    model: "gemini-1.5-flash",
     temperature: 0.4,
     maxTokens: 4096,
     customInstruction: "",
-    provider: "opencode-zen",
+    provider: "google",
+    geminiApiKey: "",
 };
 /**
  * Chuẩn hóa tên model:
@@ -80,6 +81,7 @@ exports.SettingsModel = {
             maxTokens: typeof config.maxTokens === "number" ? config.maxTokens : exports.DEFAULT_AI_CONFIG.maxTokens,
             customInstruction: config.customInstruction || "",
             provider: config.provider || exports.DEFAULT_AI_CONFIG.provider,
+            geminiApiKey: config.geminiApiKey || process.env.GEMINI_API_KEY || "",
             updatedAt: config.updatedAt,
         };
     },
@@ -102,6 +104,9 @@ exports.SettingsModel = {
                 ? config.customInstruction.trim()
                 : current.customInstruction,
             provider: config.provider?.trim() || current.provider,
+            geminiApiKey: config.geminiApiKey !== undefined
+                ? config.geminiApiKey.trim()
+                : current.geminiApiKey,
             updatedAt: new Date().toISOString(),
         };
         return this.setSetting("ai_itinerary_config", updated, "Cấu hình model và tham số sinh lịch trình thông minh của AI tư vấn du lịch");

@@ -612,13 +612,16 @@ export class ItineraryController {
 
       // Tạo bản sao cho người dùng hiện tại (ở chế độ private ban đầu để người dùng chỉnh sửa)
       const newTitle = `[Bản sao] ${orig.title}`;
+      const daysJson = typeof orig.days === "string" ? orig.days : JSON.stringify(orig.days || []);
+      const prefArray = Array.isArray(orig.preferences) ? orig.preferences : [];
+
       const insertCopy = await pool.query(
         `INSERT INTO public.itineraries (
            user_id, title, start_date, end_date, budget, total_estimated_cost,
            transport_mode, group_size, current_location, preferences, summary,
            days, is_public, created_at, updated_at
          ) VALUES (
-           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, false, NOW(), NOW()
+           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb, false, NOW(), NOW()
          ) RETURNING *`,
         [
           userId,
@@ -630,9 +633,9 @@ export class ItineraryController {
           orig.transport_mode,
           orig.group_size,
           orig.current_location,
-          orig.preferences,
+          prefArray,
           orig.summary,
-          orig.days,
+          daysJson,
         ]
       );
 

@@ -264,6 +264,137 @@ exports.swaggerDocument = {
                     },
                 },
             },
+            ItineraryPlace: {
+                type: "object",
+                required: ["placeId"],
+                properties: {
+                    placeId: { type: "string", example: "dai-noi-hue", description: "ID của địa điểm trong cơ sở dữ liệu" },
+                    reason: { type: "string", example: "Di tích lịch sử quan trọng nhất triều Nguyễn" },
+                    estimatedCost: { type: "number", example: 200000 },
+                    customName: { type: "string", example: "Đại Nội Huế" },
+                    note: { type: "string", example: "Nên mang ô/nón và nước uống." },
+                },
+            },
+            ItineraryDay: {
+                type: "object",
+                required: ["date", "places"],
+                properties: {
+                    date: { type: "string", format: "date", example: "2026-09-17" },
+                    title: { type: "string", example: "Ngày 1: Khám phá Quần thể Di tích Cố đô" },
+                    places: {
+                        type: "array",
+                        items: { $ref: "#/components/schemas/ItineraryPlace" },
+                    },
+                },
+            },
+            Itinerary: {
+                type: "object",
+                properties: {
+                    id: { type: "string", format: "uuid", example: "d9e80b2a-714a-4a25-8854-c9f53833cb91" },
+                    user_id: { type: "string", format: "uuid", example: "71c08796-03fc-4cb3-a5c7-8dc5f466b026" },
+                    title: { type: "string", example: "Lộ trình 17/9/2026 → 18/9/2026" },
+                    start_date: { type: "string", format: "date", example: "2026-09-17" },
+                    end_date: { type: "string", format: "date", example: "2026-09-18" },
+                    budget: { type: "number", example: 1000000 },
+                    total_estimated_cost: { type: "number", example: 750000 },
+                    transport_mode: {
+                        type: "string",
+                        enum: ["motorbike", "car", "bicycle", "walking"],
+                        example: "motorbike",
+                    },
+                    group_size: { type: "number", example: 2 },
+                    current_location: { type: "string", example: "Ga Huế" },
+                    preferences: {
+                        type: "array",
+                        items: { type: "string" },
+                        example: ["ancient", "food"],
+                    },
+                    summary: { type: "string", example: "Hành trình 2 ngày trải nghiệm lịch sử Cố đô và ẩm thực Cung đình Huế." },
+                    days: {
+                        type: "array",
+                        items: { $ref: "#/components/schemas/ItineraryDay" },
+                    },
+                    is_public: { type: "boolean", example: true },
+                    likes_count: { type: "number", example: 12 },
+                    bookmarks_count: { type: "number", example: 5 },
+                    views_count: { type: "number", example: 89 },
+                    forks_count: { type: "number", example: 3 },
+                    comments_count: { type: "number", example: 4 },
+                    rating: { type: "number", example: 4.8, description: "Điểm đánh giá trung bình từ 1.0 đến 5.0" },
+                    author_name: { type: "string", example: "Nguyễn Kim Hưng Thái" },
+                    author_avatar: { type: "string", example: "" },
+                    is_liked: { type: "boolean", example: false },
+                    is_bookmarked: { type: "boolean", example: false },
+                    created_at: { type: "string", format: "date-time" },
+                    updated_at: { type: "string", format: "date-time" },
+                },
+            },
+            SaveItineraryRequest: {
+                type: "object",
+                required: ["title", "startDate", "endDate", "days"],
+                properties: {
+                    id: { type: "string", example: "d9e80b2a-714a-4a25-8854-c9f53833cb91", description: "ID của lộ trình nếu là cập nhật (hoặc bỏ trống nếu tạo mới)" },
+                    title: { type: "string", example: "Lộ trình 17/9/2026 → 18/9/2026" },
+                    startDate: { type: "string", format: "date", example: "2026-09-17" },
+                    endDate: { type: "string", format: "date", example: "2026-09-18" },
+                    budget: { type: "number", example: 1000000 },
+                    totalEstimatedCost: { type: "number", example: 750000 },
+                    transportMode: {
+                        type: "string",
+                        enum: ["motorbike", "car", "bicycle", "walking"],
+                        example: "motorbike",
+                    },
+                    groupSize: { type: "number", example: 2 },
+                    currentLocation: { type: "string", example: "Ga Huế" },
+                    preferences: {
+                        type: "array",
+                        items: { type: "string" },
+                        example: ["ancient", "food"],
+                    },
+                    summary: { type: "string", example: "Hành trình 2 ngày trải nghiệm lịch sử Cố đô và ẩm thực Cung đình Huế." },
+                    days: {
+                        type: "array",
+                        items: { $ref: "#/components/schemas/ItineraryDay" },
+                    },
+                    isPublic: { type: "boolean", example: false, description: "Bật true để chia sẻ lên cộng đồng" },
+                },
+            },
+            ItineraryComment: {
+                type: "object",
+                properties: {
+                    id: { type: "string", format: "uuid", example: "3fa85f64-5717-4562-b3fc-2c963f66afa6" },
+                    itinerary_id: { type: "string", format: "uuid", example: "d9e80b2a-714a-4a25-8854-c9f53833cb91" },
+                    user_id: { type: "string", format: "uuid", example: "71c08796-03fc-4cb3-a5c7-8dc5f466b026" },
+                    content: { type: "string", example: "Lộ trình rất hợp lý, các điểm lăng tẩm đi buổi chiều mát mẻ hơn nhiều!" },
+                    rating: { type: "number", minimum: 1, maximum: 5, example: 5, description: "Số sao đánh giá từ 1 đến 5" },
+                    user_name: { type: "string", example: "Lê Thị B" },
+                    user_avatar: { type: "string", example: "" },
+                    user_role: { type: "string", example: "user" },
+                    created_at: { type: "string", format: "date-time" },
+                    updated_at: { type: "string", format: "date-time" },
+                },
+            },
+            AddCommentRequest: {
+                type: "object",
+                required: ["content"],
+                properties: {
+                    content: { type: "string", example: "Cung đường di chuyển rất tối ưu, đồ ăn quán bánh bèo rất ngon!" },
+                    rating: {
+                        type: "number",
+                        minimum: 1,
+                        maximum: 5,
+                        example: 5,
+                        description: "Số sao đánh giá lộ trình (1 - 5 sao)",
+                    },
+                },
+            },
+            ToggleVisibilityRequest: {
+                type: "object",
+                required: ["isPublic"],
+                properties: {
+                    isPublic: { type: "boolean", example: true, description: "true để công khai, false để riêng tư" },
+                },
+            },
         },
     },
     paths: {
@@ -1771,6 +1902,650 @@ exports.swaggerDocument = {
                     "401": { $ref: "#/components/schemas/ErrorResponse" },
                     "403": { $ref: "#/components/schemas/ErrorResponse" },
                     "422": { $ref: "#/components/schemas/ErrorResponse" },
+                },
+            },
+        },
+        "/api/itineraries/community": {
+            get: {
+                tags: ["Itineraries"],
+                summary: "Lấy danh sách lộ trình du lịch công khai từ cộng đồng",
+                description: "Hỗ trợ tìm kiếm từ khóa, lọc theo số ngày, phương tiện di chuyển, ngân sách tối đa và sắp xếp theo mới nhất, nhiều lượt thích nhất, lượt xem nhiều nhất hoặc điểm đánh giá cao nhất.",
+                parameters: [
+                    { name: "search", in: "query", schema: { type: "string" }, description: "Từ khóa tìm kiếm trong tiêu đề hoặc tóm tắt" },
+                    { name: "daysCount", in: "query", schema: { type: "integer" }, description: "Lọc theo số ngày (1, 2, 3, hoặc 4+)" },
+                    { name: "transportMode", in: "query", schema: { type: "string", enum: ["motorbike", "car", "bicycle", "walking"] }, description: "Phương tiện di chuyển" },
+                    { name: "maxBudget", in: "query", schema: { type: "number" }, description: "Ngân sách tối đa" },
+                    { name: "sort", in: "query", schema: { type: "string", enum: ["newest", "highest_rated", "most_liked", "most_viewed"], default: "newest" }, description: "Tiêu chí sắp xếp" },
+                    { name: "page", in: "query", schema: { type: "integer", default: 1 }, description: "Số trang" },
+                    { name: "limit", in: "query", schema: { type: "integer", default: 12 }, description: "Số bản ghi mỗi trang" },
+                ],
+                responses: {
+                    "200": {
+                        description: "Danh sách lịch trình cộng đồng phân trang",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        data: {
+                                            type: "object",
+                                            properties: {
+                                                items: {
+                                                    type: "array",
+                                                    items: { $ref: "#/components/schemas/Itinerary" },
+                                                },
+                                                pagination: {
+                                                    type: "object",
+                                                    properties: {
+                                                        page: { type: "integer", example: 1 },
+                                                        limit: { type: "integer", example: 12 },
+                                                        total: { type: "integer", example: 45 },
+                                                        totalPages: { type: "integer", example: 4 },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+        "/api/itineraries/save": {
+            post: {
+                tags: ["Itineraries"],
+                summary: "Lưu hoặc cập nhật lộ trình cá nhân",
+                description: "Yêu cầu đăng nhập. Tự động cập nhật nếu đã tồn tại lộ trình trùng khớp của người dùng, hoặc tạo mới nếu chưa có.",
+                security: [{ BearerAuth: [] }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        "application/json": {
+                            schema: { $ref: "#/components/schemas/SaveItineraryRequest" },
+                        },
+                    },
+                },
+                responses: {
+                    "200": {
+                        description: "Cập nhật thành công",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        data: {
+                                            type: "object",
+                                            properties: {
+                                                itinerary: { $ref: "#/components/schemas/Itinerary" },
+                                                message: { type: "string", example: "Cập nhật lịch trình thành công!" },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    "201": {
+                        description: "Lưu mới thành công",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        data: {
+                                            type: "object",
+                                            properties: {
+                                                itinerary: { $ref: "#/components/schemas/Itinerary" },
+                                                message: { type: "string", example: "Lưu lịch trình thành công!" },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    "401": { $ref: "#/components/schemas/ErrorResponse" },
+                    "403": { $ref: "#/components/schemas/ErrorResponse" },
+                    "422": { $ref: "#/components/schemas/ErrorResponse" },
+                },
+            },
+        },
+        "/api/itineraries/my": {
+            get: {
+                tags: ["Itineraries"],
+                summary: "Lấy tất cả lộ trình cá nhân của người dùng hiện tại",
+                description: "Yêu cầu đăng nhập. Trả về toàn bộ danh sách lộ trình riêng tư lẫn công khai của user.",
+                security: [{ BearerAuth: [] }],
+                responses: {
+                    "200": {
+                        description: "Danh sách lộ trình của người dùng",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        data: {
+                                            type: "array",
+                                            items: { $ref: "#/components/schemas/Itinerary" },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    "401": { $ref: "#/components/schemas/ErrorResponse" },
+                },
+            },
+        },
+        "/api/itineraries/{id}": {
+            get: {
+                tags: ["Itineraries"],
+                summary: "Xem chi tiết một lộ trình cụ thể",
+                description: "Tự động tăng số lượt xem views_count. Nếu lộ trình ở chế độ riêng tư, chỉ có tác giả mới có thể xem.",
+                parameters: [
+                    { name: "id", in: "path", required: true, schema: { type: "string" }, description: "UUID của lịch trình" },
+                ],
+                responses: {
+                    "200": {
+                        description: "Thông tin chi tiết lộ trình",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        data: { $ref: "#/components/schemas/Itinerary" },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    "403": { $ref: "#/components/schemas/ErrorResponse" },
+                    "404": { $ref: "#/components/schemas/ErrorResponse" },
+                },
+            },
+            delete: {
+                tags: ["Itineraries"],
+                summary: "Xóa lộ trình của mình",
+                description: "Yêu cầu đăng nhập. Người dùng chỉ có thể xóa lộ trình do chính mình tạo ra.",
+                security: [{ BearerAuth: [] }],
+                parameters: [
+                    { name: "id", in: "path", required: true, schema: { type: "string" }, description: "UUID của lịch trình cần xóa" },
+                ],
+                responses: {
+                    "200": {
+                        description: "Xóa thành công",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        data: {
+                                            type: "object",
+                                            properties: {
+                                                message: { type: "string", example: "Đã xóa lịch trình thành công." },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    "401": { $ref: "#/components/schemas/ErrorResponse" },
+                    "403": { $ref: "#/components/schemas/ErrorResponse" },
+                    "404": { $ref: "#/components/schemas/ErrorResponse" },
+                },
+            },
+        },
+        "/api/itineraries/{id}/visibility": {
+            patch: {
+                tags: ["Itineraries"],
+                summary: "Bật/tắt trạng thái công khai cho lộ trình",
+                description: "Yêu cầu đăng nhập. Cho phép người dùng chuyển đổi giữa riêng tư (false) và công khai lên cộng đồng (true).",
+                security: [{ BearerAuth: [] }],
+                parameters: [
+                    { name: "id", in: "path", required: true, schema: { type: "string" }, description: "UUID của lịch trình" },
+                ],
+                requestBody: {
+                    required: true,
+                    content: {
+                        "application/json": {
+                            schema: { $ref: "#/components/schemas/ToggleVisibilityRequest" },
+                        },
+                    },
+                },
+                responses: {
+                    "200": {
+                        description: "Cập nhật trạng thái hiển thị thành công",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        data: {
+                                            type: "object",
+                                            properties: {
+                                                itinerary: { $ref: "#/components/schemas/Itinerary" },
+                                                message: { type: "string", example: "Đã chia sẻ lịch trình công khai lên cộng đồng HueDiMo!" },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    "401": { $ref: "#/components/schemas/ErrorResponse" },
+                    "403": { $ref: "#/components/schemas/ErrorResponse" },
+                    "404": { $ref: "#/components/schemas/ErrorResponse" },
+                    "422": { $ref: "#/components/schemas/ErrorResponse" },
+                },
+            },
+        },
+        "/api/itineraries/{id}/reaction": {
+            post: {
+                tags: ["Itineraries"],
+                summary: "Thả tim / Bỏ tim lộ trình",
+                description: "Yêu cầu đăng nhập. Chuyển đổi trạng thái thích của người dùng đối với lộ trình.",
+                security: [{ BearerAuth: [] }],
+                parameters: [
+                    { name: "id", in: "path", required: true, schema: { type: "string" }, description: "UUID của lịch trình" },
+                ],
+                responses: {
+                    "200": {
+                        description: "Cập nhật lượt thích thành công",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        data: {
+                                            type: "object",
+                                            properties: {
+                                                isLiked: { type: "boolean", example: true },
+                                                likesCount: { type: "integer", example: 15 },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    "401": { $ref: "#/components/schemas/ErrorResponse" },
+                },
+            },
+        },
+        "/api/itineraries/{id}/bookmark": {
+            post: {
+                tags: ["Itineraries"],
+                summary: "Đánh dấu / Bỏ đánh dấu lưu lại lộ trình",
+                description: "Yêu cầu đăng nhập. Lưu lộ trình vào danh sách theo dõi cá nhân.",
+                security: [{ BearerAuth: [] }],
+                parameters: [
+                    { name: "id", in: "path", required: true, schema: { type: "string" }, description: "UUID của lịch trình" },
+                ],
+                responses: {
+                    "200": {
+                        description: "Cập nhật đánh dấu thành công",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        data: {
+                                            type: "object",
+                                            properties: {
+                                                isBookmarked: { type: "boolean", example: true },
+                                                bookmarksCount: { type: "integer", example: 6 },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    "401": { $ref: "#/components/schemas/ErrorResponse" },
+                },
+            },
+        },
+        "/api/itineraries/{id}/fork": {
+            post: {
+                tags: ["Itineraries"],
+                summary: "Sử dụng / Nhân bản lộ trình cộng đồng",
+                description: "Yêu cầu đăng nhập. Tạo một bản sao độc lập của lộ trình cộng đồng vào tài khoản của người dùng để tùy biến.",
+                security: [{ BearerAuth: [] }],
+                parameters: [
+                    { name: "id", in: "path", required: true, schema: { type: "string" }, description: "UUID của lịch trình gốc" },
+                ],
+                responses: {
+                    "201": {
+                        description: "Nhân bản lộ trình thành công",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        data: {
+                                            type: "object",
+                                            properties: {
+                                                itinerary: { $ref: "#/components/schemas/Itinerary" },
+                                                message: { type: "string", example: "Đã nạp lộ trình vào danh sách chuyến đi của bạn!" },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    "401": { $ref: "#/components/schemas/ErrorResponse" },
+                    "404": { $ref: "#/components/schemas/ErrorResponse" },
+                },
+            },
+        },
+        "/api/itineraries/{id}/comments": {
+            get: {
+                tags: ["Itineraries"],
+                summary: "Lấy danh sách đánh giá và bình luận của lộ trình",
+                description: "Trả về danh sách nhận xét kèm số sao đánh giá (1-5 sao) và thông tin tác giả bình luận.",
+                parameters: [
+                    { name: "id", in: "path", required: true, schema: { type: "string" }, description: "UUID của lịch trình" },
+                ],
+                responses: {
+                    "200": {
+                        description: "Danh sách đánh giá",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        data: {
+                                            type: "array",
+                                            items: { $ref: "#/components/schemas/ItineraryComment" },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            post: {
+                tags: ["Itineraries"],
+                summary: "Gửi đánh giá sao và nhận xét cho lộ trình",
+                description: "Yêu cầu đăng nhập. Nhận nội dung nhận xét và tùy chọn số sao rating (1-5). Hệ thống tự động tính toán lại điểm sao trung bình của lộ trình.",
+                security: [{ BearerAuth: [] }],
+                parameters: [
+                    { name: "id", in: "path", required: true, schema: { type: "string" }, description: "UUID của lịch trình" },
+                ],
+                requestBody: {
+                    required: true,
+                    content: {
+                        "application/json": {
+                            schema: { $ref: "#/components/schemas/AddCommentRequest" },
+                        },
+                    },
+                },
+                responses: {
+                    "201": {
+                        description: "Gửi đánh giá thành công",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        data: {
+                                            type: "object",
+                                            properties: {
+                                                comment: { $ref: "#/components/schemas/ItineraryComment" },
+                                                message: { type: "string", example: "Gửi ý kiến / đánh giá thành công!" },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    "401": { $ref: "#/components/schemas/ErrorResponse" },
+                    "422": { $ref: "#/components/schemas/ErrorResponse" },
+                },
+            },
+        },
+        "/api/itineraries/{id}/comments/{commentId}": {
+            delete: {
+                tags: ["Itineraries"],
+                summary: "Xóa bình luận hoặc đánh giá",
+                description: "Yêu cầu đăng nhập. Chỉ tác giả của bình luận hoặc Quản trị viên mới có thể xóa.",
+                security: [{ BearerAuth: [] }],
+                parameters: [
+                    { name: "id", in: "path", required: true, schema: { type: "string" }, description: "UUID của lịch trình" },
+                    { name: "commentId", in: "path", required: true, schema: { type: "string" }, description: "UUID của bình luận cần xóa" },
+                ],
+                responses: {
+                    "200": {
+                        description: "Xóa bình luận thành công",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        data: {
+                                            type: "object",
+                                            properties: {
+                                                message: { type: "string", example: "Đã xóa bình luận thành công." },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    "401": { $ref: "#/components/schemas/ErrorResponse" },
+                    "403": { $ref: "#/components/schemas/ErrorResponse" },
+                    "404": { $ref: "#/components/schemas/ErrorResponse" },
+                },
+            },
+        },
+        "/api/admin/itineraries": {
+            get: {
+                tags: ["Admin - Itineraries Management"],
+                summary: "Lấy danh sách tất cả lộ trình phục vụ quản trị (Admin)",
+                description: "Yêu cầu quyền Quản trị viên. Hỗ trợ tìm kiếm theo tiêu đề/tác giả/tóm tắt và lọc theo trạng thái công khai.",
+                security: [{ BearerAuth: [] }],
+                parameters: [
+                    { name: "q", in: "query", schema: { type: "string" }, description: "Từ khóa tìm kiếm" },
+                    { name: "isPublic", in: "query", schema: { type: "string", enum: ["true", "false"] }, description: "Lọc theo trạng thái công khai" },
+                    { name: "page", in: "query", schema: { type: "integer", default: 1 } },
+                    { name: "limit", in: "query", schema: { type: "integer", default: 20 } },
+                ],
+                responses: {
+                    "200": {
+                        description: "Danh sách lộ trình phân trang",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        data: {
+                                            type: "object",
+                                            properties: {
+                                                items: { type: "array", items: { $ref: "#/components/schemas/Itinerary" } },
+                                                pagination: {
+                                                    type: "object",
+                                                    properties: {
+                                                        page: { type: "integer" },
+                                                        limit: { type: "integer" },
+                                                        total: { type: "integer" },
+                                                        totalPages: { type: "integer" },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    "401": { $ref: "#/components/schemas/ErrorResponse" },
+                    "403": { $ref: "#/components/schemas/ErrorResponse" },
+                },
+            },
+        },
+        "/api/admin/itineraries/{id}": {
+            delete: {
+                tags: ["Admin - Itineraries Management"],
+                summary: "Quản trị viên xóa lộ trình vi phạm (Admin)",
+                description: "Yêu cầu quyền Quản trị viên. Xóa hoàn toàn một lộ trình khỏi cơ sở dữ liệu.",
+                security: [{ BearerAuth: [] }],
+                parameters: [
+                    { name: "id", in: "path", required: true, schema: { type: "string" }, description: "UUID của lộ trình cần xóa" },
+                ],
+                responses: {
+                    "200": {
+                        description: "Xóa thành công",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        data: {
+                                            type: "object",
+                                            properties: {
+                                                id: { type: "string" },
+                                                deleted: { type: "boolean", example: true },
+                                                message: { type: "string", example: "Đã xóa lịch trình thành công." },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    "401": { $ref: "#/components/schemas/ErrorResponse" },
+                    "403": { $ref: "#/components/schemas/ErrorResponse" },
+                    "404": { $ref: "#/components/schemas/ErrorResponse" },
+                },
+            },
+        },
+        "/api/admin/itineraries/{id}/visibility": {
+            patch: {
+                tags: ["Admin - Itineraries Management"],
+                summary: "Bật hoặc ẩn lộ trình khỏi cộng đồng (Admin)",
+                description: "Yêu cầu quyền Quản trị viên. Cho phép admin can thiệp ẩn lộ trình vi phạm hoặc khôi phục hiển thị.",
+                security: [{ BearerAuth: [] }],
+                parameters: [
+                    { name: "id", in: "path", required: true, schema: { type: "string" }, description: "UUID của lộ trình" },
+                ],
+                requestBody: {
+                    required: true,
+                    content: {
+                        "application/json": {
+                            schema: { $ref: "#/components/schemas/ToggleVisibilityRequest" },
+                        },
+                    },
+                },
+                responses: {
+                    "200": {
+                        description: "Cập nhật hiển thị thành công",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        data: {
+                                            type: "object",
+                                            properties: {
+                                                itinerary: { $ref: "#/components/schemas/Itinerary" },
+                                                message: { type: "string", example: "Đã cho phép lộ trình hiển thị công khai trên cộng đồng." },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    "401": { $ref: "#/components/schemas/ErrorResponse" },
+                    "403": { $ref: "#/components/schemas/ErrorResponse" },
+                    "404": { $ref: "#/components/schemas/ErrorResponse" },
+                    "422": { $ref: "#/components/schemas/ErrorResponse" },
+                },
+            },
+        },
+        "/api/admin/itinerary-comments": {
+            get: {
+                tags: ["Admin - Itineraries Management"],
+                summary: "Lấy danh sách tất cả nhận xét và đánh giá sao lộ trình (Admin)",
+                description: "Yêu cầu quyền Quản trị viên. Giúp kiểm duyệt và theo dõi các đánh giá sao và thảo luận của du khách về lộ trình.",
+                security: [{ BearerAuth: [] }],
+                parameters: [
+                    { name: "page", in: "query", schema: { type: "integer", default: 1 } },
+                    { name: "limit", in: "query", schema: { type: "integer", default: 20 } },
+                ],
+                responses: {
+                    "200": {
+                        description: "Danh sách đánh giá lộ trình phân trang",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        data: {
+                                            type: "object",
+                                            properties: {
+                                                items: { type: "array", items: { $ref: "#/components/schemas/ItineraryComment" } },
+                                                pagination: {
+                                                    type: "object",
+                                                    properties: {
+                                                        page: { type: "integer" },
+                                                        limit: { type: "integer" },
+                                                        total: { type: "integer" },
+                                                        totalPages: { type: "integer" },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    "401": { $ref: "#/components/schemas/ErrorResponse" },
+                    "403": { $ref: "#/components/schemas/ErrorResponse" },
+                },
+            },
+        },
+        "/api/admin/itinerary-comments/{id}": {
+            delete: {
+                tags: ["Admin - Itineraries Management"],
+                summary: "Quản trị viên xóa nhận xét hoặc đánh giá lộ trình vi phạm (Admin)",
+                description: "Yêu cầu quyền Quản trị viên. Xóa nhận xét và tự động tính lại điểm trung bình cho lộ trình.",
+                security: [{ BearerAuth: [] }],
+                parameters: [
+                    { name: "id", in: "path", required: true, schema: { type: "string" }, description: "UUID của bình luận" },
+                ],
+                responses: {
+                    "200": {
+                        description: "Xóa thành công",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        data: {
+                                            type: "object",
+                                            properties: {
+                                                id: { type: "string" },
+                                                deleted: { type: "boolean", example: true },
+                                                message: { type: "string", example: "Đã xóa nhận xét lộ trình thành công." },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    "401": { $ref: "#/components/schemas/ErrorResponse" },
+                    "403": { $ref: "#/components/schemas/ErrorResponse" },
+                    "404": { $ref: "#/components/schemas/ErrorResponse" },
                 },
             },
         },

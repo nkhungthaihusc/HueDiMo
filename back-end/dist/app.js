@@ -44,6 +44,7 @@ app.use("/api/weather", weather_routes_1.default);
 app.use("/api/water-levels", water_level_routes_1.default);
 app.use("/api/reverse-geocode", reverse_geocode_routes_1.default);
 app.use("/api/itinerary", itinerary_routes_1.default);
+app.use("/api/itineraries", itinerary_routes_1.default);
 app.use("/api", leaderboard_routes_1.default);
 // Health check endpoint
 app.get("/api/health", async (_req, res) => {
