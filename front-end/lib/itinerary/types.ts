@@ -46,15 +46,15 @@ export function getTransportOption(mode?: TransportMode): TransportOption {
 }
 
 /**
- * Tính khoảng cách đường chim bay giữa 2 tọa độ (Haversine Formula) theo km.
- * Nhân hệ số uốn lượn đường sá thực tế trung bình tại Huế ~1.35.
+ * Tính khoảng cách đường chim bay thực tế giữa 2 tọa độ (Haversine Formula) theo km.
+ * Mặc định detourFactor = 1.0 (chuẩn đường thẳng).
  */
 export function calculateDistanceKm(
   lat1: number,
   lng1: number,
   lat2: number,
   lng2: number,
-  detourFactor = 1.35,
+  detourFactor = 1.0,
 ): number {
   const R = 6371; // Bán kính trái đất (km)
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -67,7 +67,19 @@ export function calculateDistanceKm(
       Math.sin(dLng / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const straight = R * c;
-  return Math.round(straight * detourFactor * 10) / 10;
+  return Math.round(straight * detourFactor * 100) / 100;
+}
+
+/**
+ * Tính khoảng cách đường bộ ước tính (nhân hệ số uốn lượn đường phố trung bình ~1.35)
+ */
+export function calculateRouteDistanceKm(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+): number {
+  return calculateDistanceKm(lat1, lng1, lat2, lng2, 1.35);
 }
 
 /**
@@ -124,6 +136,7 @@ export interface ItineraryDay {
 
 export interface Itinerary {
   id?: string;
+  title?: string;
   summary: string;
   totalEstimatedCost: number;
   budget?: number;
@@ -131,7 +144,20 @@ export interface Itinerary {
   groupSize?: number;
   notes?: string;
   isAiGenerated?: boolean;
+  isPublic?: boolean;
+  userId?: string;
+  authorName?: string;
+  authorAvatar?: string;
+  likesCount?: number;
+  bookmarksCount?: number;
+  viewsCount?: number;
+  forksCount?: number;
+  commentsCount?: number;
+  rating?: number;
+  isLiked?: boolean;
+  isBookmarked?: boolean;
   createdAt?: string;
+  updatedAt?: string;
   days: ItineraryDay[];
 }
 

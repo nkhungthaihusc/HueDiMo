@@ -1,3 +1,5 @@
+import { SettingsModel } from "../models/settings.model";
+
 export type TransportMode = "motorbike" | "car" | "bicycle" | "walking";
 
 export interface TransportOption {
@@ -193,8 +195,12 @@ function truncate(text: string, max: number): string {
   return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
 }
 
-function buildMessages(req: ItineraryRequestInput, retryHint?: string): { role: "system" | "user"; content: string }[] {
-  const SYSTEM_PROMPT = `Bạn là chuyên gia du lịch tại Huế, Việt Nam. Người dùng nhập thông tin chuyến đi; nhiệm vụ của bạn là xây dựng lịch trình tham quan hợp lý CHỈ dựa trên các địa điểm trong CATALOG được cung cấp.
+function buildMessages(
+  req: ItineraryRequestInput,
+  customInstruction?: string,
+  retryHint?: string
+): { role: "system" | "user"; content: string }[] {
+  let systemPrompt = `Bạn là chuyên gia du lịch tại Huế, Việt Nam. Người dùng nhập thông tin chuyến đi; nhiệm vụ của bạn là xây dựng lịch trình tham quan hợp lý CHỈ dựa trên các địa điểm trong CATALOG được cung cấp.
 
 Quy tắc bắt buộc:
 - CHỈ được dùng placeId có trong CATALOG. Tuyệt đối không tự bịa ra địa điểm.
@@ -220,6 +226,10 @@ Trả về DUY NHẤT một đối tượng JSON hợp lệ, không kèm markdow
     { "date": "YYYY-MM-DD", "title": "tiêu đề ngày", "places": [ { "placeId": "id trong catalog", "reason": "lý do chọn ngắn gọn", "estimatedCost": 0 } ] }
   ]
 }`;
+
+  if (customInstruction && customInstruction.trim()) {
+    systemPrompt += `\n\nChỉ thị bổ sung từ Ban Quản Trị hệ thống:\n${customInstruction.trim()}`;
+  }
 
   const catalog = req.places
     .map((p) => {
@@ -261,12 +271,132 @@ ${catalog}
 Hãy trả lời đúng định dạng JSON đã quy định.${retryHint ? `\n\nGhi chú chỉnh sửa từ lần trước: ${retryHint}` : ""}`;
 
   return [
-    { role: "system", content: SYSTEM_PROMPT },
+    { role: "system", content: systemPrompt },
     { role: "user", content: userPrompt },
   ];
 }
 
-async function callZen(apiKey: string, messages: { role: "system" | "user"; content: string }[]): Promise<{ ok: true; text: string } | { ok: false; status: number }> {
+export async function callGemini(
+  apiKey: string,
+  messages: { role: "system" | "user"; content: string }[],
+  options?: { model?: string; temperature?: number; maxTokens?: number }
+): Promise<{ ok: true; text: string; modelUsed: string } | { ok: false; status: number; error?: string }> {
+  // Lấy tên model sạch, ví dụ: "gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"
+  let modelToUse = options?.model || "gemini-1.5-flash";
+  if (modelToUse.includes("/")) {
+    modelToUse = modelToUse.split("/").pop() || modelToUse;
+  }
+  // Nếu model đang là big-pickle hoặc không thuộc gemini, mặc định về gemini-1.5-flash
+  if (!modelToUse.toLowerCase().includes("gemini")) {
+    modelToUse = "gemini-1.5-flash";
+  }
+
+  const tempToUse = typeof options?.temperature === "number" ? options.temperature : 0.4;
+  const tokensToUse = typeof options?.maxTokens === "number" ? options.maxTokens : 4096;
+
+  // Gom system instruction và user prompt theo format của Google Gemini
+  const systemMsg = messages.find((m) => m.role === "system");
+  const userMsgs = messages.filter((m) => m.role === "user");
+
+  const contents = userMsgs.map((m) => ({
+    role: "user",
+    parts: [{ text: m.content }],
+  }));
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${apiKey}`;
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...(systemMsg
+          ? {
+              systemInstruction: {
+                parts: [{ text: systemMsg.content }],
+              },
+            }
+          : {}),
+        contents,
+        generationConfig: {
+          temperature: tempToUse,
+          maxOutputTokens: tokensToUse,
+          responseMimeType: "application/json",
+        },
+      }),
+      signal: AbortSignal.timeout(60_000),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      return { ok: false, status: res.status, error: errText };
+    }
+
+    const data = (await res.json()) as any;
+    const text =
+      data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+    return { ok: true, text, modelUsed: modelToUse };
+  } catch (err: any) {
+    return { ok: false, status: 0, error: err?.message || "Lỗi kết nối tới Google Gemini API" };
+  }
+}
+
+export async function callAI(
+  config: {
+    provider?: string;
+    model?: string;
+    geminiApiKey?: string;
+    temperature?: number;
+    maxTokens?: number;
+  },
+  messages: { role: "system" | "user"; content: string }[]
+): Promise<{ ok: true; text: string; modelUsed: string } | { ok: false; status: number; error?: string }> {
+  const geminiKey = config.geminiApiKey || process.env.GEMINI_API_KEY;
+  const zenKey = process.env.OPENCODE_ZEN_API_KEY;
+
+  // Nếu người dùng chọn provider Google hoặc có Gemini API Key
+  if (config.provider === "google" || (geminiKey && !config.provider)) {
+    if (!geminiKey) {
+      return { ok: false, status: 400, error: "Chưa cấu hình Google Gemini API Key. Vui lòng nhập API Key trong trang Admin hoặc file .env." };
+    }
+    return callGemini(geminiKey, messages, {
+      model: config.model || "gemini-1.5-flash",
+      temperature: config.temperature,
+      maxTokens: config.maxTokens,
+    });
+  }
+
+  // Mặc định hoặc khi chọn Zen
+  if (zenKey) {
+    return callZen(zenKey, messages, {
+      model: config.model,
+      temperature: config.temperature,
+      maxTokens: config.maxTokens,
+    });
+  }
+
+  if (geminiKey) {
+    return callGemini(geminiKey, messages, {
+      model: config.model || "gemini-1.5-flash",
+      temperature: config.temperature,
+      maxTokens: config.maxTokens,
+    });
+  }
+
+  return { ok: false, status: 500, error: "Chưa có API key nào được cấu hình (Cần GEMINI_API_KEY hoặc OPENCODE_ZEN_API_KEY)." };
+}
+
+export async function callZen(
+  apiKey: string,
+  messages: { role: "system" | "user"; content: string }[],
+  options?: { model?: string; temperature?: number; maxTokens?: number }
+): Promise<{ ok: true; text: string; modelUsed: string } | { ok: false; status: number; error?: string }> {
+  const modelToUse = options?.model || ZEN_MODEL;
+  const tempToUse = typeof options?.temperature === "number" ? options.temperature : 0.4;
+  const tokensToUse = typeof options?.maxTokens === "number" ? options.maxTokens : MAX_MESSAGES;
+
   try {
     const res = await fetch(ZEN_URL, {
       method: "POST",
@@ -280,17 +410,18 @@ async function callZen(apiKey: string, messages: { role: "system" | "user"; cont
         "x-opencode-project": "huedimo",
       },
       body: JSON.stringify({
-        model: ZEN_MODEL,
+        model: modelToUse,
         messages,
-        temperature: 0.4,
-        max_tokens: MAX_MESSAGES,
+        temperature: tempToUse,
+        max_tokens: tokensToUse,
         response_format: { type: "json_object" },
       }),
       signal: AbortSignal.timeout(60_000),
     });
 
     if (!res.ok) {
-      return { ok: false, status: res.status };
+      const errText = await res.text().catch(() => "");
+      return { ok: false, status: res.status, error: errText };
     }
 
     const data = (await res.json()) as {
@@ -298,9 +429,9 @@ async function callZen(apiKey: string, messages: { role: "system" | "user"; cont
     };
     const msg = data.choices?.[0]?.message;
     const text = msg?.content?.trim() || msg?.reasoning_content?.trim() || "";
-    return { ok: true, text };
-  } catch {
-    return { ok: false, status: 0 };
+    return { ok: true, text, modelUsed: modelToUse };
+  } catch (err: any) {
+    return { ok: false, status: 0, error: err?.message || "Connection timeout or network error" };
   }
 }
 
@@ -318,18 +449,28 @@ function parseZenText(text: string): unknown {
 
 export class ItineraryService {
   public static async generate(req: ItineraryRequestInput): Promise<ItineraryResult> {
-    const apiKey = process.env.OPENCODE_ZEN_API_KEY;
-    if (!apiKey) {
-      throw new Error("CONFIG_MISSING: OPENCODE_ZEN_API_KEY is not configured.");
-    }
+    // Đọc cấu hình model và tham số từ Database (do Admin thiết lập)
+    const aiConfig = await SettingsModel.getAIConfig();
 
     for (const retry of [false, true]) {
       const hint = retry
         ? "Lần trước bạn trả về lộ trình không hợp lệ: có placeId ngoài catalog, địa điểm bị lặp, hoặc tổng chi phí vượt ngân sách hoặc sai cấu trúc JSON. Hãy tự kiểm tra lại: mỗi placeId chỉ xuất hiện 1 lần, mọi estimatedCost lấy đúng giá (price) trong catalog nếu có, tổng ≤ ngân sách, và chỉ trả đúng JSON theo cấu trúc quy định."
         : undefined;
-      const result = await callZen(apiKey, buildMessages(req, hint));
+
+      const messages = buildMessages(req, aiConfig.customInstruction, hint);
+      const result = await callAI(
+        {
+          provider: aiConfig.provider,
+          model: aiConfig.model,
+          geminiApiKey: aiConfig.geminiApiKey,
+          temperature: aiConfig.temperature,
+          maxTokens: aiConfig.maxTokens,
+        },
+        messages
+      );
+
       if (!result.ok) {
-        throw new Error(`UPSTREAM_AI_ERROR: Status ${result.status || "timeout"}`);
+        throw new Error(`UPSTREAM_AI_ERROR: Status ${result.status || "timeout"}${result.error ? ` - ${result.error}` : ""}`);
       }
       const itinerary = parseItinerary(parseZenText(result.text));
       const capped = itinerary ? capToBudget(itinerary, req.budget) : null;

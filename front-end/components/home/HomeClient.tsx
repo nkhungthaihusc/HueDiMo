@@ -16,6 +16,7 @@ import TopBar from "@/components/home/TopBar";
 import WeatherWidget from "@/components/home/WeatherWidget";
 import ProfileModal from "@/components/home/ProfileModal";
 import LeaderboardModal from "@/components/home/LeaderboardModal";
+import CommunityItinerariesModal from "@/components/home/CommunityItinerariesModal";
 import {
   getPlacesSnapshot,
   getPlacesServerSnapshot,
@@ -35,6 +36,7 @@ export default function HomeClient() {
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<CategoryId | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [placeListPage, setPlaceListPage] = useState<number>(1);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number; accuracy?: number; address?: string } | null>(null);
   const [addMode, setAddMode] = useState(false);
   const [addPosition, setAddPosition] = useState<{ lat: number; lng: number } | null>(null);
@@ -48,6 +50,7 @@ export default function HomeClient() {
   const [weatherModalOpen, setWeatherModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [leaderboardModalOpen, setLeaderboardModalOpen] = useState(false);
+  const [communityModalOpen, setCommunityModalOpen] = useState(false);
 
   const { user } = useAuth();
   const [authPrompt, setAuthPrompt] = useState<{
@@ -75,6 +78,14 @@ export default function HomeClient() {
     getPlacesSnapshot,
     getPlacesServerSnapshot,
   );
+
+  // Tự động dọn sạch lộ trình đang hiển thị trên bản đồ khi người dùng đăng xuất hoặc chuyển đổi tài khoản
+  useEffect(() => {
+    setItinerary(null);
+    setSavedListOpen(false);
+    setBuilderOpen(false);
+    setShowItineraryForm(false);
+  }, [user?.id]);
 
   // Đồng bộ địa điểm do user đóng góp từ máy chủ khi user đăng nhập
   useEffect(() => {
@@ -283,7 +294,15 @@ export default function HomeClient() {
     // Focus route handled by MapView
   };
 
-  const panelContent = addMode && addPosition !== null ? (
+  const hasCustomOverlay =
+    (addMode && addPosition !== null) ||
+    savedListOpen ||
+    budgetOpen ||
+    builderOpen ||
+    showItineraryForm ||
+    itinerary !== null;
+
+  const overlayPanelContent = (addMode && addPosition !== null) ? (
     <AddPlacePanel
       position={addPosition}
       onSubmit={handleSubmitPlace}
@@ -297,6 +316,7 @@ export default function HomeClient() {
       onClose={() => setSavedListOpen(false)}
       onOpen={handleOpenSavedItinerary}
       onCreate={() => handleStartBuilder(null)}
+      onExploreCommunity={() => setCommunityModalOpen(true)}
       onCreateAi={() => {
         setSavedListOpen(false);
         setShowItineraryForm(true);
@@ -327,13 +347,6 @@ export default function HomeClient() {
         setSavedListOpen(true);
       }}
     />
-  ) : selectedPlace !== null ? (
-    <PlaceDetailPanel
-      key={selectedPlace.id}
-      place={selectedPlace}
-      onBack={() => setSelectedId(null)}
-      userLocation={userLocation}
-    />
   ) : itinerary !== null ? (
     <ItineraryResultPanel
       itinerary={itinerary}
@@ -342,19 +355,13 @@ export default function HomeClient() {
       onShowOnMap={handleShowOnMap}
       onSelectPlace={(id) => setSelectedId(id)}
       onEdit={() => handleStartBuilder(itinerary)}
+      onExploreCommunity={() => setCommunityModalOpen(true)}
       onOpenHistory={() => {
         setItinerary(null);
         handleOpenSaved();
       }}
     />
-  ) : (
-    <PlaceListPanel
-      places={visiblePlaces}
-      selectedId={selectedId}
-      onSelect={handleSelect}
-      userContributedPlaces={userContributedPlaces}
-    />
-  );
+  ) : null;
 
   return (
     <main className="relative h-screen w-full overflow-hidden">
@@ -382,9 +389,14 @@ export default function HomeClient() {
             onAddPlace={handleAddPlace}
             onOpenItinerary={handleOpenItinerary}
             onOpenSaved={handleOpenSaved}
+            onOpenCommunity={() => setCommunityModalOpen(true)}
             onBudget={handleOpenBudget}
             onOpenLeaderboard={() => setLeaderboardModalOpen(true)}
             onOpenProfile={() => setProfileModalOpen(true)}
+            onLogout={() => {
+              setItinerary(null);
+              closeOverlays();
+            }}
           />
           <div
             className={`flex flex-col items-center gap-2 transition-all duration-300 ease-out pointer-events-none ${
@@ -431,7 +443,30 @@ export default function HomeClient() {
           onMouseDown={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
         >
-          {panelContent}
+          {hasCustomOverlay ? (
+            overlayPanelContent
+          ) : (
+            <>
+              {selectedPlace !== null && (
+                <PlaceDetailPanel
+                  key={selectedPlace.id}
+                  place={selectedPlace}
+                  onBack={() => setSelectedId(null)}
+                  userLocation={userLocation}
+                />
+              )}
+              <div className={`h-full w-full ${selectedPlace !== null ? "hidden" : "flex flex-col"}`}>
+                <PlaceListPanel
+                  places={visiblePlaces}
+                  selectedId={selectedId}
+                  onSelect={handleSelect}
+                  userContributedPlaces={userContributedPlaces}
+                  currentPage={placeListPage}
+                  onPageChange={setPlaceListPage}
+                />
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -467,6 +502,18 @@ export default function HomeClient() {
         isOpen={leaderboardModalOpen}
         onClose={() => setLeaderboardModalOpen(false)}
         onOpenProfile={() => setProfileModalOpen(true)}
+      />
+
+      {/* Modal Lộ trình Cộng đồng */}
+      <CommunityItinerariesModal
+        isOpen={communityModalOpen}
+        places={places}
+        onClose={() => setCommunityModalOpen(false)}
+        onUseItinerary={(selectedCommunityItinerary) => {
+          setItinerary(selectedCommunityItinerary);
+          setFocusRouteToken((t) => t + 1);
+        }}
+        onSelectPlace={(id) => handleSelect(places.find((p) => p.id === id) || ({} as any))}
       />
 
       {/* Modal nhắc nhở đăng nhập */}

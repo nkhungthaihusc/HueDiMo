@@ -60,7 +60,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { label: "Dashboard", href: "/admin", icon: "📊" },
     { label: "Quản lý Địa điểm", href: "/admin/places", icon: "📍" },
     { label: "Quản lý Người dùng", href: "/admin/users", icon: "👥" },
+    { label: "Quản lý Lộ trình du lịch", href: "/admin/itineraries", icon: "🗺️" },
     { label: "Đánh giá & Phản hồi", href: "/admin/reviews", icon: "💬" },
+    { label: "Cấu hình AI tư vấn", href: "/admin/ai-settings", icon: "🤖" },
     { label: "Nhật ký API (Logs)", href: "/admin/logs", icon: "⚡" },
     { label: "Tài liệu API (Swagger)", href: "http://localhost:3002/api/docs", icon: "📖", external: true },
   ];

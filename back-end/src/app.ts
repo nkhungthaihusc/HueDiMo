@@ -49,6 +49,7 @@ app.use("/api/weather", weatherRoutes);
 app.use("/api/water-levels", waterLevelRoutes);
 app.use("/api/reverse-geocode", reverseGeocodeRoutes);
 app.use("/api/itinerary", itineraryRoutes);
+app.use("/api/itineraries", itineraryRoutes);
 app.use("/api", leaderboardRoutes);
 
 

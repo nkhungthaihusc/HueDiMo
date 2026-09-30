@@ -67,7 +67,9 @@ export default function AdminLogsPage() {
         setSelectedLog(res.items[0]);
       }
     } catch (err: any) {
-      console.error("Không thể tải API logs:", err);
+      if (err?.message !== "UNAUTHORIZED") {
+        console.error("Không thể tải API logs:", err?.message || err);
+      }
     } finally {
       setIsLoading(false);
     }

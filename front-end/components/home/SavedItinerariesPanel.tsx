@@ -1,15 +1,19 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import type { SavedItinerary } from "@/lib/itinerary/logic";
-import { deleteItinerary, getItineraries, renameItinerary } from "@/lib/itinerary/logic";
+import { deleteItinerary, getItineraries, renameItinerary, updateItineraryId, getItinerarySignature } from "@/lib/itinerary/logic";
 import { formatDateVN, formatVND } from "@/lib/format";
+import { ItineraryAPI } from "@/lib/api/itineraries";
+import { toast } from "@/components/ui/Toast";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 interface SavedItinerariesPanelProps {
   onClose: () => void;
   onCreate: () => void;
   onCreateAi?: () => void;
   onOpen: (itinerary: SavedItinerary) => void;
+  onExploreCommunity?: () => void;
 }
 
 export default function SavedItinerariesPanel({
@@ -17,12 +21,80 @@ export default function SavedItinerariesPanel({
   onCreate,
   onCreateAi,
   onOpen,
+  onExploreCommunity,
 }: SavedItinerariesPanelProps) {
+  const { user } = useAuth();
   const [list, setList] = useState<SavedItinerary[]>(() => getItineraries());
-  const [activeFilter, setActiveFilter] = useState<"all" | "ai">("all");
+  const [activeFilter, setActiveFilter] = useState<"all" | "ai" | "public">("all");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
+  const [publishingId, setPublishingId] = useState<string | null>(null);
+
+  // Khi user thay đổi hoặc đăng xuất, load lại danh sách theo user hiện tại
+  useEffect(() => {
+    setList(getItineraries());
+  }, [user?.id]);
+
+  // Đồng bộ thêm danh sách lịch trình từ Cloud nếu user đã đăng nhập
+  useEffect(() => {
+    if (!user) {
+      setList(getItineraries());
+      return;
+    }
+    let isMounted = true;
+    ItineraryAPI.getMyItineraries()
+      .then((serverList) => {
+        if (!isMounted) return;
+        setList((localList) => {
+          const merged = [...localList];
+          for (const s of serverList) {
+            const serverSig = getItinerarySignature(s);
+            // Tìm mục trùng ID hoặc trùng Signature nội dung
+            const idx = merged.findIndex((m) => m.id === s.id || getItinerarySignature(m) === serverSig);
+            if (idx >= 0) {
+              merged[idx] = {
+                ...merged[idx],
+                id: s.id || merged[idx].id,
+                title: s.title || merged[idx].title,
+                isPublic: s.isPublic,
+                likesCount: s.likesCount,
+                commentsCount: s.commentsCount,
+                viewsCount: s.viewsCount,
+                userId: s.userId || user.id,
+              };
+            } else {
+              merged.push({
+                ...s,
+                id: s.id || `cloud-${Date.now()}`,
+                title: s.title || `Lộ trình ${s.days.length} ngày`,
+                createdAt: s.createdAt || new Date().toISOString(),
+                updatedAt: s.updatedAt || new Date().toISOString(),
+                userId: s.userId || user.id,
+              });
+            }
+          }
+
+          // Lọc triệt để trùng lặp cả về ID lẫn Signature
+          const seenIds = new Set<string>();
+          const seenSigs = new Set<string>();
+          const deduplicated = merged.filter((item) => {
+            const sig = getItinerarySignature(item);
+            if (seenIds.has(item.id) || seenSigs.has(sig)) return false;
+            seenIds.add(item.id);
+            seenSigs.add(sig);
+            return true;
+          });
+
+          return deduplicated;
+        });
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   const handleRename = (id: string) => {
     if (!renameValue.trim()) return;
@@ -31,26 +103,79 @@ export default function SavedItinerariesPanel({
     setRenameValue("");
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirmDeleteId !== id) {
       setConfirmDeleteId(id);
       return;
     }
+    // Xóa khỏi local storage
     setList(deleteItinerary(id));
     setConfirmDeleteId(null);
+
+    // Nếu là ID từ server (UUID > 20 ký tự), đồng bộ xóa trên server
+    if (user && id.length > 20) {
+      try {
+        await ItineraryAPI.deleteItinerary(id);
+        toast.success("Đã xóa lịch trình thành công.");
+      } catch (err) {
+        console.error("Lỗi khi xóa lịch trình trên server:", err);
+      }
+    }
+  };
+
+  const handleTogglePublish = async (it: SavedItinerary) => {
+    if (!user) {
+      toast.info("Vui lòng đăng nhập tài khoản để chia sẻ lịch trình lên cộng đồng.");
+      return;
+    }
+
+    try {
+      setPublishingId(it.id);
+      const nextPublic = !it.isPublic;
+
+      // 1. Lưu/đồng bộ lên server trước
+      const serverRes = await ItineraryAPI.saveToServer(it, it.title, nextPublic);
+
+      // 2. Cập nhật ID từ local thành ID của server và đồng bộ local storage
+      const updatedSaved: SavedItinerary = {
+        ...serverRes,
+        id: serverRes.id || it.id,
+        title: it.title || serverRes.title || `Lộ trình ${serverRes.days.length} ngày`,
+        createdAt: it.createdAt || serverRes.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isPublic: nextPublic,
+      };
+
+      const updatedList = updateItineraryId(it.id, updatedSaved);
+      setList(updatedList);
+
+      if (nextPublic) {
+        toast.success("Đã công khai lịch trình lên Cộng đồng HueDiMo!");
+      } else {
+        toast.info("Đã chuyển lịch trình về chế độ riêng tư.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Không thể cập nhật trạng thái công khai.");
+    } finally {
+      setPublishingId(null);
+    }
   };
 
   const aiCount = useMemo(() => list.filter((it) => it.isAiGenerated).length, [list]);
+  const publicCount = useMemo(() => list.filter((it) => it.isPublic).length, [list]);
 
   const displayedList = useMemo(() => {
     if (activeFilter === "ai") {
       return list.filter((it) => it.isAiGenerated);
     }
+    if (activeFilter === "public") {
+      return list.filter((it) => it.isPublic);
+    }
     return list;
   }, [list, activeFilter]);
 
   return (
-    <div className="pointer-events-auto flex h-full w-full max-w-[calc(100vw-1rem)] sm:w-[420px] sm:max-w-[420px] flex-col overflow-hidden rounded-3xl bg-white/95 border border-slate-200/80 shadow-2xl backdrop-blur-xl transition-all duration-300 animate-in fade-in slide-in-from-right-4">
+    <div className="pointer-events-auto flex h-full w-full max-w-[calc(100vw-1rem)] sm:w-[440px] sm:max-w-[440px] flex-col overflow-hidden rounded-3xl bg-white/95 border border-slate-200/80 shadow-2xl backdrop-blur-xl transition-all duration-300 animate-in fade-in slide-in-from-right-4">
       {/* Header */}
       <div className="border-b border-slate-100 px-3.5 sm:px-5 py-3 sm:py-4 bg-gradient-to-r from-slate-50/80 to-white">
         <div className="flex items-center justify-between gap-2">
@@ -67,19 +192,31 @@ export default function SavedItinerariesPanel({
             <div className="min-w-0 flex-1">
               <h2 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight truncate">Lịch sử Lộ trình</h2>
               <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate">
-                {list.length} kế hoạch du lịch đã lưu
+                {list.length} kế hoạch du lịch cá nhân
               </p>
             </div>
           </div>
+
+          {onExploreCommunity && (
+            <button
+              type="button"
+              onClick={onExploreCommunity}
+              className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 border border-indigo-200/80 px-2.5 py-1.5 text-xs font-bold text-indigo-700 transition cursor-pointer shadow-xs"
+              title="Khám phá lịch trình du lịch từ cộng đồng"
+            >
+              <span>🌍</span>
+              <span className="hidden sm:inline">Cộng đồng</span>
+            </button>
+          )}
         </div>
 
-        {/* Tab lọc: Tất cả / Lịch trình AI */}
+        {/* Tab lọc: Tất cả / Lịch trình AI / Đã công khai */}
         {list.length > 0 && (
-          <div className="mt-3 flex items-center gap-1.5 rounded-xl bg-slate-100/80 p-1 border border-slate-200/50">
+          <div className="mt-3 flex items-center gap-1.5 rounded-xl bg-slate-100/80 p-1 border border-slate-200/50 text-[11px]">
             <button
               type="button"
               onClick={() => setActiveFilter("all")}
-              className={`flex-1 rounded-lg py-1 text-center text-xs font-bold transition cursor-pointer ${
+              className={`flex-1 rounded-lg py-1 text-center font-bold transition cursor-pointer ${
                 activeFilter === "all"
                   ? "bg-white text-slate-900 shadow-xs"
                   : "text-slate-500 hover:text-slate-900"
@@ -90,14 +227,26 @@ export default function SavedItinerariesPanel({
             <button
               type="button"
               onClick={() => setActiveFilter("ai")}
-              className={`flex-1 flex items-center justify-center gap-1 rounded-lg py-1 text-center text-xs font-bold transition cursor-pointer ${
+              className={`flex-1 flex items-center justify-center gap-1 rounded-lg py-1 text-center font-bold transition cursor-pointer ${
                 activeFilter === "ai"
                   ? "bg-indigo-600 text-white shadow-xs"
                   : "text-indigo-600 hover:text-indigo-800"
               }`}
             >
-              <span>✨ AI tạo</span>
+              <span>✨ AI</span>
               <span>({aiCount})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveFilter("public")}
+              className={`flex-1 flex items-center justify-center gap-1 rounded-lg py-1 text-center font-bold transition cursor-pointer ${
+                activeFilter === "public"
+                  ? "bg-emerald-600 text-white shadow-xs"
+                  : "text-emerald-700 hover:text-emerald-900"
+              }`}
+            >
+              <span>🌍 Public</span>
+              <span>({publicCount})</span>
             </button>
           </div>
         )}
@@ -111,10 +260,16 @@ export default function SavedItinerariesPanel({
               ✨
             </div>
             <h3 className="text-sm font-bold text-slate-800">
-              {activeFilter === "ai" ? "Chưa có lịch trình AI nào" : "Chưa có lộ trình nào"}
+              {activeFilter === "ai"
+                ? "Chưa có lịch trình AI nào"
+                : activeFilter === "public"
+                ? "Chưa có lịch trình nào được công khai"
+                : "Chưa có lộ trình nào"}
             </h3>
             <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-              Hãy dùng AI để thiết kế lộ trình tự động hoặc tự tạo một chuyến đi theo sở thích của riêng bạn!
+              {activeFilter === "public"
+                ? "Bạn có thể bấm nút 'Công khai' trên bất kỳ lịch trình nào để chia sẻ cho mọi người cùng tham khảo!"
+                : "Hãy dùng AI để thiết kế lộ trình tự động hoặc tự tạo một chuyến đi theo sở thích của riêng bạn!"}
             </p>
             <div className="mt-4 flex flex-col gap-2">
               {onCreateAi && (
@@ -143,6 +298,7 @@ export default function SavedItinerariesPanel({
           const totalPlaces = it.days.reduce((acc, d) => acc + d.places.length, 0);
           const isRenaming = renamingId === it.id;
           const isDeleting = confirmDeleteId === it.id;
+          const isPublishing = publishingId === it.id;
 
           return (
             <div
@@ -153,6 +309,16 @@ export default function SavedItinerariesPanel({
                 <div className="min-w-0 flex-1">
                   {/* Badges tag */}
                   <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+                    {it.isPublic ? (
+                      <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200/60 flex items-center gap-1">
+                        <span>🌍</span> Công khai
+                      </span>
+                    ) : (
+                      <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
+                        🔒 Riêng tư
+                      </span>
+                    )}
+
                     {it.isAiGenerated && (
                       <span className="rounded-md bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-700 border border-indigo-200/60">
                         ✨ AI tạo
@@ -218,6 +384,21 @@ export default function SavedItinerariesPanel({
                     <span className="font-bold text-indigo-700">{formatVND(it.totalEstimatedCost)}</span>
                   </div>
 
+                  {/* Tương tác stats nếu đã public */}
+                  {it.isPublic && (
+                    <div className="mt-1.5 flex items-center gap-3 text-[11px] text-slate-500">
+                      <span className="flex items-center gap-1 text-rose-600 font-semibold">
+                        <span>❤️</span> {it.likesCount || 0}
+                      </span>
+                      <span className="flex items-center gap-1 text-indigo-600 font-semibold">
+                        <span>💬</span> {it.commentsCount || 0}
+                      </span>
+                      <span className="flex items-center gap-1 text-slate-400">
+                        <span>👁️</span> {it.viewsCount || 0}
+                      </span>
+                    </div>
+                  )}
+
                   {/* Ghi chú du khách nếu có */}
                   {it.notes && (
                     <div className="mt-1.5 rounded-lg bg-slate-50 p-1.5 text-[10px] text-slate-600 border border-slate-100 line-clamp-2">
@@ -247,16 +428,32 @@ export default function SavedItinerariesPanel({
 
               {/* Actions */}
               <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setRenamingId(it.id);
-                    setRenameValue(it.title || "");
-                  }}
-                  className="text-[11px] font-semibold text-slate-600 hover:text-slate-900 cursor-pointer"
-                >
-                  ✏️ Đổi tên
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRenamingId(it.id);
+                      setRenameValue(it.title || "");
+                    }}
+                    className="text-[11px] font-semibold text-slate-600 hover:text-slate-900 cursor-pointer"
+                  >
+                    ✏️ Đổi tên
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleTogglePublish(it)}
+                    disabled={isPublishing}
+                    className={`text-[11px] font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50 ${
+                      it.isPublic
+                        ? "text-slate-500 hover:text-slate-700"
+                        : "text-emerald-700 hover:text-emerald-800"
+                    }`}
+                    title={it.isPublic ? "Ẩn khỏi cộng đồng" : "Chia sẻ cho cộng đồng cùng tham khảo"}
+                  >
+                    <span>{it.isPublic ? "🔒 Thu hồi" : "🌍 Chia sẻ"}</span>
+                  </button>
+                </div>
 
                 <button
                   type="button"

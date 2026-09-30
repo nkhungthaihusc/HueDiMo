@@ -7,6 +7,7 @@ import { approvePlace, rejectPlace } from "@/lib/addplace/logic";
 import { getReverseGeocode } from "@/lib/api/reverse-geocode";
 import { toast } from "@/components/ui/Toast";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import ImportPlacesModal from "@/components/admin/ImportPlacesModal";
 import type { Place } from "@/lib/types";
 
 const CATEGORIES = [
@@ -39,6 +40,8 @@ export default function AdminPlacesPage() {
 
   // Modal State for Add / Edit
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [editingPlace, setEditingPlace] = useState<Partial<Place> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -95,6 +98,31 @@ export default function AdminPlacesPage() {
     e.preventDefault();
     setPage(1);
     loadPlaces();
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      setIsExporting(true);
+      const blob = await AdminAPI.exportPlacesCSV({
+        q: search,
+        category: categoryFilter,
+        status: statusFilter !== "all" ? statusFilter : undefined,
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `danh_sach_dia_diem_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      toast.success("Xuất danh sách địa điểm ra tệp CSV thành công!");
+    } catch (err: any) {
+      toast.error(err.message || "Xuất tệp CSV thất bại.");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleApprove = async (id: string, name: string) => {
@@ -226,13 +254,45 @@ export default function AdminPlacesPage() {
             Quản lý toàn bộ {total} địa điểm trên bản đồ và hệ thống gợi ý AI của HueDiMo.
           </p>
         </div>
-        <button
-          onClick={handleOpenCreate}
-          className="flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-purple-900/40 transition hover:bg-purple-500"
-        >
-          <span>+</span>
-          <span>Thêm Địa điểm Mới</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Nút Xuất CSV */}
+          <button
+            onClick={handleExportCSV}
+            disabled={isExporting}
+            className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/80 px-3.5 py-2.5 text-xs font-semibold text-slate-200 shadow-sm transition hover:bg-slate-700 hover:text-white disabled:opacity-50"
+            title="Xuất toàn bộ hoặc danh sách địa điểm đang lọc ra file CSV"
+          >
+            {isExporting ? (
+              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-300 border-t-transparent" />
+            ) : (
+              <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            )}
+            <span>Xuất CSV</span>
+          </button>
+
+          {/* Nút Nhập CSV */}
+          <button
+            onClick={() => setIsImportModalOpen(true)}
+            className="flex items-center gap-2 rounded-xl border border-purple-500/40 bg-purple-950/40 px-3.5 py-2.5 text-xs font-semibold text-purple-300 shadow-sm transition hover:bg-purple-900/60 hover:text-white"
+            title="Thêm hàng loạt địa điểm từ tệp CSV có kiểm tra trùng khớp"
+          >
+            <svg className="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12" />
+            </svg>
+            <span>Nhập CSV</span>
+          </button>
+
+          {/* Nút Thêm Mới */}
+          <button
+            onClick={handleOpenCreate}
+            className="flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-purple-900/40 transition hover:bg-purple-500"
+          >
+            <span>+</span>
+            <span>Thêm Địa điểm Mới</span>
+          </button>
+        </div>
       </div>
 
       {/* Tabs lọc trạng thái kiểm duyệt */}
@@ -885,6 +945,15 @@ export default function AdminPlacesPage() {
         confirmText={confirmDialog.confirmText}
         variant={confirmDialog.variant}
         isLoading={isConfirming}
+      />
+
+      {/* Import Places from CSV Modal */}
+      <ImportPlacesModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSuccess={() => {
+          loadPlaces();
+        }}
       />
     </div>
   );

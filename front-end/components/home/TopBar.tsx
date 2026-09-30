@@ -10,9 +10,11 @@ interface TopBarProps {
   onAddPlace?: () => void;
   onOpenItinerary?: () => void;
   onOpenSaved?: () => void;
+  onOpenCommunity?: () => void;
   onBudget?: () => void;
   onOpenLeaderboard?: () => void;
   onOpenProfile?: () => void;
+  onLogout?: () => void;
 }
 
 export default function TopBar({
@@ -20,9 +22,11 @@ export default function TopBar({
   onAddPlace,
   onOpenItinerary,
   onOpenSaved,
+  onOpenCommunity,
   onBudget,
   onOpenLeaderboard,
   onOpenProfile,
+  onLogout,
 }: TopBarProps) {
   const { user, logout } = useAuth();
   const router = useRouter();
@@ -35,6 +39,7 @@ export default function TopBar({
 
   const handleLogout = () => {
     logout();
+    if (onLogout) onLogout();
     router.refresh();
   };
 
@@ -82,6 +87,18 @@ export default function TopBar({
             className="shrink-0 rounded-xl bg-white/70 px-2.5 sm:px-3 py-1.5 text-ink-800 transition hover:bg-white border border-slate-200/60 cursor-pointer select-none"
           >
             <span className="pointer-events-none select-none">🛠</span> <span className="hidden sm:inline pointer-events-none select-none">Lộ trình</span>
+          </button>
+        )}
+
+        {onOpenCommunity && (
+          <button
+            type="button"
+            onClick={onOpenCommunity}
+            className="shrink-0 flex items-center gap-1.5 rounded-xl bg-indigo-50/80 hover:bg-indigo-100/90 border border-indigo-200/80 px-2.5 sm:px-3 py-1.5 text-indigo-900 font-bold transition shadow-xs cursor-pointer select-none"
+            title="Lịch trình chia sẻ từ cộng đồng du khách"
+          >
+            <span className="pointer-events-none select-none">🌍</span>
+            <span className="hidden sm:inline pointer-events-none select-none">Cộng đồng</span>
           </button>
         )}
 

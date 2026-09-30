@@ -83,6 +83,8 @@ export function clearSession() {
   localStorage.removeItem(REFRESH_TOKEN_KEY);
   localStorage.removeItem(ACCESS_TOKEN_EXPIRES_KEY);
   localStorage.removeItem(REFRESH_TOKEN_EXPIRES_KEY);
+  localStorage.removeItem("huedimo_itineraries");
+  localStorage.removeItem("huedimo_itineraries_guest");
 }
 
 export async function registerUser(

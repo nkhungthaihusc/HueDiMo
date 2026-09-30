@@ -46,9 +46,8 @@ function Stars({
             type="button"
             disabled={!isClickable}
             onClick={() => onChange?.(star)}
-            className={`${sizeClasses[size]} transition-all duration-150 ${
-              isClickable ? "cursor-pointer hover:scale-125" : "cursor-default"
-            } ${filled ? "text-amber-400 drop-shadow-sm" : "text-ink-200"}`}
+            className={`${sizeClasses[size]} transition-all duration-150 ${isClickable ? "cursor-pointer hover:scale-125" : "cursor-default"
+              } ${filled ? "text-amber-400 drop-shadow-sm" : "text-ink-200"}`}
             aria-label={`${star} sao`}
           >
             ★
@@ -291,6 +290,11 @@ export default function PlaceDetailPanel({
 
   const distanceToUser = useMemo(() => {
     if (!userLocation) return null;
+    return calculateDistanceMeters(userLocation.lat, userLocation.lng, place.lat, place.lng);
+  }, [userLocation, place.lat, place.lng]);
+
+  const distanceToUserKM = useMemo(() => {
+    if (!userLocation) return null;
     return calculateDistanceKm(userLocation.lat, userLocation.lng, place.lat, place.lng);
   }, [userLocation, place.lat, place.lng]);
 
@@ -300,10 +304,10 @@ export default function PlaceDetailPanel({
     place.images && place.images.length > 0
       ? place.images
       : place.imageUrl
-      ? [place.imageUrl]
-      : place.image_url
-      ? [place.image_url]
-      : [];
+        ? [place.imageUrl]
+        : place.image_url
+          ? [place.image_url]
+          : [];
 
   const handlePrevImage = (e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -441,11 +445,10 @@ export default function PlaceDetailPanel({
   return (
     <>
       <div
-        className={`glass-strong pointer-events-auto flex h-full w-full max-w-[calc(100vw-1rem)] sm:w-[410px] sm:max-w-[410px] flex-col overflow-hidden rounded-3xl border border-white/40 shadow-2xl backdrop-blur-xl transition-all duration-200 ease-out ${
-          isClosing
-            ? "opacity-0 translate-x-10 scale-95 pointer-events-none"
-            : "opacity-100 translate-x-0 scale-100 animate-in fade-in slide-in-from-right-4"
-        }`}
+        className={`glass-strong pointer-events-auto flex h-full w-full max-w-[calc(100vw-1rem)] sm:w-[410px] sm:max-w-[410px] flex-col overflow-hidden rounded-3xl border border-white/40 shadow-2xl backdrop-blur-xl transition-all duration-200 ease-out ${isClosing
+          ? "opacity-0 translate-x-10 scale-95 pointer-events-none"
+          : "opacity-100 translate-x-0 scale-100 animate-in fade-in slide-in-from-right-4"
+          }`}
       >
         {/* Top Hero: Image Slider hoặc Gradient Banner */}
         <div className="relative h-60 w-full shrink-0 overflow-hidden bg-ink-900 select-none">
@@ -505,9 +508,8 @@ export default function PlaceDetailPanel({
                         aria-label={`Chuyển đến ảnh ${idx + 1}`}
                       >
                         <span
-                          className={`h-1.5 rounded-full transition-all pointer-events-none ${
-                            idx === currentImageIndex ? "w-5 bg-white shadow-sm" : "w-1.5 bg-white/50"
-                          }`}
+                          className={`h-1.5 rounded-full transition-all pointer-events-none ${idx === currentImageIndex ? "w-5 bg-white shadow-sm" : "w-1.5 bg-white/50"
+                            }`}
                         />
                       </button>
                     ))}
@@ -625,33 +627,32 @@ export default function PlaceDetailPanel({
 
           {distanceToUser !== null && (
             <div
-              className={`mt-2.5 flex items-center justify-between rounded-xl px-3 py-1.5 text-xs shadow-2xs border ${
-                distanceToUser <= 0.5
-                  ? "bg-emerald-50/90 border-emerald-200 text-emerald-800"
-                  : "bg-blue-50/90 border-blue-100 text-blue-800"
-              }`}
+              className={`mt-2.5 flex items-center justify-between rounded-xl px-3 py-1.5 text-xs shadow-2xs border ${distanceToUser <= 500
+                ? "bg-emerald-50/90 border-emerald-200 text-emerald-800"
+                : "bg-blue-50/90 border-blue-100 text-blue-800"
+                }`}
             >
               <div className="flex items-center gap-2">
                 <span className="relative flex h-2 w-2">
                   <span
-                    className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${
-                      distanceToUser <= 0.5 ? "bg-emerald-400" : "bg-blue-400"
-                    }`}
+                    className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${distanceToUser <= 500 ? "bg-emerald-400" : "bg-blue-400"
+                      }`}
                   ></span>
                   <span
-                    className={`relative inline-flex h-2 w-2 rounded-full ${
-                      distanceToUser <= 0.5 ? "bg-emerald-600" : "bg-blue-600"
-                    }`}
+                    className={`relative inline-flex h-2 w-2 rounded-full ${distanceToUser <= 500 ? "bg-emerald-600" : "bg-blue-600"
+                      }`}
                   ></span>
                 </span>
                 <span className="font-semibold">
-                  {distanceToUser <= 0.5
-                    ? `Đủ điều kiện check-in (cách ~${Math.round(distanceToUser * 1000)}m)`
-                    : `Cách bạn: ~${distanceToUser} km`}
+                  {distanceToUser <= 500
+                    ? `Đủ điều kiện check-in (cách ~${Math.round(distanceToUser)}m)`
+                    : distanceToUser < 1000
+                      ? `Cách bạn: ~${Math.round(distanceToUser)}m`
+                      : `Cách bạn: ~${(distanceToUser / 1000).toFixed(2)} km`}
                 </span>
               </div>
               <span className="text-[10px] font-bold opacity-80">
-                {distanceToUser <= 0.5 ? "✓ Bán kính ≤ 500m" : "Yêu cầu ≤ 500m"}
+                {distanceToUser <= 500 ? "✓ Bán kính ≤ 500m" : "Check-in ≤ 500m"}
               </span>
             </div>
           )}
@@ -700,11 +701,10 @@ export default function PlaceDetailPanel({
           {/* Thông báo Check-in */}
           {checkinMessage && (
             <div
-              className={`mt-2.5 p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 animate-in fade-in slide-in-from-top-1 ${
-                checkinMessage.type === "success"
-                  ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                  : "bg-rose-50 text-rose-800 border border-rose-200"
-              }`}
+              className={`mt-2.5 p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 animate-in fade-in slide-in-from-top-1 ${checkinMessage.type === "success"
+                ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                : "bg-rose-50 text-rose-800 border border-rose-200"
+                }`}
             >
               <span className="pointer-events-none select-none">{checkinMessage.type === "success" ? "✨" : "⚠️"}</span>
               <span className="pointer-events-none select-none">{checkinMessage.text}</span>
@@ -717,30 +717,27 @@ export default function PlaceDetailPanel({
           <button
             type="button"
             onClick={() => setActiveTab("info")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-center text-xs font-bold rounded-xl transition-all duration-200 cursor-pointer select-none ${
-              activeTab === "info"
-                ? "bg-white text-brand-700 shadow-sm ring-1 ring-black/5"
-                : "text-ink-600 hover:text-ink-900 hover:bg-white/50"
-            }`}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-center text-xs font-bold rounded-xl transition-all duration-200 cursor-pointer select-none ${activeTab === "info"
+              ? "bg-white text-brand-700 shadow-sm ring-1 ring-black/5"
+              : "text-ink-600 hover:text-ink-900 hover:bg-white/50"
+              }`}
           >
             <span className="pointer-events-none select-none">📋 Thông tin chi tiết</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("reviews")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-center text-xs font-bold rounded-xl transition-all duration-200 cursor-pointer select-none ${
-              activeTab === "reviews"
-                ? "bg-white text-brand-700 shadow-sm ring-1 ring-black/5"
-                : "text-ink-600 hover:text-ink-900 hover:bg-white/50"
-            }`}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-center text-xs font-bold rounded-xl transition-all duration-200 cursor-pointer select-none ${activeTab === "reviews"
+              ? "bg-white text-brand-700 shadow-sm ring-1 ring-black/5"
+              : "text-ink-600 hover:text-ink-900 hover:bg-white/50"
+              }`}
           >
             <span className="pointer-events-none select-none">⭐ Đánh giá</span>
             <span
-              className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold pointer-events-none select-none ${
-                activeTab === "reviews"
-                  ? "bg-brand-600 text-white"
-                  : "bg-ink-200 text-ink-700"
-              }`}
+              className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold pointer-events-none select-none ${activeTab === "reviews"
+                ? "bg-brand-600 text-white"
+                : "bg-ink-200 text-ink-700"
+                }`}
             >
               {reviewCount}
             </span>
@@ -850,11 +847,10 @@ export default function PlaceDetailPanel({
                     {specifics.tickets.map((t, idx) => (
                       <div
                         key={idx}
-                        className={`rounded-xl p-2.5 border ${
-                          t.price === 0
-                            ? "bg-emerald-50/70 border-emerald-200/80 text-emerald-900"
-                            : "bg-ink-50/70 border-ink-200/70 text-ink-900"
-                        }`}
+                        className={`rounded-xl p-2.5 border ${t.price === 0
+                          ? "bg-emerald-50/70 border-emerald-200/80 text-emerald-900"
+                          : "bg-ink-50/70 border-ink-200/70 text-ink-900"
+                          }`}
                       >
                         <div className="flex items-center justify-between text-xs">
                           <span className="font-semibold">{t.type}</span>
@@ -1128,77 +1124,76 @@ export default function PlaceDetailPanel({
                     <Stars value={rating} onChange={setRating} size="lg" />
                   </div>
 
-                <div>
-                  <textarea
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    placeholder="Chia sẻ trải nghiệm thực tế, món ăn nên thử, góc chụp đẹp..."
-                    rows={3}
-                    className="w-full resize-none rounded-xl border border-brand-100 bg-white p-2 text-xs text-ink-900 outline-none placeholder:text-ink-400 focus:ring-2 focus:ring-brand-400 leading-relaxed"
-                  />
-                </div>
-
-                {/* Phần Upload Ảnh Đánh Giá lên Supabase */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[11px] font-semibold text-ink-700">
-                      Ảnh chụp thực tế ({reviewImages.length}/5)
-                    </label>
-                    <span className="text-[10px] text-ink-400">Tối đa 5 ảnh, 10MB/ảnh</span>
+                  <div>
+                    <textarea
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                      placeholder="Chia sẻ trải nghiệm thực tế, món ăn nên thử, góc chụp đẹp..."
+                      rows={3}
+                      className="w-full resize-none rounded-xl border border-brand-100 bg-white p-2 text-xs text-ink-900 outline-none placeholder:text-ink-400 focus:ring-2 focus:ring-brand-400 leading-relaxed"
+                    />
                   </div>
 
-                  {/* Danh sách ảnh đã upload */}
-                  {reviewImages.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {reviewImages.map((imgUrl, idx) => (
-                        <div key={idx} className="relative group h-14 w-14 rounded-xl overflow-hidden border border-brand-200">
-                          <img src={imgUrl} alt="" className="h-full w-full object-cover" />
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveReviewImage(idx)}
-                            className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/70 text-[9px] text-white hover:bg-red-600 transition"
-                            title="Xóa ảnh này"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Nút bấm chọn ảnh */}
-                  {reviewImages.length < 5 && (
-                    <div>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleSelectReviewImage}
-                        disabled={isUploadingImage}
-                        className="hidden"
-                        id="review-image-input"
-                      />
-                      <label
-                        htmlFor="review-image-input"
-                        className={`inline-flex items-center gap-1.5 rounded-xl border border-dashed border-brand-300 bg-brand-50/50 px-3 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-100/60 cursor-pointer transition ${
-                          isUploadingImage ? "opacity-50 pointer-events-none" : ""
-                        }`}
-                      >
-                        {isUploadingImage ? (
-                          <>
-                            <div className="h-3 w-3 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
-                            <span>Đang tải lên Supabase...</span>
-                          </>
-                        ) : (
-                          <>
-                            <span>📸</span>
-                            <span>Thêm ảnh review</span>
-                          </>
-                        )}
+                  {/* Phần Upload Ảnh Đánh Giá lên Supabase */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-[11px] font-semibold text-ink-700">
+                        Ảnh chụp thực tế ({reviewImages.length}/5)
                       </label>
+                      <span className="text-[10px] text-ink-400">Tối đa 5 ảnh, 10MB/ảnh</span>
                     </div>
-                  )}
-                </div>
+
+                    {/* Danh sách ảnh đã upload */}
+                    {reviewImages.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {reviewImages.map((imgUrl, idx) => (
+                          <div key={idx} className="relative group h-14 w-14 rounded-xl overflow-hidden border border-brand-200">
+                            <img src={imgUrl} alt="" className="h-full w-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveReviewImage(idx)}
+                              className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/70 text-[9px] text-white hover:bg-red-600 transition"
+                              title="Xóa ảnh này"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Nút bấm chọn ảnh */}
+                    {reviewImages.length < 5 && (
+                      <div>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleSelectReviewImage}
+                          disabled={isUploadingImage}
+                          className="hidden"
+                          id="review-image-input"
+                        />
+                        <label
+                          htmlFor="review-image-input"
+                          className={`inline-flex items-center gap-1.5 rounded-xl border border-dashed border-brand-300 bg-brand-50/50 px-3 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-100/60 cursor-pointer transition ${isUploadingImage ? "opacity-50 pointer-events-none" : ""
+                            }`}
+                        >
+                          {isUploadingImage ? (
+                            <>
+                              <div className="h-3 w-3 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
+                              <span>Đang tải lên Supabase...</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>📸</span>
+                              <span>Thêm ảnh review</span>
+                            </>
+                          )}
+                        </label>
+                      </div>
+                    )}
+                  </div>
 
                   <button
                     type="submit"
@@ -1364,11 +1359,10 @@ export default function PlaceDetailPanel({
                       key={idx}
                       type="button"
                       onClick={() => setCurrentImageIndex(idx)}
-                      className={`h-12 w-16 overflow-hidden rounded-lg border-2 transition ${
-                        idx === currentImageIndex
-                          ? "border-brand-400 scale-105"
-                          : "border-transparent opacity-60 hover:opacity-100"
-                      }`}
+                      className={`h-12 w-16 overflow-hidden rounded-lg border-2 transition ${idx === currentImageIndex
+                        ? "border-brand-400 scale-105"
+                        : "border-transparent opacity-60 hover:opacity-100"
+                        }`}
                     >
                       <img src={img} alt="thumb" className="h-full w-full object-cover" />
                     </button>

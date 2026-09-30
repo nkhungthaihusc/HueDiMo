@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import type { Place, CategoryId } from "@/lib/types";
 import { CATEGORIES, getCategory } from "@/lib/data/categories";
 import { useHorizontalScroll } from "@/hooks/useHorizontalScroll";
@@ -10,6 +10,8 @@ interface PlaceListPanelProps {
   selectedId: string | null;
   onSelect: (place: Place) => void;
   userContributedPlaces?: Place[];
+  currentPage?: number;
+  onPageChange?: (page: number) => void;
 }
 
 function PlaceThumbnail({
@@ -55,12 +57,29 @@ export default function PlaceListPanel({
   selectedId,
   onSelect,
   userContributedPlaces = [],
+  currentPage: externalPage,
+  onPageChange: externalSetPage,
 }: PlaceListPanelProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | "all" | "my_places">("all");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [internalPage, setInternalPage] = useState(1);
+  const [isMounted, setIsMounted] = useState(false);
   const PAGE_SIZE = 10;
+
+  const currentPage = externalPage ?? internalPage;
+  const setCurrentPage = (updater: number | ((p: number) => number)) => {
+    const nextPage = typeof updater === "function" ? updater(currentPage) : updater;
+    if (externalSetPage) {
+      externalSetPage(nextPage);
+    } else {
+      setInternalPage(nextPage);
+    }
+  };
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const {
     containerRef: catScrollRef,
@@ -98,9 +117,16 @@ export default function PlaceListPanel({
     });
   }, [places, searchQuery, selectedCategory, userContributedSet]);
 
-  // Tự động chuyển về trang 1 khi thay đổi thể loại hoặc từ khóa tìm kiếm
+  // Chỉ reset page về 1 khi người dùng thực sự thay đổi từ khóa tìm kiếm hoặc danh mục lọc
+  const prevFilterRef = useRef({ searchQuery, selectedCategory });
   useEffect(() => {
-    setCurrentPage(1);
+    if (
+      prevFilterRef.current.searchQuery !== searchQuery ||
+      prevFilterRef.current.selectedCategory !== selectedCategory
+    ) {
+      prevFilterRef.current = { searchQuery, selectedCategory };
+      setCurrentPage(1);
+    }
   }, [searchQuery, selectedCategory]);
 
   const totalPages = Math.ceil(filteredPlaces.length / PAGE_SIZE) || 1;
@@ -205,7 +231,7 @@ export default function PlaceListPanel({
                 >
                   <span className="pointer-events-none select-none">Tất cả</span>
                 </button>
-                {userContributedPlaces.length > 0 && (
+                {isMounted && userContributedPlaces.length > 0 && (
                   <button
                     type="button"
                     onClick={() => {
@@ -264,11 +290,11 @@ export default function PlaceListPanel({
         )}
       </div>
 
-      {/* Danh sách địa điểm */}
+      {/* Danh sách địa điểm & Phân trang */}
       {!collapsed && (
-        <div className="glass-strong flex-1 overflow-y-auto overscroll-contain rounded-3xl border border-white/70 p-2.5 shadow-2xl backdrop-blur-xl transition-all duration-300 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="glass-strong flex-1 flex flex-col min-h-0 rounded-3xl border border-white/70 shadow-2xl backdrop-blur-xl transition-all duration-300 overflow-hidden">
           {filteredPlaces.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-8 text-center">
+            <div className="flex flex-col items-center justify-center p-8 text-center my-auto">
               <span className="text-3xl mb-2">🔍</span>
               <p className="text-xs font-bold text-slate-800">Không tìm thấy địa điểm phù hợp</p>
               <p className="text-[11px] text-slate-500 mt-0.5">Thử đổi từ khóa hoặc chọn mục khác</p>
@@ -280,145 +306,148 @@ export default function PlaceListPanel({
                 }}
                 className="mt-3 rounded-xl bg-brand-50 border border-brand-200 px-3.5 py-1.5 text-xs font-bold text-brand-700 hover:bg-brand-100 cursor-pointer transition active:scale-95"
               >
-                Xem tất cả 65 địa điểm
+                Xem tất cả {places.length} địa điểm
               </button>
             </div>
           ) : (
             <>
-              <ul className="flex flex-col gap-2.5">
-                {pagedPlaces.map((place) => {
-                const cat = getCategory(place.category);
-                const active = selectedId === place.id;
-                const thumbnail = place.images?.[0] || place.imageUrl || place.image_url;
+              {/* Vùng danh sách có thể cuộn độc lập */}
+              <div className="flex-1 overflow-y-auto overscroll-contain p-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <ul className="flex flex-col gap-2.5">
+                  {pagedPlaces.map((place) => {
+                    const cat = getCategory(place.category);
+                    const active = selectedId === place.id;
+                    const thumbnail = place.images?.[0] || place.imageUrl || place.image_url;
 
-                return (
-                  <li key={place.id}>
-                    <button
-                      type="button"
-                      onClick={() => onSelect(place)}
-                      className={`group relative flex w-full items-center gap-3 rounded-2xl p-3 text-left transition-all duration-200 cursor-pointer border select-none ${
-                        active
-                          ? "bg-gradient-to-r from-brand-600 via-brand-700 to-indigo-700 text-white shadow-xl shadow-brand-600/30 border-transparent scale-[1.01]"
-                          : "bg-white/85 hover:bg-white border-slate-200/80 hover:border-brand-300 hover:shadow-lg hover:-translate-y-0.5 text-slate-800"
-                      }`}
-                    >
-                      {/* Thumbnail có fallback an toàn */}
-                      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-slate-100 shadow-inner pointer-events-none select-none">
-                        <PlaceThumbnail
-                          src={thumbnail}
-                          alt={place.name}
-                          categoryColor={cat.color}
-                          categoryEmoji={cat.emoji}
-                        />
-
-                        {/* Category Badge nhỏ góc dưới ảnh */}
-                        <span
-                          className="absolute bottom-1 right-1 flex h-4.5 w-4.5 items-center justify-center rounded-lg text-[10px] text-white shadow-sm"
-                          style={{ backgroundColor: cat.color }}
-                          title={cat.label}
+                    return (
+                      <li key={place.id}>
+                        <button
+                          type="button"
+                          onClick={() => onSelect(place)}
+                          className={`group relative flex w-full items-center gap-3 rounded-2xl p-3 text-left transition-all duration-200 cursor-pointer border select-none ${
+                            active
+                              ? "bg-gradient-to-r from-brand-600 via-brand-700 to-indigo-700 text-white shadow-xl shadow-brand-600/30 border-transparent scale-[1.01]"
+                              : "bg-white/85 hover:bg-white border-slate-200/80 hover:border-brand-300 hover:shadow-lg hover:-translate-y-0.5 text-slate-800"
+                          }`}
                         >
-                          {cat.emoji}
-                        </span>
-                      </div>
+                          {/* Thumbnail có fallback an toàn */}
+                          <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-slate-100 shadow-inner pointer-events-none select-none">
+                            <PlaceThumbnail
+                              src={thumbnail}
+                              alt={place.name}
+                              categoryColor={cat.color}
+                              categoryEmoji={cat.emoji}
+                            />
 
-                      {/* Thông tin chính */}
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span
-                            className={`block truncate text-xs font-extrabold tracking-tight ${
-                              active ? "text-white" : "text-slate-900 group-hover:text-brand-700"
-                            }`}
-                          >
-                            {place.name}
-                          </span>
-                          {place.status === "pending" && (
-                            <span className="rounded-md px-1.5 py-0.5 text-[9px] font-black bg-amber-100 text-amber-800 border border-amber-300 shrink-0">
-                              ⏳ Chờ duyệt
-                            </span>
-                          )}
-                          {place.status === "approved" && userContributedSet.has(place.id) && (
-                            <span className="rounded-md px-1.5 py-0.5 text-[9px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
-                              ✅ Đã duyệt
-                            </span>
-                          )}
-                          {place.status === "rejected" && (
-                            <span className="rounded-md px-1.5 py-0.5 text-[9px] font-black bg-rose-100 text-rose-800 border border-rose-300 shrink-0">
-                              ❌ Từ chối
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Thể loại & Bản địa */}
-                        <div className="mt-0.5 flex items-center gap-1.5 text-[11px]">
-                          <span className={active ? "text-white/85" : "text-slate-500 font-medium"}>
-                            {cat.label}
-                          </span>
-                          {place.isLocal && (
+                            {/* Category Badge nhỏ góc dưới ảnh */}
                             <span
-                              className={`rounded-md px-1.5 py-0.2 text-[9px] font-bold ${
-                                active
-                                  ? "bg-emerald-400/30 text-emerald-100 border border-emerald-300/30"
-                                  : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              }`}
+                              className="absolute bottom-1 right-1 flex h-4.5 w-4.5 items-center justify-center rounded-lg text-[10px] text-white shadow-sm"
+                              style={{ backgroundColor: cat.color }}
+                              title={cat.label}
                             >
-                              🌿 Bản địa
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Rating & Giá vé */}
-                        <div className="mt-1.5 flex items-center justify-between">
-                          <div className="flex items-center gap-1">
-                            <span
-                              className={`inline-flex items-center gap-0.5 rounded-lg px-2 py-0.5 text-[10px] font-extrabold ${
-                                active
-                                  ? "bg-white/20 text-amber-200 backdrop-blur-sm"
-                                  : "bg-amber-50 text-amber-700 border border-amber-200/60"
-                              }`}
-                            >
-                              ★ {place.rating > 0 ? place.rating.toFixed(1) : "5.0"}
+                              {cat.emoji}
                             </span>
                           </div>
 
-                          {typeof place.price === "number" && (
-                            <span
-                              className={`text-[10px] font-extrabold px-2 py-0.5 rounded-lg shadow-2xs ${
-                                place.price === 0
-                                  ? active
-                                    ? "bg-emerald-400/25 text-emerald-100 border border-emerald-300/30"
-                                    : "bg-emerald-50 text-emerald-700 border border-emerald-200/70"
-                                  : active
-                                  ? "bg-white/20 text-white border border-white/20"
-                                  : "bg-indigo-50 text-indigo-700 border border-indigo-200/70"
-                              }`}
-                            >
-                              {place.price === 0
-                                ? "Miễn phí"
-                                : `${(place.price / 1000).toLocaleString("vi-VN")}k`}
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                          {/* Thông tin chính */}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span
+                                className={`block truncate text-xs font-extrabold tracking-tight ${
+                                  active ? "text-white" : "text-slate-900 group-hover:text-brand-700"
+                                }`}
+                              >
+                                {place.name}
+                              </span>
+                              {place.status === "pending" && (
+                                <span className="rounded-md px-1.5 py-0.5 text-[9px] font-black bg-amber-100 text-amber-800 border border-amber-300 shrink-0">
+                                  ⏳ Chờ duyệt
+                                </span>
+                              )}
+                              {place.status === "approved" && userContributedSet.has(place.id) && (
+                                <span className="rounded-md px-1.5 py-0.5 text-[9px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
+                                  ✅ Đã duyệt
+                                </span>
+                              )}
+                              {place.status === "rejected" && (
+                                <span className="rounded-md px-1.5 py-0.5 text-[9px] font-black bg-rose-100 text-rose-800 border border-rose-300 shrink-0">
+                                  ❌ Từ chối
+                                </span>
+                              )}
+                            </div>
 
-                      {/* Mũi tên chỉ báo */}
-                      <span
-                        className={`text-sm transition-transform duration-200 ${
-                          active
-                            ? "text-white translate-x-1"
-                            : "text-slate-300 group-hover:text-brand-500 group-hover:translate-x-1"
-                        }`}
-                      >
-                        ›
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-              </ul>
+                            {/* Thể loại & Bản địa */}
+                            <div className="mt-0.5 flex items-center gap-1.5 text-[11px]">
+                              <span className={active ? "text-white/85" : "text-slate-500 font-medium"}>
+                                {cat.label}
+                              </span>
+                              {place.isLocal && (
+                                <span
+                                  className={`rounded-md px-1.5 py-0.2 text-[9px] font-bold ${
+                                    active
+                                      ? "bg-emerald-400/30 text-emerald-100 border border-emerald-300/30"
+                                      : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                  }`}
+                                >
+                                  🌿 Bản địa
+                                </span>
+                              )}
+                            </div>
 
-              {/* Thanh phân trang cố định ở một chỗ, chuyển trang mượt mà */}
+                            {/* Rating & Giá vé */}
+                            <div className="mt-1.5 flex items-center justify-between">
+                              <div className="flex items-center gap-1">
+                                <span
+                                  className={`inline-flex items-center gap-0.5 rounded-lg px-2 py-0.5 text-[10px] font-extrabold ${
+                                    active
+                                      ? "bg-white/20 text-amber-200 backdrop-blur-sm"
+                                      : "bg-amber-50 text-amber-700 border border-amber-200/60"
+                                  }`}
+                                >
+                                  ★ {place.rating > 0 ? place.rating.toFixed(1) : "5.0"}
+                                </span>
+                              </div>
+
+                              {typeof place.price === "number" && (
+                                <span
+                                  className={`text-[10px] font-extrabold px-2 py-0.5 rounded-lg shadow-2xs ${
+                                    place.price === 0
+                                      ? active
+                                        ? "bg-emerald-400/25 text-emerald-100 border border-emerald-300/30"
+                                        : "bg-emerald-50 text-emerald-700 border border-emerald-200/70"
+                                      : active
+                                      ? "bg-white/20 text-white border border-white/20"
+                                      : "bg-indigo-50 text-indigo-700 border border-indigo-200/70"
+                                  }`}
+                                >
+                                  {place.price === 0
+                                    ? "Miễn phí"
+                                    : `${(place.price / 1000).toLocaleString("vi-VN")}k`}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Mũi tên chỉ báo */}
+                          <span
+                            className={`text-sm transition-transform duration-200 ${
+                              active
+                                ? "text-white translate-x-1"
+                                : "text-slate-300 group-hover:text-brand-500 group-hover:translate-x-1"
+                            }`}
+                          >
+                            ›
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+
+              {/* Thanh phân trang cố định ở đáy, không bị cuộn */}
               {totalPages > 1 && (
-                <div className="mt-2.5 pt-2 border-t border-slate-200/70 flex items-center justify-between px-1 text-xs select-none">
+                <div className="shrink-0 border-t border-slate-200/80 bg-white/95 backdrop-blur-md px-3 py-2.5 flex items-center justify-between text-xs select-none rounded-b-3xl">
                   <button
                     type="button"
                     disabled={currentPage <= 1}

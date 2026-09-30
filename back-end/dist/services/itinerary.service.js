@@ -4,6 +4,8 @@ exports.ItineraryService = exports.TRANSPORT_OPTIONS = void 0;
 exports.getTransportOption = getTransportOption;
 exports.parseItinerary = parseItinerary;
 exports.capToBudget = capToBudget;
+exports.callZen = callZen;
+const settings_model_1 = require("../models/settings.model");
 exports.TRANSPORT_OPTIONS = [
     {
         id: "motorbike",
@@ -128,8 +130,8 @@ const ZEN_REQUEST_ID = () => `req_${crypto.randomUUID()}`;
 function truncate(text, max) {
     return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
 }
-function buildMessages(req, retryHint) {
-    const SYSTEM_PROMPT = `Bạn là chuyên gia du lịch tại Huế, Việt Nam. Người dùng nhập thông tin chuyến đi; nhiệm vụ của bạn là xây dựng lịch trình tham quan hợp lý CHỈ dựa trên các địa điểm trong CATALOG được cung cấp.
+function buildMessages(req, customInstruction, retryHint) {
+    let systemPrompt = `Bạn là chuyên gia du lịch tại Huế, Việt Nam. Người dùng nhập thông tin chuyến đi; nhiệm vụ của bạn là xây dựng lịch trình tham quan hợp lý CHỈ dựa trên các địa điểm trong CATALOG được cung cấp.
 
 Quy tắc bắt buộc:
 - CHỈ được dùng placeId có trong CATALOG. Tuyệt đối không tự bịa ra địa điểm.
@@ -155,6 +157,9 @@ Trả về DUY NHẤT một đối tượng JSON hợp lệ, không kèm markdow
     { "date": "YYYY-MM-DD", "title": "tiêu đề ngày", "places": [ { "placeId": "id trong catalog", "reason": "lý do chọn ngắn gọn", "estimatedCost": 0 } ] }
   ]
 }`;
+    if (customInstruction && customInstruction.trim()) {
+        systemPrompt += `\n\nChỉ thị bổ sung từ Ban Quản Trị hệ thống:\n${customInstruction.trim()}`;
+    }
     const catalog = req.places
         .map((p) => {
         const price = typeof p.price === "number" && Number.isFinite(p.price) && p.price > 0
@@ -189,11 +194,14 @@ ${catalog}
 
 Hãy trả lời đúng định dạng JSON đã quy định.${retryHint ? `\n\nGhi chú chỉnh sửa từ lần trước: ${retryHint}` : ""}`;
     return [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
     ];
 }
-async function callZen(apiKey, messages) {
+async function callZen(apiKey, messages, options) {
+    const modelToUse = options?.model || ZEN_MODEL;
+    const tempToUse = typeof options?.temperature === "number" ? options.temperature : 0.4;
+    const tokensToUse = typeof options?.maxTokens === "number" ? options.maxTokens : MAX_MESSAGES;
     try {
         const res = await fetch(ZEN_URL, {
             method: "POST",
@@ -207,24 +215,25 @@ async function callZen(apiKey, messages) {
                 "x-opencode-project": "huedimo",
             },
             body: JSON.stringify({
-                model: ZEN_MODEL,
+                model: modelToUse,
                 messages,
-                temperature: 0.4,
-                max_tokens: MAX_MESSAGES,
+                temperature: tempToUse,
+                max_tokens: tokensToUse,
                 response_format: { type: "json_object" },
             }),
             signal: AbortSignal.timeout(60_000),
         });
         if (!res.ok) {
-            return { ok: false, status: res.status };
+            const errText = await res.text().catch(() => "");
+            return { ok: false, status: res.status, error: errText };
         }
         const data = (await res.json());
         const msg = data.choices?.[0]?.message;
         const text = msg?.content?.trim() || msg?.reasoning_content?.trim() || "";
-        return { ok: true, text };
+        return { ok: true, text, modelUsed: modelToUse };
     }
-    catch {
-        return { ok: false, status: 0 };
+    catch (err) {
+        return { ok: false, status: 0, error: err?.message || "Connection timeout or network error" };
     }
 }
 function parseZenText(text) {
@@ -246,13 +255,20 @@ class ItineraryService {
         if (!apiKey) {
             throw new Error("CONFIG_MISSING: OPENCODE_ZEN_API_KEY is not configured.");
         }
+        // Đọc cấu hình model và tham số từ Database (do Admin thiết lập)
+        const aiConfig = await settings_model_1.SettingsModel.getAIConfig();
         for (const retry of [false, true]) {
             const hint = retry
                 ? "Lần trước bạn trả về lộ trình không hợp lệ: có placeId ngoài catalog, địa điểm bị lặp, hoặc tổng chi phí vượt ngân sách hoặc sai cấu trúc JSON. Hãy tự kiểm tra lại: mỗi placeId chỉ xuất hiện 1 lần, mọi estimatedCost lấy đúng giá (price) trong catalog nếu có, tổng ≤ ngân sách, và chỉ trả đúng JSON theo cấu trúc quy định."
                 : undefined;
-            const result = await callZen(apiKey, buildMessages(req, hint));
+            const messages = buildMessages(req, aiConfig.customInstruction, hint);
+            const result = await callZen(apiKey, messages, {
+                model: aiConfig.model,
+                temperature: aiConfig.temperature,
+                maxTokens: aiConfig.maxTokens,
+            });
             if (!result.ok) {
-                throw new Error(`UPSTREAM_AI_ERROR: Status ${result.status || "timeout"}`);
+                throw new Error(`UPSTREAM_AI_ERROR: Status ${result.status || "timeout"}${result.error ? ` - ${result.error}` : ""}`);
             }
             const itinerary = parseItinerary(parseZenText(result.text));
             const capped = itinerary ? capToBudget(itinerary, req.budget) : null;

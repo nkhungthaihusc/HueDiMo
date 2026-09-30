@@ -54,7 +54,14 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
 
   // Kiểm tra trạng thái hiện tại
   const isPublic = checkIsPublic(pathname);
-  const hasSession = typeof window !== "undefined" && Boolean(getSession() && getAccessToken());
+
+  // Trước khi mounted trên client, server và client render giống nhau (children)
+  // để tránh Hydration Mismatch
+  if (!mounted) {
+    return <>{children}</>;
+  }
+
+  const hasSession = Boolean(getSession() && getAccessToken());
 
   // Trong lúc đang kiểm tra phiên làm việc mà chưa đăng nhập tại trang được bảo vệ
   if (!isPublic && !hasSession) {

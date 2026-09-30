@@ -4,6 +4,8 @@ exports.AdminController = void 0;
 const db_1 = require("../config/db");
 const response_1 = require("../utils/response");
 const logger_middleware_1 = require("../middleware/logger.middleware");
+const settings_model_1 = require("../models/settings.model");
+const itinerary_service_1 = require("../services/itinerary.service");
 // Helper function to slugify Vietnamese string for ID generation if not provided
 function slugify(text) {
     return text
@@ -543,6 +545,383 @@ exports.AdminController = {
         }
     },
     /**
+     * GET /api/admin/places/export-csv
+     * Xuất danh sách địa điểm ra định dạng CSV có BOM UTF-8
+     */
+    async exportPlacesCSV(req, res, next) {
+        try {
+            const { q, category, status } = req.query;
+            const whereClauses = [];
+            const values = [];
+            let idx = 1;
+            if (q && typeof q === "string" && q.trim()) {
+                whereClauses.push(`(name ILIKE $${idx} OR address ILIKE $${idx} OR description ILIKE $${idx})`);
+                values.push(`%${q.trim()}%`);
+                idx++;
+            }
+            if (category && typeof category === "string" && category.trim()) {
+                whereClauses.push(`category = $${idx}`);
+                values.push(category.trim());
+                idx++;
+            }
+            if (status && typeof status === "string" && status.trim() && status !== "all") {
+                whereClauses.push(`status = $${idx}`);
+                values.push(status.trim());
+                idx++;
+            }
+            const whereSQL = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+            const query = `
+        SELECT 
+          id, name, category, lat, lng, address, price, is_local,
+          opening_hours, estimated_duration_minutes, best_time_to_visit,
+          rating, description, image_url, status, notes, created_at
+        FROM public.places
+        ${whereSQL}
+        ORDER BY created_at DESC
+      `;
+            const result = await db_1.pool.query(query, values);
+            const rows = result.rows;
+            // Chuẩn bị header CSV
+            const headers = [
+                "id",
+                "name",
+                "category",
+                "lat",
+                "lng",
+                "address",
+                "price",
+                "is_local",
+                "opening_hours",
+                "estimated_duration_minutes",
+                "best_time_to_visit",
+                "rating",
+                "description",
+                "image_url",
+                "status",
+                "notes",
+            ];
+            const escapeCSV = (str) => {
+                if (str === null || str === undefined)
+                    return "";
+                let val = String(str);
+                if (val.includes('"') || val.includes(',') || val.includes('\n') || val.includes('\r')) {
+                    val = '"' + val.replace(/"/g, '""') + '"';
+                }
+                return val;
+            };
+            const csvLines = [headers.join(",")];
+            for (const row of rows) {
+                const line = headers.map((h) => escapeCSV(row[h])).join(",");
+                csvLines.push(line);
+            }
+            // BOM UTF-8 (\uFEFF) giúp Excel tự động nhận diện ký tự tiếng Việt có dấu
+            const csvContent = "\uFEFF" + csvLines.join("\r\n");
+            const filename = `places_export_${new Date().toISOString().slice(0, 10)}.csv`;
+            res.setHeader("Content-Type", "text/csv; charset=utf-8");
+            res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+            res.status(200).send(csvContent);
+        }
+        catch (error) {
+            next(error);
+        }
+    },
+    /**
+     * POST /api/admin/places/import-csv/preview
+     * Kiểm tra trước tính hợp lệ và phát hiện trùng khớp khi import file CSV
+     */
+    async previewImportCSV(req, res, next) {
+        try {
+            const { items } = req.body;
+            if (!Array.isArray(items) || items.length === 0) {
+                (0, response_1.sendError)(res, "VALIDATION_ERROR", "Danh sách dữ liệu tải lên trống hoặc không đúng định dạng.", 422);
+                return;
+            }
+            // Lấy toàn bộ danh sách địa điểm hiện có để so sánh trùng khớp
+            const existingPlacesRes = await db_1.pool.query("SELECT id, LOWER(TRIM(name)) as norm_name, lat, lng, address FROM public.places");
+            const existingPlaces = existingPlacesRes.rows;
+            // Tạo map tra cứu nhanh
+            const idMap = new Set(existingPlaces.map((p) => p.id));
+            const nameMap = new Map();
+            for (const p of existingPlaces) {
+                if (p.norm_name)
+                    nameMap.set(p.norm_name, p.id);
+            }
+            const validatedItems = [];
+            let validCount = 0;
+            let duplicateCount = 0;
+            let errorCount = 0;
+            // Danh sách theo dõi trùng lặp nội bộ trong cùng file CSV
+            const batchIds = new Set();
+            const batchNames = new Set();
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                const rowNum = i + 1;
+                const name = (item.name || "").trim();
+                const category = (item.category || "").trim();
+                const rawLat = item.lat;
+                const rawLng = item.lng;
+                const numLat = Number(rawLat);
+                const numLng = Number(rawLng);
+                const errors = [];
+                let isDuplicate = false;
+                let duplicateReason = "";
+                let matchedPlaceId = null;
+                // 1. Kiểm tra bắt buộc tên
+                if (!name) {
+                    errors.push("Thiếu tên địa điểm");
+                }
+                // 2. Kiểm tra bắt buộc category
+                if (!category) {
+                    errors.push("Thiếu danh mục (category)");
+                }
+                // 3. Kiểm tra tọa độ
+                if (isNaN(numLat) || isNaN(numLng)) {
+                    errors.push("Tọa độ lat/lng không hợp lệ hoặc để trống");
+                }
+                else if (numLat < 15.0 || numLat > 18.0 || numLng < 106.0 || numLng > 109.0) {
+                    errors.push("Tọa độ nằm ngoài phạm vi tỉnh Thừa Thiên Huế (15.0-18.0, 106.0-109.0)");
+                }
+                // 3.1. Kiểm tra rating nếu có
+                if (item.rating !== undefined && item.rating !== "" && !isNaN(Number(item.rating))) {
+                    const r = Number(item.rating);
+                    if (r < 0 || r > 5.0) {
+                        errors.push(`Đánh giá (rating) phải từ 0 đến 5.0 (giá trị hiện tại: ${item.rating})`);
+                    }
+                }
+                // 3.2. Kiểm tra giá vé nếu có
+                if (item.price !== undefined && item.price !== "" && !isNaN(Number(item.price))) {
+                    const p = Number(item.price);
+                    if (p < 0) {
+                        errors.push(`Giá vé không được âm (giá trị hiện tại: ${item.price})`);
+                    }
+                }
+                // 4. Kiểm tra trùng ID hoặc Tên trong hệ thống
+                const normName = name.toLowerCase();
+                let proposedId = item.id ? slugify(item.id) : slugify(name);
+                if (item.id && idMap.has(item.id)) {
+                    isDuplicate = true;
+                    duplicateReason = `Trùng ID đã có trong hệ thống (${item.id})`;
+                    matchedPlaceId = item.id;
+                }
+                else if (nameMap.has(normName)) {
+                    isDuplicate = true;
+                    duplicateReason = `Trùng tên với địa điểm đã tồn tại (${nameMap.get(normName)})`;
+                    matchedPlaceId = nameMap.get(normName) || null;
+                }
+                else if (batchNames.has(normName)) {
+                    isDuplicate = true;
+                    duplicateReason = "Trùng tên với một dòng khác trong cùng tệp CSV này";
+                }
+                else {
+                    // 5. Kiểm tra khoảng cách tọa độ xem có quá sát vị trí hiện có không (< ~35 mét)
+                    if (!isNaN(numLat) && !isNaN(numLng)) {
+                        const nearby = existingPlaces.find((p) => {
+                            const dLat = Math.abs(p.lat - numLat);
+                            const dLng = Math.abs(p.lng - numLng);
+                            return dLat < 0.0003 && dLng < 0.0003;
+                        });
+                        if (nearby) {
+                            isDuplicate = true;
+                            duplicateReason = `Tọa độ trùng sát với địa điểm '${nearby.id}' (cách < 35m)`;
+                            matchedPlaceId = nearby.id;
+                        }
+                    }
+                }
+                if (normName)
+                    batchNames.add(normName);
+                if (item.id)
+                    batchIds.add(item.id);
+                if (errors.length > 0) {
+                    errorCount++;
+                }
+                else if (isDuplicate) {
+                    duplicateCount++;
+                }
+                else {
+                    validCount++;
+                }
+                validatedItems.push({
+                    rowNum,
+                    ...item,
+                    name,
+                    category,
+                    lat: numLat,
+                    lng: numLng,
+                    isValid: errors.length === 0,
+                    errors,
+                    isDuplicate,
+                    duplicateReason,
+                    matchedPlaceId,
+                });
+            }
+            (0, response_1.sendSuccess)(res, {
+                total: items.length,
+                validCount,
+                duplicateCount,
+                errorCount,
+                items: validatedItems,
+            });
+        }
+        catch (error) {
+            next(error);
+        }
+    },
+    /**
+     * POST /api/admin/places/import-csv
+     * Thực hiện lưu các địa điểm từ CSV vào Database theo chiến lược xử lý trùng
+     */
+    async importPlacesCSV(req, res, next) {
+        try {
+            const { items, duplicateStrategy = "skip" } = req.body;
+            // duplicateStrategy: "skip" (bỏ qua bản ghi trùng) | "overwrite" (cập nhật bản ghi trùng)
+            if (!Array.isArray(items) || items.length === 0) {
+                (0, response_1.sendError)(res, "VALIDATION_ERROR", "Không có dữ liệu để thực hiện nhập.", 422);
+                return;
+            }
+            const created_by = req.user?.id || null;
+            let insertedCount = 0;
+            let updatedCount = 0;
+            let skippedCount = 0;
+            const errors = [];
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                const rowNum = item.rowNum || i + 1;
+                const name = (item.name || "").trim();
+                const category = (item.category || "").trim();
+                const numLat = Number(item.lat);
+                const numLng = Number(item.lng);
+                if (!name || !category || isNaN(numLat) || isNaN(numLng)) {
+                    errors.push({ rowNum, name: name || "Không tên", error: "Dữ liệu thiếu hoặc tọa độ không hợp lệ" });
+                    continue;
+                }
+                // Tìm xem bản ghi có tồn tại chưa
+                let targetId = item.id ? slugify(item.id) : slugify(name);
+                if (!targetId)
+                    targetId = `place-${Date.now()}-${i}`;
+                let matchedId = item.matchedPlaceId || null;
+                if (!matchedId) {
+                    const matchCheck = await db_1.pool.query("SELECT id FROM public.places WHERE id = $1 OR LOWER(TRIM(name)) = LOWER($2) LIMIT 1", [targetId, name]);
+                    if (matchCheck.rows.length > 0) {
+                        matchedId = matchCheck.rows[0].id;
+                    }
+                }
+                if (matchedId) {
+                    if (duplicateStrategy === "skip") {
+                        skippedCount++;
+                        continue;
+                    }
+                    else if (duplicateStrategy === "overwrite") {
+                        // Safe parse số
+                        const safePrice = item.price !== undefined && item.price !== "" && !isNaN(Number(item.price)) ? Math.max(0, Number(item.price)) : null;
+                        const safeDuration = item.estimated_duration_minutes !== undefined && item.estimated_duration_minutes !== "" && !isNaN(Number(item.estimated_duration_minutes)) ? Math.max(1, Math.round(Number(item.estimated_duration_minutes))) : null;
+                        let safeRating = null;
+                        if (item.rating !== undefined && item.rating !== "" && !isNaN(Number(item.rating))) {
+                            const r = Number(item.rating);
+                            safeRating = Math.min(5.0, Math.max(0.0, Math.round(r * 100) / 100));
+                        }
+                        const safeIsLocal = item.is_local !== undefined && item.is_local !== "" ? (item.is_local === true || String(item.is_local).toLowerCase() === "true" || item.is_local === 1 || item.is_local === "1") : null;
+                        // Cập nhật bản ghi hiện có
+                        await db_1.pool.query(`UPDATE public.places SET
+                name = $1,
+                category = $2,
+                lat = $3,
+                lng = $4,
+                address = COALESCE($5, address),
+                price = COALESCE($6, price),
+                is_local = COALESCE($7, is_local),
+                opening_hours = COALESCE($8, opening_hours),
+                estimated_duration_minutes = COALESCE($9, estimated_duration_minutes),
+                best_time_to_visit = COALESCE($10, best_time_to_visit),
+                rating = COALESCE($11, rating),
+                description = COALESCE($12, description),
+                image_url = COALESCE($13, image_url),
+                notes = COALESCE($14, notes),
+                status = COALESCE($15, status),
+                updated_at = NOW()
+              WHERE id = $16`, [
+                            name,
+                            category,
+                            numLat,
+                            numLng,
+                            (item.address || "").trim() || null,
+                            safePrice,
+                            safeIsLocal,
+                            (item.opening_hours || "").trim() || null,
+                            safeDuration,
+                            (item.best_time_to_visit || "").trim() || null,
+                            safeRating,
+                            (item.description || "").trim() || null,
+                            (item.image_url || "").trim() || null,
+                            (item.notes || "").trim() || null,
+                            item.status ? String(item.status).trim() : null,
+                            matchedId,
+                        ]);
+                        updatedCount++;
+                        continue;
+                    }
+                }
+                // Nếu không trùng, tạo mới ID độc nhất
+                let finalId = targetId;
+                const existCheck = await db_1.pool.query("SELECT id FROM public.places WHERE id = $1", [finalId]);
+                if (existCheck.rows.length > 0) {
+                    finalId = `${finalId}-${Date.now().toString().slice(-4)}`;
+                }
+                const imgUrl = (item.image_url || "").trim() || null;
+                const safePrice = item.price !== undefined && item.price !== "" && !isNaN(Number(item.price)) ? Math.max(0, Number(item.price)) : 0;
+                const safeDuration = item.estimated_duration_minutes !== undefined && item.estimated_duration_minutes !== "" && !isNaN(Number(item.estimated_duration_minutes)) ? Math.max(1, Math.round(Number(item.estimated_duration_minutes))) : 60;
+                let safeRating = 4.5;
+                if (item.rating !== undefined && item.rating !== "" && !isNaN(Number(item.rating))) {
+                    const r = Number(item.rating);
+                    safeRating = Math.min(5.0, Math.max(0.0, Math.round(r * 100) / 100));
+                }
+                const safeIsLocal = item.is_local === true || String(item.is_local).toLowerCase() === "true" || item.is_local === 1 || item.is_local === "1";
+                await db_1.pool.query(`INSERT INTO public.places (
+            id, name, category, lat, lng, address, price, is_local,
+            opening_hours, estimated_duration_minutes, best_time_to_visit,
+            rating, description, image_url, images, highlights, notes,
+            status, created_by, created_at, updated_at
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8,
+            $9, $10, $11, $12, $13, $14, $15, $16, $17,
+            $18, $19, NOW(), NOW()
+          )`, [
+                    finalId,
+                    name,
+                    category,
+                    numLat,
+                    numLng,
+                    (item.address || "").trim() || "",
+                    safePrice,
+                    safeIsLocal,
+                    (item.opening_hours || "").trim() || "",
+                    safeDuration,
+                    (item.best_time_to_visit || "").trim() || "",
+                    safeRating,
+                    (item.description || "").trim() || "",
+                    imgUrl,
+                    imgUrl ? [imgUrl] : [],
+                    item.highlights ? (Array.isArray(item.highlights) ? item.highlights : [item.highlights]) : [],
+                    (item.notes || "").trim() || "",
+                    item.status || "approved",
+                    created_by,
+                ]);
+                insertedCount++;
+            }
+            (0, response_1.sendSuccess)(res, {
+                totalProcessed: items.length,
+                insertedCount,
+                updatedCount,
+                skippedCount,
+                errorCount: errors.length,
+                errors,
+                message: `Đã xử lý xong: thêm mới ${insertedCount}, cập nhật ${updatedCount}, bỏ qua ${skippedCount}, lỗi ${errors.length}.`,
+            });
+        }
+        catch (error) {
+            next(error);
+        }
+    },
+    /**
      * DELETE /api/admin/logs
      * Xóa sạch log hiện tại trong bộ nhớ
      */
@@ -550,6 +929,126 @@ exports.AdminController = {
         try {
             logger_middleware_1.RequestLogStore.clearLogs();
             (0, response_1.sendSuccess)(res, { message: "Đã xóa toàn bộ nhật ký requests." });
+        }
+        catch (error) {
+            next(error);
+        }
+    },
+    /**
+     * GET /api/admin/ai-settings
+     * Lấy cấu hình model và tham số của AI tư vấn
+     */
+    async getAISettings(_req, res, next) {
+        try {
+            const config = await settings_model_1.SettingsModel.getAIConfig();
+            const apiKey = process.env.OPENCODE_ZEN_API_KEY || "";
+            const maskedApiKey = apiKey
+                ? `${apiKey.slice(0, 7)}...${apiKey.slice(-4)}`
+                : "CHƯA_CẤU_HÌNH";
+            (0, response_1.sendSuccess)(res, {
+                config,
+                defaultConfig: settings_model_1.DEFAULT_AI_CONFIG,
+                apiKeyStatus: {
+                    configured: !!apiKey,
+                    maskedKey: maskedApiKey,
+                },
+                supportedPresets: [
+                    { id: "big-pickle", name: "Big Pickle (Mặc định HueDiMo - Nhanh & Tối ưu)", provider: "opencode-zen" },
+                    { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash (Tốc độ cao, suy luận sắc bén)", provider: "google" },
+                    { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro (Độ chính xác cao, hiểu ngữ cảnh sâu)", provider: "google" },
+                    { id: "gpt-4o-mini", name: "GPT-4o Mini (Phản hồi nhanh, giá tối ưu)", provider: "openai" },
+                    { id: "gpt-4o", name: "GPT-4o (Đỉnh cao lý luận & đa nhiệm)", provider: "openai" },
+                    { id: "claude-3-5-sonnet", name: "Claude 3.5 Sonnet (Văn phong mượt, chi tiết)", provider: "anthropic" },
+                ],
+            });
+        }
+        catch (error) {
+            next(error);
+        }
+    },
+    /**
+     * PUT /api/admin/ai-settings
+     * Cập nhật model và tham số của AI tư vấn
+     */
+    async updateAISettings(req, res, next) {
+        try {
+            const { model, temperature, maxTokens, customInstruction, provider } = req.body || {};
+            if (model !== undefined && (typeof model !== "string" || !model.trim())) {
+                (0, response_1.sendError)(res, "VALIDATION_ERROR", "Tên model không được để trống.", 422);
+                return;
+            }
+            if (temperature !== undefined) {
+                const temp = Number(temperature);
+                if (isNaN(temp) || temp < 0 || temp > 1.0) {
+                    (0, response_1.sendError)(res, "VALIDATION_ERROR", "Nhiệt độ (temperature) phải từ 0.0 đến 1.0.", 422);
+                    return;
+                }
+            }
+            if (maxTokens !== undefined) {
+                const tokens = Number(maxTokens);
+                if (isNaN(tokens) || tokens < 512 || tokens > 16384) {
+                    (0, response_1.sendError)(res, "VALIDATION_ERROR", "Số lượng tokens (maxTokens) phải từ 512 đến 16384.", 422);
+                    return;
+                }
+            }
+            const updated = await settings_model_1.SettingsModel.saveAIConfig({
+                model: model ? model.trim() : undefined,
+                temperature: temperature !== undefined ? Number(temperature) : undefined,
+                maxTokens: maxTokens !== undefined ? Number(maxTokens) : undefined,
+                customInstruction: typeof customInstruction === "string" ? customInstruction : undefined,
+                provider: typeof provider === "string" ? provider.trim() : undefined,
+            });
+            (0, response_1.sendSuccess)(res, {
+                config: updated,
+                message: "Cập nhật cấu hình model AI tư vấn thành công!",
+            });
+        }
+        catch (error) {
+            next(error);
+        }
+    },
+    /**
+     * POST /api/admin/ai-settings/test
+     * Gửi request kiểm tra khả năng phản hồi của model được chọn
+     */
+    async testAIModel(req, res, next) {
+        try {
+            const apiKey = process.env.OPENCODE_ZEN_API_KEY;
+            if (!apiKey) {
+                (0, response_1.sendError)(res, "INTERNAL_ERROR", "Máy chủ chưa được cấu hình OPENCODE_ZEN_API_KEY.", 500);
+                return;
+            }
+            const { model, temperature } = req.body || {};
+            const rawModel = (typeof model === "string" && model.trim()) ? model.trim() : (await settings_model_1.SettingsModel.getAIConfig()).model;
+            const testModel = (0, settings_model_1.normalizeModelName)(rawModel);
+            const testTemp = typeof temperature === "number" ? temperature : 0.4;
+            const startTime = Date.now();
+            const testMessages = [
+                {
+                    role: "system",
+                    content: "Bạn là AI tư vấn viên du lịch của ứng dụng HueDiMo. Hãy trả về JSON ngắn gọn: {\"status\":\"ok\",\"reply\":\"lời chào 1 câu giới thiệu về Huế\"}",
+                },
+                {
+                    role: "user",
+                    content: "Kiểm tra kết nối và khả năng sinh lịch trình du lịch Huế.",
+                },
+            ];
+            const result = await (0, itinerary_service_1.callZen)(apiKey, testMessages, {
+                model: testModel,
+                temperature: testTemp,
+                maxTokens: 512,
+            });
+            const latencyMs = Date.now() - startTime;
+            if (!result.ok) {
+                (0, response_1.sendError)(res, "UPSTREAM_ERROR", `Model "${testModel}" phản hồi thất bại: Mã HTTP ${result.status || "timeout"}${result.error ? ` (${result.error})` : ""}.`, 502);
+                return;
+            }
+            (0, response_1.sendSuccess)(res, {
+                modelUsed: result.modelUsed,
+                latencyMs,
+                responseSample: result.text,
+                message: `Kết nối thành công tới model "${result.modelUsed}" (${latencyMs}ms)!`,
+            });
         }
         catch (error) {
             next(error);

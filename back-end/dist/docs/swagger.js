@@ -215,6 +215,55 @@ exports.swaggerDocument = {
                     },
                 },
             },
+            CSVPlaceItem: {
+                type: "object",
+                required: ["name", "category", "lat", "lng"],
+                properties: {
+                    id: { type: "string", example: "lang-tu-duc" },
+                    name: { type: "string", example: "Lăng Tự Đức (Khiêm Lăng)" },
+                    category: { type: "string", example: "ancient" },
+                    lat: { type: "number", example: 16.43255 },
+                    lng: { type: "number", example: 107.56608 },
+                    address: { type: "string", example: "Thôn Thượng Ba, P. Thủy Xuân, TP. Huế" },
+                    price: { type: "number", example: 150000 },
+                    is_local: { type: "boolean", example: false },
+                    opening_hours: { type: "string", example: "07:00 - 17:30" },
+                    estimated_duration_minutes: { type: "number", example: 100 },
+                    best_time_to_visit: { type: "string", example: "Buổi chiều mát (14:30 - 17:00)" },
+                    rating: { type: "number", example: 4.6 },
+                    description: { type: "string", example: "Khu lăng tẩm mang phong cách hoa viên sơn thủy hữu tình..." },
+                    image_url: { type: "string", example: "https://example.com/image.jpg" },
+                    notes: { type: "string", example: "Khuôn viên nhiều bóng mát, thích hợp tản bộ." },
+                    status: { type: "string", enum: ["approved", "pending", "rejected"], example: "approved" },
+                },
+            },
+            PreviewImportCSVRequest: {
+                type: "object",
+                required: ["items"],
+                properties: {
+                    items: {
+                        type: "array",
+                        items: { $ref: "#/components/schemas/CSVPlaceItem" },
+                    },
+                },
+            },
+            ImportPlacesCSVRequest: {
+                type: "object",
+                required: ["items"],
+                properties: {
+                    items: {
+                        type: "array",
+                        items: { $ref: "#/components/schemas/CSVPlaceItem" },
+                    },
+                    duplicateStrategy: {
+                        type: "string",
+                        enum: ["skip", "overwrite"],
+                        default: "skip",
+                        description: "Chiến lược xử lý khi trùng lặp: 'skip' (bỏ qua), 'overwrite' (ghi đè/cập nhật thông tin mới)",
+                        example: "skip",
+                    },
+                },
+            },
         },
     },
     paths: {
@@ -941,6 +990,156 @@ exports.swaggerDocument = {
                 },
             },
         },
+        "/api/admin/ai-settings": {
+            get: {
+                tags: ["Admin - AI Service"],
+                summary: "Lấy cấu hình hiện tại của AI tư vấn du lịch (Admin)",
+                description: "Yêu cầu quyền Quản trị viên (Admin). Trả về model AI đang sử dụng, các tham số temperature, maxTokens, customInstruction, trạng thái API key và danh sách model được gợi ý.",
+                security: [{ BearerAuth: [] }],
+                responses: {
+                    "200": {
+                        description: "Cấu hình AI hiện tại",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        data: {
+                                            type: "object",
+                                            properties: {
+                                                config: {
+                                                    type: "object",
+                                                    properties: {
+                                                        model: { type: "string", example: "big-pickle" },
+                                                        temperature: { type: "number", example: 0.4 },
+                                                        maxTokens: { type: "number", example: 4096 },
+                                                        customInstruction: { type: "string", example: "Ưu tiên các món ăn đậm chất Huế." },
+                                                    },
+                                                },
+                                                apiKeyStatus: {
+                                                    type: "object",
+                                                    properties: {
+                                                        configured: { type: "boolean", example: true },
+                                                        maskedKey: { type: "string", example: "sk-Rr8T...0U4l" },
+                                                    },
+                                                },
+                                                supportedPresets: {
+                                                    type: "array",
+                                                    items: {
+                                                        type: "object",
+                                                        properties: {
+                                                            id: { type: "string" },
+                                                            name: { type: "string" },
+                                                            provider: { type: "string" },
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    "401": { $ref: "#/components/schemas/ErrorResponse" },
+                    "403": { $ref: "#/components/schemas/ErrorResponse" },
+                },
+            },
+            put: {
+                tags: ["Admin - AI Service"],
+                summary: "Cập nhật model và tham số của AI tư vấn (Admin)",
+                description: "Yêu cầu quyền Quản trị viên (Admin). Cho phép chỉnh sửa model AI (ví dụ: big-pickle, gemini-2.5-flash, gpt-4o...), nhiệt độ temperature, maxTokens và chỉ thị bổ sung customInstruction.",
+                security: [{ BearerAuth: [] }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    model: { type: "string", example: "gemini-2.5-flash" },
+                                    temperature: { type: "number", example: 0.4, minimum: 0, maximum: 1 },
+                                    maxTokens: { type: "number", example: 4096, minimum: 512, maximum: 16384 },
+                                    customInstruction: { type: "string", example: "Luôn gợi ý thêm đặc sản ẩm thực Huế cho mỗi ngày." },
+                                },
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    "200": {
+                        description: "Cập nhật cấu hình thành công",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        data: {
+                                            type: "object",
+                                            properties: {
+                                                config: { type: "object" },
+                                                message: { type: "string", example: "Cập nhật cấu hình model AI tư vấn thành công!" },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    "401": { $ref: "#/components/schemas/ErrorResponse" },
+                    "403": { $ref: "#/components/schemas/ErrorResponse" },
+                    "422": { $ref: "#/components/schemas/ErrorResponse" },
+                },
+            },
+        },
+        "/api/admin/ai-settings/test": {
+            post: {
+                tags: ["Admin - AI Service"],
+                summary: "Kiểm tra kết nối và khả năng phản hồi của model AI (Admin)",
+                description: "Yêu cầu quyền Quản trị viên (Admin). Gửi request thử nghiệm nhanh tới model AI chỉ định để đo độ trễ và kiểm tra phản hồi.",
+                security: [{ BearerAuth: [] }],
+                requestBody: {
+                    required: false,
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    model: { type: "string", example: "gemini-2.5-flash" },
+                                    temperature: { type: "number", example: 0.4 },
+                                },
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    "200": {
+                        description: "Kiểm tra kết nối thành công",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        data: {
+                                            type: "object",
+                                            properties: {
+                                                modelUsed: { type: "string", example: "gemini-2.5-flash" },
+                                                latencyMs: { type: "number", example: 1200 },
+                                                responseSample: { type: "string" },
+                                                message: { type: "string" },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    "401": { $ref: "#/components/schemas/ErrorResponse" },
+                    "403": { $ref: "#/components/schemas/ErrorResponse" },
+                    "502": { $ref: "#/components/schemas/ErrorResponse" },
+                },
+            },
+        },
         "/api/upload": {
             post: {
                 tags: ["Media & Storage"],
@@ -1421,6 +1620,157 @@ exports.swaggerDocument = {
                         },
                     },
                     "401": { $ref: "#/components/schemas/ErrorResponse" },
+                },
+            },
+        },
+        "/api/admin/places/export-csv": {
+            get: {
+                tags: ["Admin - Places Management"],
+                summary: "Xuất danh sách địa điểm ra tệp CSV (Admin)",
+                description: "Yêu cầu quyền Quản trị viên (Admin). Hỗ trợ lọc theo từ khóa tìm kiếm (q), danh mục (category) và trạng thái kiểm duyệt (status). Tệp CSV trả về kèm tiền tố UTF-8 BOM để mở tiếng Việt trên Microsoft Excel không bị lỗi phông.",
+                security: [{ BearerAuth: [] }],
+                parameters: [
+                    {
+                        name: "q",
+                        in: "query",
+                        required: false,
+                        description: "Từ khóa tìm kiếm theo tên, địa chỉ hoặc mô tả",
+                        schema: { type: "string", example: "Lăng" },
+                    },
+                    {
+                        name: "category",
+                        in: "query",
+                        required: false,
+                        description: "Lọc theo mã danh mục (ancient, spiritual, food, hotel,...)",
+                        schema: { type: "string", example: "ancient" },
+                    },
+                    {
+                        name: "status",
+                        in: "query",
+                        required: false,
+                        description: "Lọc theo trạng thái kiểm duyệt ('all', 'approved', 'pending', 'rejected')",
+                        schema: { type: "string", enum: ["all", "approved", "pending", "rejected"], example: "approved" },
+                    },
+                ],
+                responses: {
+                    "200": {
+                        description: "Tệp CSV danh sách địa điểm kèm header Content-Disposition tải về",
+                        content: {
+                            "text/csv": {
+                                schema: {
+                                    type: "string",
+                                    format: "binary",
+                                },
+                            },
+                        },
+                    },
+                    "401": { $ref: "#/components/schemas/ErrorResponse" },
+                    "403": { $ref: "#/components/schemas/ErrorResponse" },
+                },
+            },
+        },
+        "/api/admin/places/import-csv/preview": {
+            post: {
+                tags: ["Admin - Places Management"],
+                summary: "Kiểm tra trước và phát hiện trùng khớp dữ liệu CSV (Admin Preview / Dry-run)",
+                description: "Yêu cầu quyền Quản trị viên (Admin). Nhận mảng các dòng parse được từ file CSV, kiểm tra hợp lệ tọa độ Thừa Thiên Huế (15.0 - 18.0, 106.0 - 109.0), và đối chiếu với cơ sở dữ liệu để gắn cờ trùng lặp (trùng ID, trùng tên, trùng tọa độ lân cận < 35m, hoặc trùng nội bộ trong file).",
+                security: [{ BearerAuth: [] }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        "application/json": {
+                            schema: { $ref: "#/components/schemas/PreviewImportCSVRequest" },
+                        },
+                    },
+                },
+                responses: {
+                    "200": {
+                        description: "Kết quả kiểm tra trước dữ liệu nhập",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        data: {
+                                            type: "object",
+                                            properties: {
+                                                total: { type: "number", example: 10 },
+                                                validCount: { type: "number", example: 7 },
+                                                duplicateCount: { type: "number", example: 2 },
+                                                errorCount: { type: "number", example: 1 },
+                                                items: {
+                                                    type: "array",
+                                                    items: {
+                                                        type: "object",
+                                                        properties: {
+                                                            rowNum: { type: "number", example: 1 },
+                                                            name: { type: "string", example: "Lăng Tự Đức" },
+                                                            category: { type: "string", example: "ancient" },
+                                                            lat: { type: "number", example: 16.43255 },
+                                                            lng: { type: "number", example: 107.56608 },
+                                                            isValid: { type: "boolean", example: true },
+                                                            errors: { type: "array", items: { type: "string" } },
+                                                            isDuplicate: { type: "boolean", example: true },
+                                                            duplicateReason: { type: "string", example: "Trùng tên với địa điểm đã tồn tại (lang-tu-duc)" },
+                                                            matchedPlaceId: { type: "string", example: "lang-tu-duc" },
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    "401": { $ref: "#/components/schemas/ErrorResponse" },
+                    "403": { $ref: "#/components/schemas/ErrorResponse" },
+                    "422": { $ref: "#/components/schemas/ErrorResponse" },
+                },
+            },
+        },
+        "/api/admin/places/import-csv": {
+            post: {
+                tags: ["Admin - Places Management"],
+                summary: "Thực hiện nhập danh sách địa điểm từ CSV vào hệ thống (Admin)",
+                description: "Yêu cầu quyền Quản trị viên (Admin). Nhận danh sách các địa điểm đã kiểm tra kèm tùy chọn xử lý trùng lặp `duplicateStrategy` ('skip' để bỏ qua, 'overwrite' để cập nhật dữ liệu mới lên địa điểm cũ).",
+                security: [{ BearerAuth: [] }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        "application/json": {
+                            schema: { $ref: "#/components/schemas/ImportPlacesCSVRequest" },
+                        },
+                    },
+                },
+                responses: {
+                    "200": {
+                        description: "Nhập dữ liệu thành công kèm thống kê số lượng xử lý",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "object",
+                                    properties: {
+                                        data: {
+                                            type: "object",
+                                            properties: {
+                                                totalProcessed: { type: "number", example: 10 },
+                                                insertedCount: { type: "number", example: 7 },
+                                                updatedCount: { type: "number", example: 2 },
+                                                skippedCount: { type: "number", example: 0 },
+                                                errorCount: { type: "number", example: 1 },
+                                                message: { type: "string", example: "Đã xử lý xong: thêm mới 7, cập nhật 2, bỏ qua 0, lỗi 1." },
+                                                errors: { type: "array", items: { type: "object" } },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    "401": { $ref: "#/components/schemas/ErrorResponse" },
+                    "403": { $ref: "#/components/schemas/ErrorResponse" },
+                    "422": { $ref: "#/components/schemas/ErrorResponse" },
                 },
             },
         },

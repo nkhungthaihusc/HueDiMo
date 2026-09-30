@@ -6,6 +6,7 @@ import {
   itineraryTotal,
   getTransportOption,
   calculateDistanceKm,
+  calculateRouteDistanceKm,
   calculateTravelTimeMinutes,
   formatTravelTime,
   TRANSPORT_OPTIONS,
@@ -557,7 +558,7 @@ export default function ItineraryBuilderPanel({
                 if (idx > 0) {
                   const prevPlace = byId.get(day.places[idx - 1].placeId);
                   if (prevPlace && place) {
-                    const dist = calculateDistanceKm(prevPlace.lat, prevPlace.lng, place.lat, place.lng);
+                    const dist = calculateRouteDistanceKm(prevPlace.lat, prevPlace.lng, place.lat, place.lng);
                     const mins = calculateTravelTimeMinutes(dist, transportMode);
                     travelBadge = (
                       <div className="my-1 flex items-center gap-1.5 pl-4 text-[10px] text-slate-500">

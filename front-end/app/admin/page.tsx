@@ -109,7 +109,7 @@ export default function AdminDashboardPage() {
       )}
 
       {/* KPI Stats Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -152,6 +152,26 @@ export default function AdminDashboardPage() {
           </div>
         </Link>
 
+        <Link
+          href="/admin/itineraries"
+          className="group rounded-2xl border border-slate-800 bg-slate-900/70 p-5 shadow-sm hover:border-indigo-500/50 transition cursor-pointer"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 group-hover:text-indigo-300 transition">
+              Lộ trình Du lịch
+            </span>
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-400">
+              🗺️
+            </span>
+          </div>
+          <div className="mt-3 text-3xl font-extrabold text-white">
+            {overview?.totalItineraries ?? 0}
+          </div>
+          <div className="mt-1 flex items-center gap-1.5 text-xs text-indigo-400">
+            <span>{overview?.publicItineraries ?? 0} công khai cộng đồng</span>
+          </div>
+        </Link>
+
         <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -172,7 +192,7 @@ export default function AdminDashboardPage() {
         <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Đánh giá & Review
+              Đánh giá Địa điểm
             </span>
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-400">
               💬

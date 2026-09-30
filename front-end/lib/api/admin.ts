@@ -10,9 +10,49 @@ export interface AdminStats {
     totalUsers: number;
     totalReviews: number;
     avgRating: number;
+    totalItineraries?: number;
+    publicItineraries?: number;
+    totalItineraryComments?: number;
   };
   categoryDistribution: { category: string; count: number }[];
   recentPlaces: Place[];
+}
+
+export interface AdminAIConfig {
+  model: string;
+  temperature: number;
+  maxTokens: number;
+  customInstruction: string;
+  provider?: string;
+  geminiApiKey?: string;
+  updatedAt?: string;
+}
+
+export interface AdminAISettingsResponse {
+  config: AdminAIConfig;
+  defaultConfig: AdminAIConfig;
+  apiKeyStatus: {
+    gemini: {
+      configured: boolean;
+      maskedKey: string;
+    };
+    zen: {
+      configured: boolean;
+      maskedKey: string;
+    };
+  };
+  supportedPresets: {
+    id: string;
+    name: string;
+    provider: string;
+  }[];
+}
+
+export interface AdminAITestResponse {
+  modelUsed: string;
+  latencyMs: number;
+  responseSample: string;
+  message: string;
 }
 
 export interface AdminPlacesResponse {
@@ -144,6 +184,71 @@ export const AdminAPI = {
     });
   },
 
+  async exportPlacesCSV(params?: { q?: string; category?: string; status?: string }): Promise<Blob> {
+    let token = getAccessToken();
+    if (!token) throw new Error("UNAUTHORIZED");
+
+    const query = new URLSearchParams();
+    if (params?.q) query.append("q", params.q);
+    if (params?.category) query.append("category", params.category);
+    if (params?.status && params.status !== "all") query.append("status", params.status);
+
+    const qs = query.toString() ? `?${query.toString()}` : "";
+    const res = await fetch(`${BACKEND_URL}/api/admin/places/export-csv${qs}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || "Không thể xuất file CSV.");
+    }
+
+    return await res.blob();
+  },
+
+  async previewImportCSV(items: any[]): Promise<{
+    total: number;
+    validCount: number;
+    duplicateCount: number;
+    errorCount: number;
+    items: {
+      rowNum: number;
+      name: string;
+      category: string;
+      lat: number;
+      lng: number;
+      address?: string;
+      isValid: boolean;
+      errors: string[];
+      isDuplicate: boolean;
+      duplicateReason: string;
+      matchedPlaceId?: string;
+      [key: string]: any;
+    }[];
+  }> {
+    return adminFetch("/api/admin/places/import-csv/preview", {
+      method: "POST",
+      body: JSON.stringify({ items }),
+    });
+  },
+
+  async importPlacesCSV(items: any[], duplicateStrategy: "skip" | "overwrite" = "skip"): Promise<{
+    totalProcessed: number;
+    insertedCount: number;
+    updatedCount: number;
+    skippedCount: number;
+    errorCount: number;
+    errors: any[];
+    message: string;
+  }> {
+    return adminFetch("/api/admin/places/import-csv", {
+      method: "POST",
+      body: JSON.stringify({ items, duplicateStrategy }),
+    });
+  },
+
   // Users
   async getUsers(params?: { page?: number; limit?: number; q?: string; role?: string }): Promise<AdminUsersResponse> {
     const query = new URLSearchParams();
@@ -231,6 +336,94 @@ export const AdminAPI = {
   async clearLogs(): Promise<{ message: string }> {
     return adminFetch("/api/admin/logs", {
       method: "DELETE",
+    });
+  },
+
+  // Itineraries Management
+  async getItineraries(params?: {
+    q?: string;
+    isPublic?: boolean;
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    items: any[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> {
+    const query = new URLSearchParams();
+    if (params?.q) query.append("q", params.q);
+    if (params?.isPublic !== undefined) query.append("isPublic", String(params.isPublic));
+    if (params?.page) query.append("page", String(params.page));
+    if (params?.limit) query.append("limit", String(params.limit));
+
+    const qs = query.toString() ? `?${query.toString()}` : "";
+    return adminFetch(`/api/admin/itineraries${qs}`);
+  },
+
+  async toggleItineraryVisibility(id: string, isPublic: boolean): Promise<{ itinerary: any; message: string }> {
+    return adminFetch(`/api/admin/itineraries/${id}/visibility`, {
+      method: "PATCH",
+      body: JSON.stringify({ isPublic }),
+    });
+  },
+
+  async deleteItinerary(id: string): Promise<{ id: string; deleted: boolean; message: string }> {
+    return adminFetch(`/api/admin/itineraries/${id}`, {
+      method: "DELETE",
+    });
+  },
+
+  async getItineraryComments(params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    items: any[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> {
+    const query = new URLSearchParams();
+    if (params?.page) query.append("page", String(params.page));
+    if (params?.limit) query.append("limit", String(params.limit));
+
+    const qs = query.toString() ? `?${query.toString()}` : "";
+    return adminFetch(`/api/admin/itinerary-comments${qs}`);
+  },
+
+  async deleteItineraryComment(id: string): Promise<{ id: string; deleted: boolean; message: string }> {
+    return adminFetch(`/api/admin/itinerary-comments/${id}`, {
+      method: "DELETE",
+    });
+  },
+
+  // AI Service Settings
+  async getAISettings(): Promise<AdminAISettingsResponse> {
+    return adminFetch("/api/admin/ai-settings");
+  },
+
+  async updateAISettings(data: Partial<AdminAIConfig>): Promise<{ config: AdminAIConfig; message: string }> {
+    return adminFetch("/api/admin/ai-settings", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async testAISettings(data?: {
+    model?: string;
+    temperature?: number;
+    provider?: string;
+    geminiApiKey?: string;
+  }): Promise<AdminAITestResponse> {
+    return adminFetch("/api/admin/ai-settings/test", {
+      method: "POST",
+      body: JSON.stringify(data || {}),
     });
   },
 };

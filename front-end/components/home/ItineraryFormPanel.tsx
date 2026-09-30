@@ -7,6 +7,7 @@ import type { CategoryId, Place } from "@/lib/types";
 import { CATEGORIES } from "@/lib/data/categories";
 import { createItinerary } from "@/lib/api/itinerary";
 import { ApiError } from "@/lib/api/client";
+import { toast } from "@/components/ui/Toast";
 
 function toDateInput(d: Date): string {
   const y = d.getFullYear();
@@ -106,11 +107,13 @@ export default function ItineraryFormPanel({
         createdAt: new Date().toISOString(),
       };
 
+      toast.success("✨ AI đã thiết kế lịch trình du lịch Huế thành công!");
       onGenerated(enhancedItinerary);
     } catch (e) {
-      setError(
-        e instanceof ApiError ? e.message : "Không kết nối được với máy chủ AI. Thử lại sau."
-      );
+      const errMsg =
+        e instanceof ApiError ? e.message : "Không kết nối được với máy chủ AI. Thử lại sau.";
+      setError(errMsg);
+      toast.error(`Lỗi AI tư vấn: ${errMsg}`);
     } finally {
       setLoading(false);
     }
