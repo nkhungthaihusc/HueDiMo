@@ -7,6 +7,8 @@ import { useHorizontalScroll } from "@/hooks/useHorizontalScroll";
 
 interface PlaceListPanelProps {
   places: Place[];
+  activeCategory: CategoryId | null;
+  onCategoryChange: (category: CategoryId | null) => void;
   selectedId: string | null;
   onSelect: (place: Place) => void;
   userContributedPlaces?: Place[];
@@ -54,6 +56,8 @@ function PlaceThumbnail({
 
 export default function PlaceListPanel({
   places,
+  activeCategory,
+  onCategoryChange,
   selectedId,
   onSelect,
   userContributedPlaces = [],
@@ -62,7 +66,12 @@ export default function PlaceListPanel({
 }: PlaceListPanelProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<CategoryId | "all" | "my_places">("all");
+  const [personalOnly, setPersonalOnly] = useState(false);
+  const selectedCategory = personalOnly ? "my_places" : activeCategory ?? "all";
+  const setSelectedCategory = (category: CategoryId | "all" | "my_places") => {
+    setPersonalOnly(category === "my_places");
+    onCategoryChange(category === "all" || category === "my_places" ? null : category);
+  };
   const [internalPage, setInternalPage] = useState(1);
   const [isMounted, setIsMounted] = useState(false);
   const PAGE_SIZE = 10;
@@ -140,8 +149,8 @@ export default function PlaceListPanel({
   return (
     <div className="pointer-events-auto flex h-full w-full max-w-[calc(100vw-1rem)] sm:w-[380px] sm:max-w-[380px] flex-col animate-in fade-in slide-in-from-left-4 duration-300 ease-out select-none">
       {/* Header bar */}
-      <div className="glass-strong mb-2.5 rounded-3xl border border-white/70 p-3 sm:p-3.5 shadow-xl backdrop-blur-xl">
-        <div className="flex items-center justify-between gap-2">
+      <div className="place-list-header glass-strong mb-2.5 rounded-3xl border border-white/70 p-3 sm:p-3.5 shadow-xl backdrop-blur-xl">
+        <div className="place-list-title flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
             <div className="flex h-8 sm:h-9 w-8 sm:w-9 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-brand-600 via-indigo-600 to-amber-500 text-white shadow-md shadow-brand-500/25 text-base">
               🏛️
@@ -170,9 +179,9 @@ export default function PlaceListPanel({
 
         {/* Tìm kiếm & Tab Lọc thể loại */}
         {!collapsed && (
-          <div className="mt-3 space-y-2.5">
+          <div className="place-list-filters mt-3 space-y-2.5">
             {/* Ô tìm kiếm nhanh */}
-            <div className="relative">
+            <div className="place-list-search relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none select-none">
                 🔍
               </span>

@@ -269,18 +269,18 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onClick={onClose} />
 
       {/* Modal Dialog */}
-      <div className="relative w-full max-w-5xl rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-5xl rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4 bg-slate-950/60">
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 bg-slate-50">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-700 border border-purple-500/20">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">Thêm danh sách địa điểm bằng CSV</h2>
-              <p className="text-xs text-slate-400">
+              <h2 className="text-lg font-bold text-slate-900">Thêm danh sách địa điểm bằng CSV</h2>
+              <p className="text-xs text-slate-500">
                 Tự động kiểm tra trùng lặp tên, ID, tọa độ trước khi lưu vào cơ sở dữ liệu
               </p>
             </div>
@@ -288,17 +288,17 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
           <div className="flex items-center gap-2">
             <button
               onClick={handleDownloadTemplate}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition"
               title="Tải tệp CSV mẫu chuẩn"
             >
-              <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4 text-emerald-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
               <span>Tải file CSV mẫu</span>
             </button>
             <button
               onClick={onClose}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition"
+              className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition"
             >
               <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -313,7 +313,7 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
           {!file && (
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="flex flex-col items-center justify-center border-2 border-dashed border-slate-700 hover:border-purple-500 rounded-2xl p-10 cursor-pointer bg-slate-950/40 hover:bg-purple-950/10 transition group"
+              className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 hover:border-purple-500 rounded-2xl p-10 cursor-pointer bg-slate-50 hover:bg-purple-50 transition group"
             >
               <input
                 ref={fileInputRef}
@@ -322,15 +322,15 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
                 className="hidden"
                 onChange={handleFileChange}
               />
-              <div className="h-14 w-14 rounded-2xl bg-purple-500/10 text-purple-400 flex items-center justify-center group-hover:scale-110 transition duration-300 border border-purple-500/20 mb-3">
+              <div className="h-14 w-14 rounded-2xl bg-purple-500/10 text-purple-700 flex items-center justify-center group-hover:scale-110 transition duration-300 border border-purple-500/20 mb-3">
                 <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <p className="text-sm font-semibold text-white group-hover:text-purple-300">
+              <p className="text-sm font-semibold text-slate-900 group-hover:text-purple-700">
                 Nhấp hoặc kéo thả tệp CSV vào đây
               </p>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-slate-500 mt-1">
                 Chỉ hỗ trợ file *.csv có bảng mã UTF-8. Nhấn &quot;Tải file CSV mẫu&quot; ở trên nếu chưa có file chuẩn.
               </p>
             </div>
@@ -340,7 +340,7 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
           {isLoadingPreview && (
             <div className="py-12 flex flex-col items-center justify-center gap-3">
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
-              <p className="text-sm text-slate-300">Đang kiểm tra trùng lặp và xác thực từng dòng trong tệp...</p>
+              <p className="text-sm text-slate-600">Đang kiểm tra trùng lặp và xác thực từng dòng trong tệp...</p>
             </div>
           )}
 
@@ -348,35 +348,35 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
           {file && !isLoadingPreview && previewStats && (
             <div className="space-y-4">
               {/* File Info Bar & Stats */}
-              <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-950/70 border border-slate-800 rounded-xl p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 border border-slate-200 rounded-xl p-4">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 font-bold text-xs border border-emerald-500/20">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-700 font-bold text-xs border border-emerald-500/20">
                     CSV
                   </span>
                   <div>
-                    <p className="text-sm font-semibold text-white">{file.name}</p>
-                    <p className="text-xs text-slate-400">
-                      Tổng cộng: <strong className="text-white">{previewStats.total}</strong> dòng địa điểm
+                    <p className="text-sm font-semibold text-slate-900">{file.name}</p>
+                    <p className="text-xs text-slate-500">
+                      Tổng cộng: <strong className="text-slate-900">{previewStats.total}</strong> dòng địa điểm
                     </p>
                   </div>
                 </div>
 
                 {/* Badges thống kê */}
                 <div className="flex items-center gap-2">
-                  <span className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-xs font-semibold text-emerald-400">
+                  <span className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                     {previewStats.validCount} Hợp lệ mới
                   </span>
-                  <span className="rounded-lg bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 text-xs font-semibold text-amber-400">
+                  <span className="rounded-lg bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 text-xs font-semibold text-amber-700">
                     {previewStats.duplicateCount} Trùng khớp
                   </span>
                   {previewStats.errorCount > 0 && (
-                    <span className="rounded-lg bg-rose-500/10 border border-rose-500/20 px-2.5 py-1 text-xs font-semibold text-rose-400">
+                    <span className="rounded-lg bg-rose-500/10 border border-rose-500/20 px-2.5 py-1 text-xs font-semibold text-rose-700">
                       {previewStats.errorCount} Lỗi cú pháp
                     </span>
                   )}
                   <button
                     onClick={handleReset}
-                    className="ml-2 text-xs text-slate-400 hover:text-white underline"
+                    className="ml-2 text-xs text-slate-500 hover:text-slate-900 underline"
                   >
                     Chọn file khác
                   </button>
@@ -385,11 +385,11 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
 
               {/* Tùy chọn xử lý khi có trùng lặp */}
               <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-wider text-amber-400">
+                <p className="text-xs font-semibold uppercase tracking-wider text-amber-700">
                   Cơ chế xử lý khi phát hiện dữ liệu trùng khớp:
                 </p>
                 <div className="flex flex-wrap gap-4 text-xs">
-                  <label className="flex items-center gap-2 cursor-pointer text-slate-200">
+                  <label className="flex items-center gap-2 cursor-pointer text-slate-800">
                     <input
                       type="radio"
                       name="dup_strategy"
@@ -399,10 +399,10 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
                       className="text-purple-600 focus:ring-purple-500"
                     />
                     <span>
-                      <strong className="text-white">Bỏ qua (Skip):</strong> Chỉ thêm những địa điểm mới, giữ nguyên địa điểm đã có trong hệ thống (Khuyên dùng)
+                      <strong className="text-slate-900">Bỏ qua (Skip):</strong> Chỉ thêm những địa điểm mới, giữ nguyên địa điểm đã có trong hệ thống (Khuyên dùng)
                     </span>
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer text-slate-200">
+                  <label className="flex items-center gap-2 cursor-pointer text-slate-800">
                     <input
                       type="radio"
                       name="dup_strategy"
@@ -412,19 +412,19 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
                       className="text-purple-600 focus:ring-purple-500"
                     />
                     <span>
-                      <strong className="text-white">Ghi đè/Cập nhật (Overwrite):</strong> Cập nhật thông tin mới nhất từ CSV lên địa điểm trùng khớp
+                      <strong className="text-slate-900">Ghi đè/Cập nhật (Overwrite):</strong> Cập nhật thông tin mới nhất từ CSV lên địa điểm trùng khớp
                     </span>
                   </label>
                 </div>
               </div>
 
               {/* Tabs lọc dòng xem trước */}
-              <div className="flex items-center gap-2 border-b border-slate-800 pb-2 text-xs">
+              <div className="flex items-center gap-2 border-b border-slate-200 pb-2 text-xs">
                 <button
                   type="button"
                   onClick={() => setFilterTab("all")}
                   className={`px-3 py-1.5 rounded-lg font-medium transition ${
-                    filterTab === "all" ? "bg-purple-600 text-white" : "text-slate-400 hover:text-white"
+                    filterTab === "all" ? "bg-purple-600 text-white" : "text-slate-500 hover:text-white"
                   }`}
                 >
                   Tất cả ({previewItems.length})
@@ -433,7 +433,7 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
                   type="button"
                   onClick={() => setFilterTab("duplicate")}
                   className={`px-3 py-1.5 rounded-lg font-medium transition ${
-                    filterTab === "duplicate" ? "bg-amber-600 text-white" : "text-slate-400 hover:text-white"
+                    filterTab === "duplicate" ? "bg-amber-600 text-slate-900" : "text-slate-500 hover:text-slate-900"
                   }`}
                 >
                   Dòng trùng khớp ({previewStats.duplicateCount})
@@ -442,7 +442,7 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
                   type="button"
                   onClick={() => setFilterTab("valid")}
                   className={`px-3 py-1.5 rounded-lg font-medium transition ${
-                    filterTab === "valid" ? "bg-emerald-600 text-white" : "text-slate-400 hover:text-white"
+                    filterTab === "valid" ? "bg-emerald-600 text-white" : "text-slate-500 hover:text-white"
                   }`}
                 >
                   Hợp lệ mới ({previewStats.validCount})
@@ -452,7 +452,7 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
                     type="button"
                     onClick={() => setFilterTab("error")}
                     className={`px-3 py-1.5 rounded-lg font-medium transition ${
-                      filterTab === "error" ? "bg-rose-600 text-white" : "text-slate-400 hover:text-white"
+                      filterTab === "error" ? "bg-rose-600 text-white" : "text-slate-500 hover:text-white"
                     }`}
                   >
                     Lỗi ({previewStats.errorCount})
@@ -461,9 +461,10 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
               </div>
 
               {/* Bảng Xem trước dữ liệu */}
-              <div className="max-h-72 overflow-y-auto rounded-xl border border-slate-800 bg-slate-950/60">
+              <div className="max-h-72 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50">
                 <table className="w-full text-left text-xs">
-                  <thead className="sticky top-0 bg-slate-900 text-slate-400 border-b border-slate-800">
+                <caption className="caption-top px-4 py-3 text-left text-xs font-medium text-slate-500 md:hidden">Vuốt ngang để xem đầy đủ thông tin và thao tác →</caption>
+                  <thead className="sticky top-0 bg-white text-slate-500 border-b border-slate-200">
                     <tr>
                       <th className="py-2.5 px-3">Dòng</th>
                       <th className="py-2.5 px-3">Trạng thái kiểm tra</th>
@@ -473,40 +474,40 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
                       <th className="py-2.5 px-3">Địa chỉ</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                  <tbody className="divide-y divide-slate-100 text-slate-600">
                     {filteredPreview.map((item, idx) => (
-                      <tr key={idx} className="hover:bg-slate-900/40">
+                      <tr key={idx} className="hover:bg-white">
                         <td className="py-2 px-3 text-slate-500 font-mono">#{item.rowNum}</td>
                         <td className="py-2 px-3">
                           {!item.isValid ? (
-                            <span className="inline-flex items-center gap-1 rounded bg-rose-500/10 px-2 py-0.5 text-[11px] font-medium text-rose-400 border border-rose-500/20">
+                            <span className="inline-flex items-center gap-1 rounded bg-rose-500/10 px-2 py-0.5 text-[11px] font-medium text-rose-700 border border-rose-500/20">
                               Lỗi: {item.errors.join("; ")}
                             </span>
                           ) : item.isDuplicate ? (
                             <span
-                              className="inline-flex items-center gap-1 rounded bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-400 border border-amber-500/20"
+                              className="inline-flex items-center gap-1 rounded bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700 border border-amber-500/20"
                               title={item.duplicateReason}
                             >
                               ⚠ {item.duplicateReason}
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-400 border border-emerald-500/20">
+                            <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 border border-emerald-500/20">
                               ✓ Mới hợp lệ
                             </span>
                           )}
                         </td>
-                        <td className="py-2 px-3 font-semibold text-white max-w-[200px] truncate" title={item.name}>
+                        <td className="py-2 px-3 font-semibold text-slate-900 max-w-[200px] truncate" title={item.name}>
                           {item.name || "—"}
                         </td>
                         <td className="py-2 px-3">
-                          <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-300 font-mono">
+                          <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600 font-mono">
                             {item.category}
                           </span>
                         </td>
-                        <td className="py-2 px-3 font-mono text-[11px] text-slate-400">
+                        <td className="py-2 px-3 font-mono text-[11px] text-slate-500">
                           {item.lat}, {item.lng}
                         </td>
-                        <td className="py-2 px-3 text-slate-400 max-w-[220px] truncate" title={item.address}>
+                        <td className="py-2 px-3 text-slate-500 max-w-[220px] truncate" title={item.address}>
                           {item.address || "—"}
                         </td>
                       </tr>
@@ -520,23 +521,23 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
           {/* Kết quả sau khi Import */}
           {importResult && (
             <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 space-y-2">
-              <div className="flex items-center gap-2 text-emerald-400 font-semibold text-sm">
+              <div className="flex items-center gap-2 text-emerald-700 font-semibold text-sm">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 <span>Nhập dữ liệu thành công!</span>
               </div>
-              <p className="text-xs text-slate-300">{importResult.message}</p>
+              <p className="text-xs text-slate-600">{importResult.message}</p>
             </div>
           )}
         </div>
 
         {/* Modal Footer */}
-        <div className="flex items-center justify-between border-t border-slate-800 px-6 py-4 bg-slate-950/80">
+        <div className="flex items-center justify-between border-t border-slate-200 px-6 py-4 bg-slate-50">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl px-4 py-2 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition"
+            className="rounded-xl px-4 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition"
           >
             Đóng
           </button>

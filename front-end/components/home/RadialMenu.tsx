@@ -135,7 +135,7 @@ export default function RadialMenu({ activeCategory, onToggle }: RadialMenuProps
     <div
       ref={containerRef}
       className={`pointer-events-auto relative flex items-center justify-center select-none touch-none ${
-        open ? (isDragging ? "cursor-grabbing" : "cursor-grab") : ""
+        open ? `h-[360px] w-[360px] ${isDragging ? "cursor-grabbing" : "cursor-grab"}` : "h-16 w-16"
       }`}
     >
       {/* Vòng menu radial */}

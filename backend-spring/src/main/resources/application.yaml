@@ -1,15 +1,17 @@
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
 
 spring:
   application:
     name: backend-spring
+  config:
+    import: "optional:file:./.env[.properties]"
 
   datasource:
     # URL kết nối tới Supabase Pooler (chú ý sslmode=require)
-    url: jdbc:postgresql://aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?sslmode=require
-    username: postgres.vhyfauholmouikskxecp
-    password: Hungthai@2005
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:postgres}?sslmode=require}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -28,7 +30,28 @@ spring:
 
 # Cấu hình JWT (dùng chung secret key với Express để tương thích token)
 jwt:
-  access-secret: huedimo_jwt_secret_key_secure_hue_travel_2026
+  access-secret: ${JWT_SECRET}
   access-expiration: 86400000 # 1 ngày (ms)
-  refresh-secret: huedimo_jwt_refresh_secret_key_secure_hue_travel_2026
+  refresh-secret: ${JWT_REFRESH_SECRET}
   refresh-expiration: 2592000000 # 30 ngày (ms)
+
+# Cấu hình AI Itinerary (Đồng bộ từ Express sang Spring Boot)
+ai:
+  gemini:
+    api-key: ${GEMINI_API_KEY:}
+    model: ${GEMINI_MODEL:gemini-1.5-flash}
+    base-url: https://generativelanguage.googleapis.com/v1beta/models
+  opencode:
+    zen-api-key: ${OPENCODE_ZEN_API_KEY:}
+    url: https://opencode.ai/zen/v1/chat/completions
+    model: big-pickle
+
+# Alias ngắn gọn cho Gemini
+gemini:
+  api-key: ${GEMINI_API_KEY:}
+  model: ${GEMINI_MODEL:gemini-1.5-flash}
+
+# Cấu hình Supabase (Storage & Client API)
+supabase:
+  url: ${SUPABASE_URL:}
+  anon-key: ${SUPABASE_ANON_KEY:}

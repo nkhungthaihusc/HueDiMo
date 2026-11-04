@@ -70,21 +70,21 @@ export default function AdminReviewsPage() {
     <div className="flex flex-1 flex-col space-y-6 min-h-0">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between shrink-0">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Kiểm duyệt Đánh giá Du khách</h1>
-          <p className="text-sm text-slate-400">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Kiểm duyệt Đánh giá Du khách</h1>
+          <p className="text-sm text-slate-500">
             Xem và kiểm duyệt phản hồi của du khách về các danh thắng và món ngon ở Huế ({total} đánh giá).
           </p>
         </div>
 
         {/* Thanh chuyển trang nhanh ở đầu */}
-        <div className="flex items-center gap-2 text-xs border border-slate-800 bg-slate-900/80 rounded-xl px-3 py-1.5 shrink-0 self-start sm:self-auto">
-          <span className="text-slate-400">Trang <span className="text-white font-bold">{page}</span>/{totalPages}</span>
+        <div className="flex items-center gap-2 text-xs border border-slate-200 bg-white rounded-xl px-3 py-1.5 shrink-0 self-start sm:self-auto">
+          <span className="text-slate-500">Trang <span className="text-slate-900 font-bold">{page}</span>/{totalPages}</span>
           <div className="flex items-center gap-1">
             <button
               type="button"
               disabled={page <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="h-6 w-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white disabled:opacity-30 transition flex items-center justify-center font-bold cursor-pointer"
+              className="h-6 w-6 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 disabled:opacity-30 transition flex items-center justify-center font-bold cursor-pointer"
               title="Trang trước"
             >
               ‹
@@ -93,7 +93,7 @@ export default function AdminReviewsPage() {
               type="button"
               disabled={page >= totalPages}
               onClick={() => setPage((p) => p + 1)}
-              className="h-6 w-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white disabled:opacity-30 transition flex items-center justify-center font-bold cursor-pointer"
+              className="h-6 w-6 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 disabled:opacity-30 transition flex items-center justify-center font-bold cursor-pointer"
               title="Trang sau"
             >
               ›
@@ -102,20 +102,21 @@ export default function AdminReviewsPage() {
         </div>
       </div>
 
-      <div className="flex-1 min-h-[450px] overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 shadow-sm flex flex-col">
+      <div className="flex-1 min-h-[450px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col">
         {isLoading ? (
           <div className="flex flex-1 items-center justify-center min-h-[300px]">
             <div className="h-7 w-7 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
           </div>
         ) : reviews.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center text-slate-400 min-h-[300px]">
+          <div className="flex flex-1 flex-col items-center justify-center text-slate-500 min-h-[300px]">
             <span className="text-3xl">💬</span>
             <p className="mt-2 text-xs">Hiện tại chưa có đánh giá nào từ du khách.</p>
           </div>
         ) : (
           <div className="flex-1 overflow-x-auto overflow-y-auto min-h-0">
             <table className="w-full text-left text-xs">
-              <thead className="sticky top-0 z-10 border-b border-slate-800 bg-slate-950/95 backdrop-blur-md text-slate-400">
+                <caption className="caption-top px-4 py-3 text-left text-xs font-medium text-slate-500 md:hidden">Vuốt ngang để xem đầy đủ thông tin và thao tác →</caption>
+              <thead className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50 backdrop-blur-md text-slate-500">
                 <tr>
                   <th className="px-5 py-3 font-semibold">Địa điểm</th>
                   <th className="px-4 py-3 font-semibold">Tác giả</th>
@@ -125,15 +126,15 @@ export default function AdminReviewsPage() {
                   <th className="px-5 py-3 font-semibold text-right">Hành động</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-slate-100">
                 {reviews.map((r) => (
-                  <tr key={r.id} className="hover:bg-slate-800/25 transition">
-                    <td className="px-5 py-3.5 font-semibold text-purple-300">
+                  <tr key={r.id} className="hover:bg-slate-100 transition">
+                    <td className="px-5 py-3.5 font-semibold text-purple-700">
                       {r.place_name || r.place_id}
                     </td>
-                    <td className="px-4 py-3.5 text-white font-medium">{r.author_name}</td>
-                    <td className="px-4 py-3.5 text-amber-400 font-bold">★ {r.rating}</td>
-                    <td className="px-5 py-3.5 text-slate-300 max-w-md">
+                    <td className="px-4 py-3.5 text-slate-900 font-medium">{r.author_name}</td>
+                    <td className="px-4 py-3.5 text-amber-700 font-bold">★ {r.rating}</td>
+                    <td className="px-5 py-3.5 text-slate-600 max-w-md">
                       <p className="line-clamp-2">{r.comment}</p>
                       {r.images && r.images.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1.5">
@@ -143,7 +144,7 @@ export default function AdminReviewsPage() {
                               href={imgUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="h-10 w-10 overflow-hidden rounded-lg border border-slate-700 bg-slate-950 block hover:scale-105 transition"
+                              className="h-10 w-10 overflow-hidden rounded-lg border border-slate-200 bg-slate-50 block hover:scale-105 transition"
                               title="Bấm để xem ảnh gốc"
                             >
                               <img src={imgUrl} alt="" className="h-full w-full object-cover" />
@@ -158,7 +159,7 @@ export default function AdminReviewsPage() {
                     <td className="px-5 py-3.5 text-right">
                       <button
                         onClick={() => handleDelete(r.id)}
-                        className="rounded-lg bg-slate-800 px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-600 hover:text-white transition"
+                        className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-600 hover:text-slate-900 transition"
                       >
                         Xóa
                       </button>

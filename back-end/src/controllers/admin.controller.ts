@@ -1067,7 +1067,7 @@ export const AdminController = {
         if (isNaN(numLat) || isNaN(numLng)) {
           errors.push("Tọa độ lat/lng không hợp lệ hoặc để trống");
         } else if (numLat < 15.0 || numLat > 18.0 || numLng < 106.0 || numLng > 109.0) {
-          errors.push("Tọa độ nằm ngoài phạm vi tỉnh Thừa Thiên Huế (15.0-18.0, 106.0-109.0)");
+          errors.push("Tọa độ nằm ngoài phạm vi Thành Phố Huế (15.0-18.0, 106.0-109.0)");
         }
 
         // 3.1. Kiểm tra rating nếu có

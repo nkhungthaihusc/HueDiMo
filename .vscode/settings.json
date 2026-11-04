@@ -1,0 +1,35 @@
+{
+    "java.debug.settings.onBuildFailureProceed": true,
+    "java.jdt.ls.lombokSupport.enabled": true,
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "maven.executable.path": "C:\\Users\\Hungt\\AppData\\Roaming\\Antigravity IDE\\User\\globalStorage\\pleiades.java-extension-pack-jdk\\maven\\latest\\bin\\mvn",
+    "java.import.gradle.home": "C:\\Users\\Hungt\\AppData\\Roaming\\Antigravity IDE\\User\\globalStorage\\pleiades.java-extension-pack-jdk\\gradle\\latest",
+    "terminal.integrated.env.windows": {
+        "JAVA_HOME": "C:\\Program Files\\Java\\jdk-21.0.12",
+        "PATH": "C:\\Program Files\\Java\\jdk-21.0.12\\bin;${env:PATH}"
+    },
+    "maven.terminal.customEnv": [
+        {
+            "environmentVariable": "JAVA_HOME",
+            "value": "C:\\Program Files\\Java\\jdk-21.0.12"
+        }
+    ],
+    "java.errors.incompleteClasspath.severity": "ignore",
+    "java.debug.settings.enableRunDebugCodeLens": false,
+    "java.debug.settings.hotCodeReplace": "never",
+    "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx2G -Xms100m -javaagent:\"C:/Users/Hungt/.m2/repository/org/projectlombok/lombok/1.18.38/lombok-1.18.38.jar\"",
+    "java.autobuild.enabled": true,
+    "spring-boot.ls.live-information.automatic-connection.on": false,
+    "boot-java.live-information.automatic-connection.on": false,
+    "debug.openDebug": "neverOpen",
+    "debug.showInStatusBar": "never",
+    "debug.onTaskErrors": "abort",
+    "code-runner.saveFileBeforeRun": false,
+    "code-runner.runInTerminal": true,
+    "code-runner.showRunIconInEditorTitleMenu": false,
+    "java.debug.settings.enableNoConfigDebug": false,
+    "debug.toolBarLocation": "hidden",
+    "spring.dashboard.enableGutter": "off",
+    "java.test.editor.enableShortcuts": false,
+    "java.test.enableCodeLens": false
+}

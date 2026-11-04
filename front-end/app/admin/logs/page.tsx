@@ -117,30 +117,30 @@ export default function AdminLogsPage() {
   const getMethodBadge = (method: string) => {
     switch (method.toUpperCase()) {
       case "GET":
-        return "bg-emerald-950/70 text-emerald-400 border-emerald-800/40";
+        return "bg-emerald-50 text-emerald-700 border-emerald-200";
       case "POST":
-        return "bg-blue-950/70 text-blue-400 border-blue-800/40";
+        return "bg-blue-50 text-blue-700 border-blue-200";
       case "PUT":
       case "PATCH":
-        return "bg-amber-950/70 text-amber-400 border-amber-800/40";
+        return "bg-amber-50 text-amber-700 border-amber-200";
       case "DELETE":
-        return "bg-red-950/70 text-red-400 border-red-800/40";
+        return "bg-red-50 text-red-700 border-red-200";
       default:
-        return "bg-slate-800 text-slate-300 border-slate-700";
+        return "bg-slate-100 text-slate-600 border-slate-200";
     }
   };
 
   const getStatusBadge = (code: number) => {
     if (code >= 200 && code < 300) {
-      return "text-emerald-400 bg-emerald-500/10 border-emerald-500/30";
+      return "text-emerald-700 bg-emerald-500/10 border-emerald-500/30";
     }
     if (code >= 300 && code < 400) {
-      return "text-blue-400 bg-blue-500/10 border-blue-500/30";
+      return "text-blue-700 bg-blue-500/10 border-blue-500/30";
     }
     if (code >= 400 && code < 500) {
-      return "text-amber-400 bg-amber-500/10 border-amber-500/30";
+      return "text-amber-700 bg-amber-500/10 border-amber-500/30";
     }
-    return "text-red-400 bg-red-500/10 border-red-500/30";
+    return "text-red-700 bg-red-500/10 border-red-500/30";
   };
 
   return (
@@ -148,16 +148,16 @@ export default function AdminLogsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
             <span>⚡ Giám sát Yêu cầu API (Network Inspector)</span>
             {isAutoRefresh && (
-              <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-400 border border-emerald-500/30">
+              <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-500/30">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 Live 3s
               </span>
             )}
           </h1>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-500">
             Bắt trọn vẹn Thông tin chung, Headers, Request Body, Response JSON mở rộng và Response Headers.
           </p>
         </div>
@@ -167,21 +167,21 @@ export default function AdminLogsPage() {
             onClick={() => setIsAutoRefresh(!isAutoRefresh)}
             className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition border ${
               isAutoRefresh
-                ? "border-emerald-600/50 bg-emerald-950/30 text-emerald-300 hover:bg-emerald-900/40"
-                : "border-slate-800 bg-slate-900 text-slate-400 hover:text-white"
+                ? "border-emerald-600/50 bg-emerald-50 text-emerald-700 hover:bg-emerald-50"
+                : "border-slate-200 bg-white text-slate-500 hover:text-slate-900"
             }`}
           >
             {isAutoRefresh ? "⏸ Tạm dừng Live" : "▶ Tiếp tục Live"}
           </button>
           <button
             onClick={loadLogs}
-            className="rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs font-semibold text-slate-300 hover:text-white transition"
+            className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
           >
             🔄 Làm mới
           </button>
           <button
             onClick={handleClearLogs}
-            className="rounded-xl border border-red-900/30 bg-red-950/20 px-3.5 py-2 text-xs font-semibold text-red-400 hover:bg-red-900/30 transition"
+            className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 transition"
           >
             🗑 Xóa log
           </button>
@@ -190,28 +190,28 @@ export default function AdminLogsPage() {
 
       {/* KPI Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-          <div className="text-xs font-medium text-slate-400">Tổng Requests Ghi nhận</div>
-          <div className="mt-1 text-2xl font-bold text-white">{stats.totalRequestsLogged}</div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+          <div className="text-xs font-medium text-slate-500">Tổng Requests Ghi nhận</div>
+          <div className="mt-1 text-2xl font-bold text-slate-900">{stats.totalRequestsLogged}</div>
         </div>
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-          <div className="text-xs font-medium text-slate-400">Số Request Lỗi (4xx / 5xx)</div>
-          <div className={`mt-1 text-2xl font-bold ${stats.errorCount > 0 ? "text-red-400" : "text-emerald-400"}`}>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+          <div className="text-xs font-medium text-slate-500">Số Request Lỗi (4xx / 5xx)</div>
+          <div className={`mt-1 text-2xl font-bold ${stats.errorCount > 0 ? "text-red-600" : "text-emerald-700"}`}>
             {stats.errorCount}
           </div>
         </div>
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-          <div className="text-xs font-medium text-slate-400">Độ trễ Xử lý Trung bình</div>
-          <div className="mt-1 text-2xl font-bold text-purple-400">{stats.avgLatencyMs} ms</div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+          <div className="text-xs font-medium text-slate-500">Độ trễ Xử lý Trung bình</div>
+          <div className="mt-1 text-2xl font-bold text-purple-700">{stats.avgLatencyMs} ms</div>
         </div>
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 p-3">
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3">
         <select
           value={methodFilter}
           onChange={(e) => setMethodFilter(e.target.value)}
-          className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-slate-300 focus:border-purple-500 focus:outline-none"
+          className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-600 focus:border-purple-500 focus:outline-none"
         >
           <option value="">Tất cả Method (GET, POST, PUT, DELETE...)</option>
           <option value="GET">GET</option>
@@ -224,7 +224,7 @@ export default function AdminLogsPage() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-slate-300 focus:border-purple-500 focus:outline-none"
+          className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-600 focus:border-purple-500 focus:outline-none"
         >
           <option value="">Tất cả Status Code</option>
           <option value="200">200 OK</option>
@@ -240,8 +240,8 @@ export default function AdminLogsPage() {
       {/* Main Split Layout */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Left Side: Requests List (5 cols) */}
-        <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 shadow-sm lg:col-span-5">
-          <div className="border-b border-slate-800 bg-slate-950/80 px-4 py-2.5 text-xs font-semibold text-slate-300 flex items-center justify-between">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-5">
+          <div className="border-b border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-semibold text-slate-600 flex items-center justify-between">
             <span>Danh sách Requests gần nhất</span>
             <span className="text-[11px] text-slate-500 font-normal">{logs.length} bản ghi</span>
           </div>
@@ -251,12 +251,12 @@ export default function AdminLogsPage() {
               <div className="h-7 w-7 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
             </div>
           ) : logs.length === 0 ? (
-            <div className="flex h-72 flex-col items-center justify-center text-slate-400">
+            <div className="flex h-72 flex-col items-center justify-center text-slate-500">
               <span className="text-3xl">📭</span>
               <p className="mt-2 text-xs">Chưa có request nào gửi tới server.</p>
             </div>
           ) : (
-            <div className="overflow-y-auto max-h-[640px] divide-y divide-slate-800/60">
+            <div className="overflow-y-auto max-h-[640px] divide-y divide-slate-100">
               {logs.map((log) => {
                 const isSelected = selectedLog?.id === log.id;
                 return (
@@ -265,8 +265,8 @@ export default function AdminLogsPage() {
                     onClick={() => setSelectedLog(log)}
                     className={`p-3 cursor-pointer transition flex items-center justify-between gap-2.5 ${
                       isSelected
-                        ? "bg-purple-950/50 border-l-4 border-purple-500"
-                        : "hover:bg-slate-800/40"
+                        ? "bg-purple-50 border-l-4 border-purple-500"
+                        : "hover:bg-slate-100"
                     }`}
                   >
                     <div className="flex items-center gap-2 overflow-hidden min-w-0">
@@ -284,13 +284,13 @@ export default function AdminLogsPage() {
                       >
                         {log.method}
                       </span>
-                      <span className="truncate font-mono text-xs text-white">
+                      <span className="truncate font-mono text-xs text-slate-900">
                         {log.url}
                       </span>
                     </div>
 
                     <div className="shrink-0 text-right">
-                      <div className="font-mono text-[11px] text-slate-400">{log.durationMs}ms</div>
+                      <div className="font-mono text-[11px] text-slate-500">{log.durationMs}ms</div>
                       <div className="text-[10px] text-slate-500 font-mono">
                         {new Date(log.timestamp).toLocaleTimeString("vi-VN")}
                       </div>
@@ -303,11 +303,11 @@ export default function AdminLogsPage() {
         </div>
 
         {/* Right Side: Detailed Inspector (7 cols) */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-sm lg:col-span-7 flex flex-col min-h-[600px] max-h-[700px]">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-7 flex flex-col min-h-[600px] max-h-[700px]">
           {selectedLog ? (
             <div className="flex flex-col h-full overflow-hidden">
               {/* Log Header Summary */}
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800 shrink-0">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200 shrink-0">
                 <div className="flex items-center gap-2 overflow-hidden">
                   <span
                     className={`rounded-md border px-2 py-0.5 text-xs font-bold ${getStatusBadge(
@@ -323,27 +323,27 @@ export default function AdminLogsPage() {
                   >
                     {selectedLog.method}
                   </span>
-                  <span className="font-mono text-xs text-white truncate max-w-sm">
+                  <span className="font-mono text-xs text-slate-900 truncate max-w-sm">
                     {selectedLog.url}
                   </span>
                 </div>
 
                 <button
                   onClick={() => copyToClipboard(selectedLog)}
-                  className="rounded-lg bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition"
+                  className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition"
                 >
                   {copySuccess ? "✓ Đã copy" : "📋 Copy Log"}
                 </button>
               </div>
 
               {/* Inspector Navigation Tabs */}
-              <div className="flex items-center gap-1 border-b border-slate-800 pt-3 pb-2 shrink-0 overflow-x-auto">
+              <div className="flex items-center gap-1 border-b border-slate-200 pt-3 pb-2 shrink-0 overflow-x-auto">
                 <button
                   onClick={() => setActiveTab("general")}
                   className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                     activeTab === "general"
                       ? "bg-purple-600 text-white"
-                      : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+                      : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
                   }`}
                 >
                   📌 Thông tin chung
@@ -353,7 +353,7 @@ export default function AdminLogsPage() {
                   className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                     activeTab === "reqHeaders"
                       ? "bg-purple-600 text-white"
-                      : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+                      : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
                   }`}
                 >
                   📥 Request Headers
@@ -363,7 +363,7 @@ export default function AdminLogsPage() {
                   className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                     activeTab === "reqBody"
                       ? "bg-purple-600 text-white"
-                      : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+                      : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
                   }`}
                 >
                   📤 Request Body {selectedLog.requestBody && Object.keys(selectedLog.requestBody).length > 0 && "●"}
@@ -373,7 +373,7 @@ export default function AdminLogsPage() {
                   className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                     activeTab === "resBody"
                       ? "bg-purple-600 text-white"
-                      : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+                      : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
                   }`}
                 >
                   ⚡ Response (JSON)
@@ -383,7 +383,7 @@ export default function AdminLogsPage() {
                   className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                     activeTab === "resHeaders"
                       ? "bg-purple-600 text-white"
-                      : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+                      : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
                   }`}
                 >
                   📋 Response Headers
@@ -396,71 +396,71 @@ export default function AdminLogsPage() {
                 {activeTab === "general" && (
                   <div className="space-y-3.5">
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="rounded-xl bg-slate-950 p-3 border border-slate-800">
-                        <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                      <div className="rounded-xl bg-slate-50 p-3 border border-slate-200">
+                        <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                           Request URL
                         </div>
-                        <div className="mt-1 font-mono text-purple-300 break-all">{selectedLog.url}</div>
+                        <div className="mt-1 font-mono text-purple-700 break-all">{selectedLog.url}</div>
                       </div>
-                      <div className="rounded-xl bg-slate-950 p-3 border border-slate-800">
-                        <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                      <div className="rounded-xl bg-slate-50 p-3 border border-slate-200">
+                        <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                           Request Method
                         </div>
-                        <div className="mt-1 font-bold text-white">{selectedLog.method}</div>
+                        <div className="mt-1 font-bold text-slate-900">{selectedLog.method}</div>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-3 gap-3">
-                      <div className="rounded-xl bg-slate-950 p-3 border border-slate-800">
-                        <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                      <div className="rounded-xl bg-slate-50 p-3 border border-slate-200">
+                        <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                           Status Code
                         </div>
-                        <div className="mt-1 font-bold text-white">
+                        <div className="mt-1 font-bold text-slate-900">
                           {selectedLog.statusCode} ({selectedLog.statusMessage || "OK"})
                         </div>
                       </div>
-                      <div className="rounded-xl bg-slate-950 p-3 border border-slate-800">
-                        <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                      <div className="rounded-xl bg-slate-50 p-3 border border-slate-200">
+                        <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                           Độ trễ Server
                         </div>
-                        <div className="mt-1 font-mono text-emerald-400 font-bold">{selectedLog.durationMs} ms</div>
+                        <div className="mt-1 font-mono text-emerald-700 font-bold">{selectedLog.durationMs} ms</div>
                       </div>
-                      <div className="rounded-xl bg-slate-950 p-3 border border-slate-800">
-                        <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                      <div className="rounded-xl bg-slate-50 p-3 border border-slate-200">
+                        <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                           Giao thức HTTP
                         </div>
-                        <div className="mt-1 font-mono text-slate-300">{selectedLog.protocol} / {selectedLog.httpVersion}</div>
+                        <div className="mt-1 font-mono text-slate-600">{selectedLog.protocol} / {selectedLog.httpVersion}</div>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="rounded-xl bg-slate-950 p-3 border border-slate-800">
-                        <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                      <div className="rounded-xl bg-slate-50 p-3 border border-slate-200">
+                        <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                           Địa chỉ IP Client
                         </div>
-                        <div className="mt-1 font-mono text-slate-200">{selectedLog.ip}</div>
+                        <div className="mt-1 font-mono text-slate-800">{selectedLog.ip}</div>
                       </div>
-                      <div className="rounded-xl bg-slate-950 p-3 border border-slate-800">
-                        <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                      <div className="rounded-xl bg-slate-50 p-3 border border-slate-200">
+                        <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                           Thời điểm Gửi
                         </div>
-                        <div className="mt-1 font-mono text-slate-300">
+                        <div className="mt-1 font-mono text-slate-600">
                           {new Date(selectedLog.timestamp).toLocaleString("vi-VN")}
                         </div>
                       </div>
                     </div>
 
                     {/* User Profile Context */}
-                    <div className="rounded-xl bg-slate-950 p-3 border border-slate-800">
-                      <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                    <div className="rounded-xl bg-slate-50 p-3 border border-slate-200">
+                      <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                         Thông tin Người thực hiện (Authenticated User)
                       </div>
                       <div className="mt-2 flex items-center gap-3">
-                        <span className="rounded-lg bg-purple-900/60 px-2 py-1 text-purple-300 font-medium">
+                        <span className="rounded-lg bg-purple-50 px-2 py-1 text-purple-700 font-medium">
                           Role: {selectedLog.userRole || "Ẩn danh (Guest)"}
                         </span>
                         {selectedLog.userEmail && (
-                          <span className="font-mono text-white">Email: {selectedLog.userEmail}</span>
+                          <span className="font-mono text-slate-900">Email: {selectedLog.userEmail}</span>
                         )}
                         {selectedLog.userId && (
                           <span className="font-mono text-slate-500 text-[11px]">ID: {selectedLog.userId}</span>
@@ -469,11 +469,11 @@ export default function AdminLogsPage() {
                     </div>
 
                     {/* User Agent */}
-                    <div className="rounded-xl bg-slate-950 p-3 border border-slate-800">
-                      <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                    <div className="rounded-xl bg-slate-50 p-3 border border-slate-200">
+                      <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                         User Agent Client
                       </div>
-                      <div className="mt-1 text-slate-400 font-mono text-[11px] break-all">
+                      <div className="mt-1 text-slate-500 font-mono text-[11px] break-all">
                         {selectedLog.userAgent}
                       </div>
                     </div>
@@ -484,19 +484,19 @@ export default function AdminLogsPage() {
                 {activeTab === "reqHeaders" && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between pb-1">
-                      <span className="text-xs text-slate-400 font-semibold uppercase">Header Name : Value</span>
+                      <span className="text-xs text-slate-500 font-semibold uppercase">Header Name : Value</span>
                       <button
                         onClick={() => copyToClipboard(selectedLog.requestHeaders)}
-                        className="text-[11px] text-purple-400 hover:text-purple-300"
+                        className="text-[11px] text-purple-700 hover:text-purple-700"
                       >
                         Copy Headers JSON
                       </button>
                     </div>
-                    <div className="rounded-xl bg-slate-950 border border-slate-800 overflow-hidden divide-y divide-slate-800/60 font-mono text-xs">
+                    <div className="rounded-xl bg-slate-50 border border-slate-200 overflow-hidden divide-y divide-slate-100 font-mono text-xs">
                       {Object.entries(selectedLog.requestHeaders || {}).map(([key, value]) => (
-                        <div key={key} className="p-2.5 flex items-start gap-3 hover:bg-slate-900/40">
-                          <span className="font-semibold text-purple-300 shrink-0 w-44 break-all">{key}:</span>
-                          <span className="text-slate-300 break-all">{String(value)}</span>
+                        <div key={key} className="p-2.5 flex items-start gap-3 hover:bg-white">
+                          <span className="font-semibold text-purple-700 shrink-0 w-44 break-all">{key}:</span>
+                          <span className="text-slate-600 break-all">{String(value)}</span>
                         </div>
                       ))}
                     </div>
@@ -509,10 +509,10 @@ export default function AdminLogsPage() {
                     {/* Query Params */}
                     {Object.keys(selectedLog.queryParams || {}).length > 0 && (
                       <div>
-                        <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider pb-1">
+                        <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider pb-1">
                           Query Parameters (URL SearchParams)
                         </div>
-                        <pre className="rounded-xl bg-slate-950 p-3 font-mono text-purple-300 overflow-x-auto border border-slate-800">
+                        <pre className="rounded-xl bg-slate-50 p-3 font-mono text-purple-700 overflow-x-auto border border-slate-200">
                           {JSON.stringify(selectedLog.queryParams, null, 2)}
                         </pre>
                       </div>
@@ -521,24 +521,24 @@ export default function AdminLogsPage() {
                     {/* Body Payload */}
                     <div>
                       <div className="flex items-center justify-between pb-1">
-                        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                        <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                           Request Body Payload
                         </span>
                         {selectedLog.requestBody && (
                           <button
                             onClick={() => copyToClipboard(selectedLog.requestBody)}
-                            className="text-[11px] text-purple-400 hover:text-purple-300"
+                            className="text-[11px] text-purple-700 hover:text-purple-700"
                           >
                             Copy Body JSON
                           </button>
                         )}
                       </div>
                       {selectedLog.requestBody && Object.keys(selectedLog.requestBody).length > 0 ? (
-                        <pre className="rounded-xl bg-slate-950 p-3 font-mono text-amber-300 overflow-x-auto border border-slate-800 text-[11px]">
+                        <pre className="rounded-xl bg-slate-50 p-3 font-mono text-amber-700 overflow-x-auto border border-slate-200 text-[11px]">
                           {JSON.stringify(selectedLog.requestBody, null, 2)}
                         </pre>
                       ) : (
-                        <div className="rounded-xl bg-slate-950/60 p-6 text-center text-slate-500 border border-slate-800/80">
+                        <div className="rounded-xl bg-slate-50 p-6 text-center text-slate-500 border border-slate-200">
                           (Không có Request Body payload)
                         </div>
                       )}
@@ -550,13 +550,13 @@ export default function AdminLogsPage() {
                 {activeTab === "resBody" && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between pb-1">
-                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                      <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                         Response Body Trả về từ Server (JSON)
                       </span>
                       {selectedLog.responseBody && (
                         <button
                           onClick={() => copyToClipboard(selectedLog.responseBody)}
-                          className="text-[11px] text-emerald-400 hover:text-emerald-300 font-semibold"
+                          className="text-[11px] text-emerald-700 hover:text-emerald-700 font-semibold"
                         >
                           Copy Response JSON
                         </button>
@@ -564,13 +564,13 @@ export default function AdminLogsPage() {
                     </div>
 
                     {selectedLog.responseBody !== undefined && selectedLog.responseBody !== null ? (
-                      <pre className="rounded-xl bg-slate-950 p-3 font-mono text-emerald-300 overflow-x-auto border border-slate-800 text-[11px] leading-relaxed">
+                      <pre className="rounded-xl bg-slate-50 p-3 font-mono text-emerald-700 overflow-x-auto border border-slate-200 text-[11px] leading-relaxed">
                         {typeof selectedLog.responseBody === "object"
                           ? JSON.stringify(selectedLog.responseBody, null, 2)
                           : String(selectedLog.responseBody)}
                       </pre>
                     ) : (
-                      <div className="rounded-xl bg-slate-950/60 p-6 text-center text-slate-500 border border-slate-800/80">
+                      <div className="rounded-xl bg-slate-50 p-6 text-center text-slate-500 border border-slate-200">
                         (Response body rỗng hoặc chưa hoàn tất)
                       </div>
                     )}
@@ -581,19 +581,19 @@ export default function AdminLogsPage() {
                 {activeTab === "resHeaders" && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between pb-1">
-                      <span className="text-xs text-slate-400 font-semibold uppercase">Response Header : Value</span>
+                      <span className="text-xs text-slate-500 font-semibold uppercase">Response Header : Value</span>
                       <button
                         onClick={() => copyToClipboard(selectedLog.responseHeaders)}
-                        className="text-[11px] text-purple-400 hover:text-purple-300"
+                        className="text-[11px] text-purple-700 hover:text-purple-700"
                       >
                         Copy Response Headers JSON
                       </button>
                     </div>
-                    <div className="rounded-xl bg-slate-950 border border-slate-800 overflow-hidden divide-y divide-slate-800/60 font-mono text-xs">
+                    <div className="rounded-xl bg-slate-50 border border-slate-200 overflow-hidden divide-y divide-slate-100 font-mono text-xs">
                       {Object.entries(selectedLog.responseHeaders || {}).map(([key, value]) => (
-                        <div key={key} className="p-2.5 flex items-start gap-3 hover:bg-slate-900/40">
-                          <span className="font-semibold text-emerald-300 shrink-0 w-44 break-all">{key}:</span>
-                          <span className="text-slate-300 break-all">{String(value)}</span>
+                        <div key={key} className="p-2.5 flex items-start gap-3 hover:bg-white">
+                          <span className="font-semibold text-emerald-700 shrink-0 w-44 break-all">{key}:</span>
+                          <span className="text-slate-600 break-all">{String(value)}</span>
                         </div>
                       ))}
                     </div>

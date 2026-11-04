@@ -8,7 +8,7 @@ export const metadata = {
 
 export default function TermsOfServicePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 text-slate-800">
+    <div className="h-full w-full overflow-y-auto bg-gradient-to-b from-slate-50 via-white to-slate-50 text-slate-800">
       {/* Top Navigation */}
       <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3.5 sm:px-6">

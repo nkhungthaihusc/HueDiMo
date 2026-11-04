@@ -708,9 +708,9 @@ export default function MapView({
 
       {/* Thông báo hướng dẫn cấp quyền vị trí nếu người dùng từ chối */}
       {showPermissionModal && (
-        <div className="pointer-events-auto absolute top-20 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 rounded-2xl bg-amber-600/95 text-white px-4 py-2.5 shadow-2xl backdrop-blur-md text-xs sm:text-sm font-medium border border-amber-400/40 animate-in fade-in slide-in-from-top-3 duration-300 max-w-[92vw]">
+        <div className="map-permission-notice pointer-events-auto absolute z-30 flex items-center gap-3 rounded-2xl bg-amber-600/95 text-white px-4 py-2.5 shadow-2xl backdrop-blur-md text-xs sm:text-sm font-medium border border-amber-400/40 animate-in fade-in slide-in-from-top-3 duration-300 max-w-[92vw]">
           <span className="text-lg">📍</span>
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="font-bold">Ứng dụng chưa được cấp quyền vị trí</div>
             <div className="text-[11px] text-amber-100">
               Nhấp vào biểu tượng 🔒 trên thanh địa chỉ, chọn &quot;Cho phép vị trí&quot; rồi bấm Thử lại.
@@ -744,7 +744,7 @@ export default function MapView({
         <button
           type="button"
           onClick={handleRecenter}
-          className={`pointer-events-auto absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 shadow-2xl backdrop-blur-md text-xs font-bold tracking-wide transition-all duration-300 hover:scale-105 active:scale-95 border border-blue-400/40 ring-4 ring-blue-500/25 ${
+          className={`map-follow-button pointer-events-auto absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 shadow-2xl backdrop-blur-md text-xs font-bold tracking-wide transition-all duration-300 hover:scale-105 active:scale-95 border border-blue-400/40 ring-4 ring-blue-500/25 ${
             hideControls ? "opacity-0 pointer-events-none translate-y-8 scale-95 invisible" : "opacity-100 translate-y-0 scale-100 visible"
           }`}
         >
@@ -759,7 +759,7 @@ export default function MapView({
 
       {/* Cụm công cụ điều khiển Bản đồ (Zoom, Reset Hướng Bắc, Chuyển cam vị trí của tôi, Về trung tâm Huế) */}
       <div
-        className={`pointer-events-auto absolute left-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2 transition-all duration-300 ease-out ${
+        className={`map-controls pointer-events-auto absolute left-4 top-1/2 z-20 flex flex-col gap-2 transition-all duration-300 ease-out ${
           hideControls
             ? "opacity-0 pointer-events-none -translate-x-8 scale-95 invisible"
             : "opacity-100 translate-x-0 scale-100 visible"

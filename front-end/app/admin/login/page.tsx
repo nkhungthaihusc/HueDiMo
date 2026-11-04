@@ -41,11 +41,11 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 p-4 font-sans text-slate-100">
+    <div className="flex h-dvh overflow-y-auto items-center justify-center bg-slate-50 p-4 font-sans text-slate-900">
       <div className="w-full max-w-md">
         {/* Logo and Header */}
         <div className="text-center mb-8">
-          <div className="mx-auto mb-4 relative h-16 w-16 overflow-hidden rounded-2xl shadow-xl shadow-purple-900/50 ring-2 ring-purple-500/40">
+          <div className="mx-auto mb-4 relative h-16 w-16 overflow-hidden rounded-2xl shadow-sm ring-2 ring-purple-500/40">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/avatars/473616240_1779979822801506_5513169442076253620_n.jpg"
@@ -53,19 +53,19 @@ export default function AdminLoginPage() {
               className="h-full w-full object-cover"
             />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">HueDiMo Console</h1>
-          <p className="mt-1 text-xs text-purple-400 font-medium">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">HueDiMo Console</h1>
+          <p className="mt-1 text-xs text-purple-700 font-medium">
             Di sản văn hóa với hội nhập và phát triển
           </p>
-          <p className="mt-0.5 text-xs text-slate-400">
+          <p className="mt-0.5 text-xs text-slate-500">
             Hệ thống Quản trị & Điều hành Dữ liệu Du lịch Huế
           </p>
         </div>
 
         {/* Login Card */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-8 shadow-2xl backdrop-blur-xl">
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-2xl backdrop-blur-xl">
           {errorMsg && (
-            <div className="mb-6 flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3.5 text-xs font-medium text-red-400">
+            <div className="mb-6 flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3.5 text-xs font-medium text-red-600">
               <span>⚠️</span>
               <span>{errorMsg}</span>
             </div>
@@ -73,7 +73,7 @@ export default function AdminLoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600">
                 Email Quản trị
               </label>
               <input
@@ -82,13 +82,13 @@ export default function AdminLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@huedimo.vn"
-                className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950/60 px-4 py-2.5 text-sm text-white placeholder-slate-500 transition focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder-slate-500 transition focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600">
                   Mật khẩu
                 </label>
               </div>
@@ -98,14 +98,14 @@ export default function AdminLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950/60 px-4 py-2.5 text-sm text-white placeholder-slate-500 transition focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder-slate-500 transition focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
               />
             </div>
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-900/30 transition hover:bg-purple-500 disabled:opacity-50"
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-purple-500 disabled:opacity-50"
             >
               {isSubmitting ? (
                 <>
@@ -122,8 +122,8 @@ export default function AdminLoginPage() {
           </form>
 
           {/* Preset Hint */}
-          <div className="mt-6 rounded-xl border border-purple-900/30 bg-purple-950/20 p-3 text-xs text-purple-300/80">
-            <div className="font-semibold text-purple-200">Tài khoản Admin mặc định:</div>
+          <div className="mt-6 rounded-xl border border-purple-200 bg-purple-50 p-3 text-xs text-purple-700/80">
+            <div className="font-semibold text-purple-700">Tài khoản Admin mặc định:</div>
             <div className="mt-1 flex justify-between">
               <span>Email: <code>admin@huedimo.vn</code></span>
             </div>
@@ -137,7 +137,7 @@ export default function AdminLoginPage() {
         <div className="mt-6 text-center">
           <Link
             href="/"
-            className="text-xs font-medium text-slate-400 transition hover:text-slate-200"
+            className="text-xs font-medium text-slate-500 transition hover:text-slate-800"
           >
             ← Quay lại trang bản đồ du khách
           </Link>

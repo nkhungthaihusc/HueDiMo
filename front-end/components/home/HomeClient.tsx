@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { Compass, Route, Sparkles, Globe } from "lucide-react";
+import MobilePanel from "@/components/home/MobilePanel";
+import { CATEGORIES } from "@/lib/data/categories";
 import AddPlacePanel from "@/components/home/AddPlacePanel";
 import BudgetPanel from "@/components/home/BudgetPanel";
 import ItineraryBuilderPanel from "@/components/home/ItineraryBuilderPanel";
@@ -33,6 +36,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import AuthPromptModal from "@/components/auth/AuthPromptModal";
 
 export default function HomeClient() {
+  const [panelExpanded, setPanelExpanded] = useState(false);
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<CategoryId | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -122,7 +126,7 @@ export default function HomeClient() {
     [userContributedPlaces]
   );
 
-  const visiblePlaces = useMemo(() => {
+  const accessiblePlaces = useMemo(() => {
     return places.filter((p) => {
       const isApproved = !p.status || p.status === "approved";
       const isUserContributed =
@@ -132,9 +136,14 @@ export default function HomeClient() {
       // Địa điểm được hiển thị nếu đã duyệt HOẶC là địa điểm do chính user này gửi (ghim tạm lên map của user đó)
       if (!isApproved && !isUserContributed) return false;
 
-      return activeCategory ? p.category === activeCategory : true;
+      return true;
     });
-  }, [activeCategory, places, user, userContributedIds]);
+  }, [places, user, userContributedIds]);
+
+  const visiblePlaces = useMemo(
+    () => activeCategory ? accessiblePlaces.filter((place) => place.category === activeCategory) : accessiblePlaces,
+    [accessiblePlaces, activeCategory],
+  );
 
   const selectedPlace = useMemo(
     () => places.find((p) => p.id === selectedId) ?? null,
@@ -161,6 +170,7 @@ export default function HomeClient() {
   };
 
   const handleSelect = (place: Place) => {
+    setPanelExpanded(true);
     setSelectedId(place.id);
     closeOverlays();
   };
@@ -180,6 +190,7 @@ export default function HomeClient() {
       );
       return;
     }
+    setPanelExpanded(false);
     if (addMode) {
       setAddMode(false);
       setAddPosition(null);
@@ -190,6 +201,7 @@ export default function HomeClient() {
   };
 
   const handleOpenItinerary = () => {
+    setPanelExpanded(true);
     if (!user) {
       promptLogin(
         "Đăng nhập để tạo lộ trình AI",
@@ -207,6 +219,7 @@ export default function HomeClient() {
   };
 
   const handleOpenSaved = () => {
+    setPanelExpanded(true);
     if (!user) {
       promptLogin(
         "Đăng nhập để xem lộ trình đã lưu",
@@ -224,6 +237,7 @@ export default function HomeClient() {
   };
 
   const handleOpenBudget = () => {
+    setPanelExpanded(true);
     if (!user) {
       promptLogin(
         "Đăng nhập để xem dự toán ngân sách",
@@ -241,6 +255,7 @@ export default function HomeClient() {
   };
 
   const handleStartBuilder = (initial: Itinerary | null) => {
+    setPanelExpanded(true);
     if (!user) {
       promptLogin(
         "Đăng nhập để chỉnh sửa lộ trình",
@@ -255,6 +270,7 @@ export default function HomeClient() {
   };
 
   const handleOpenSavedItinerary = (saved: SavedItinerary) => {
+    setPanelExpanded(true);
     setItinerary(saved);
     setSavedListOpen(false);
     setBudgetOpen(false);
@@ -263,6 +279,7 @@ export default function HomeClient() {
   };
 
   const handleMapClick = (coord: { lat: number; lng: number }) => {
+    setPanelExpanded(true);
     setAddPosition(coord);
   };
 
@@ -274,6 +291,7 @@ export default function HomeClient() {
   };
 
   const handleGenerated = (result: Itinerary) => {
+    setPanelExpanded(true);
     // Tự động lưu lịch trình AI vào lịch sử
     const saved = saveItinerary({
       ...result,
@@ -285,13 +303,15 @@ export default function HomeClient() {
   };
 
   const handleBuilderSaved = (saved: Itinerary) => {
+    setPanelExpanded(true);
     setItinerary(saved);
     setBuilderOpen(false);
     setEditingItinerary(null);
   };
 
   const handleShowOnMap = () => {
-    // Focus route handled by MapView
+    setPanelExpanded(false);
+    setFocusRouteToken((token) => token + 1);
   };
 
   const hasCustomOverlay =
@@ -364,7 +384,7 @@ export default function HomeClient() {
   ) : null;
 
   return (
-    <main className="relative h-screen w-full overflow-hidden">
+    <main className="home-shell relative w-full overflow-hidden" data-panel-expanded={panelExpanded}>
       {/* Bản đồ nền */}
       <div className="absolute inset-0 z-0 isolate">
         <MapView
@@ -382,8 +402,8 @@ export default function HomeClient() {
       </div>
 
       {/* Overlay: thanh trên cùng */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 p-4">
-        <div className="flex flex-col gap-3">
+      <div className="home-header pointer-events-none absolute inset-x-0 top-0 z-30">
+        <div className="flex min-w-0 flex-col gap-2 md:gap-3">
           <TopBar
             isAddMode={addMode}
             onAddPlace={handleAddPlace}
@@ -399,19 +419,24 @@ export default function HomeClient() {
             }}
           />
           <div
-            className={`flex flex-col items-center gap-2 transition-all duration-300 ease-out pointer-events-none ${
+            className={`home-toolbar flex flex-col gap-2 transition-all duration-300 ease-out pointer-events-none ${
               weatherModalOpen
                 ? "-translate-y-4 opacity-0 scale-95 invisible"
                 : "translate-y-0 opacity-100 scale-100 visible"
             }`}
           >
-            <div className="w-full max-w-xl pointer-events-auto">
+            <div className="home-search w-full pointer-events-auto">
               <SearchBar
                 value={query}
                 onChange={setQuery}
                 onSelectPlace={(place) => handleSelect(place)}
               />
             </div>
+
+            <nav aria-label="Lọc loại địa điểm" className="home-categories pointer-events-auto flex w-full gap-2 overflow-x-auto no-scrollbar md:hidden">
+              <button type="button" aria-pressed={activeCategory === null} onClick={() => { setActiveCategory(null); setSelectedId(null); }} className={`category-chip ${activeCategory === null ? "is-active" : ""}`}>Tất cả</button>
+              {CATEGORIES.map((category) => <button key={category.id} type="button" aria-pressed={activeCategory === category.id} onClick={() => handleToggleCategory(category.id as CategoryId)} className={`category-chip ${activeCategory === category.id ? "is-active" : ""}`}><span aria-hidden="true">{category.emoji}</span>{category.label}</button>)}
+            </nav>
 
             {addMode && addPosition === null && (
               <span className="glass-strong pointer-events-auto rounded-full px-4 py-1.5 text-xs font-medium text-ink-700 animate-pulse">
@@ -431,18 +456,13 @@ export default function HomeClient() {
 
       {/* Overlay: panel bên phải */}
       <div
-        className={`absolute right-2 sm:right-4 left-2 sm:left-auto top-20 sm:top-24 bottom-3 sm:bottom-4 z-40 flex justify-end pointer-events-none transition-all duration-300 ease-out ${
+        className={`home-panel-position z-20 flex justify-end pointer-events-none transition-all duration-300 ease-out ${
           weatherModalOpen
             ? "translate-x-10 opacity-0 invisible"
             : "translate-x-0 opacity-100 visible"
         }`}
       >
-        <div
-          className="pointer-events-auto h-full w-full sm:w-auto flex flex-col justify-start"
-          onClick={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
-        >
+        <MobilePanel expanded={panelExpanded} onExpandedChange={setPanelExpanded} title={selectedPlace && !hasCustomOverlay ? selectedPlace.name : hasCustomOverlay ? "Hành trình của bạn" : `Khám phá Huế · ${visiblePlaces.length} địa điểm`}>
           {hasCustomOverlay ? (
             overlayPanelContent
           ) : (
@@ -457,7 +477,9 @@ export default function HomeClient() {
               )}
               <div className={`h-full w-full ${selectedPlace !== null ? "hidden" : "flex flex-col"}`}>
                 <PlaceListPanel
-                  places={visiblePlaces}
+                  places={accessiblePlaces}
+                  activeCategory={activeCategory}
+                  onCategoryChange={setActiveCategory}
                   selectedId={selectedId}
                   onSelect={handleSelect}
                   userContributedPlaces={userContributedPlaces}
@@ -467,11 +489,11 @@ export default function HomeClient() {
               </div>
             </>
           )}
-        </div>
+        </MobilePanel>
       </div>
 
       {/* Overlay: widget góc trái trên, ngang hàng dưới search */}
-      <div className="absolute left-4 top-24 z-10">
+      <div className="home-weather absolute z-10">
         <WeatherWidget
           isOpen={weatherModalOpen}
           onModalOpenChange={setWeatherModalOpen}
@@ -480,7 +502,7 @@ export default function HomeClient() {
 
       {/* Overlay: radial menu góc trái dưới */}
       <div
-        className={`absolute bottom-6 left-6 z-10 transition-all duration-300 ease-out ${
+        className={`absolute bottom-6 left-6 z-10 hidden md:block transition-all duration-300 ease-out ${
           weatherModalOpen
             ? "pointer-events-none -translate-x-10 translate-y-10 scale-90 opacity-0 invisible"
             : "pointer-events-auto translate-x-0 translate-y-0 scale-100 opacity-100 visible"
@@ -488,6 +510,13 @@ export default function HomeClient() {
       >
         <RadialMenu activeCategory={activeCategory} onToggle={handleToggleCategory} />
       </div>
+
+      <nav aria-label="Điều hướng trên điện thoại" className="mobile-navigation md:hidden">
+        <button type="button" aria-pressed={!hasCustomOverlay && !selectedPlace && panelExpanded} onClick={() => { closeOverlays(); setItinerary(null); setSelectedId(null); setPanelExpanded((expanded) => !expanded); }}><Compass size={21} /><span>Khám phá</span></button>
+        <button type="button" aria-pressed={savedListOpen} onClick={handleOpenSaved}><Route size={21} /><span>Lịch trình</span></button>
+        <button type="button" aria-pressed={showItineraryForm} onClick={handleOpenItinerary}><Sparkles size={21} /><span>Tạo với AI</span></button>
+        <button type="button" aria-pressed={communityModalOpen} onClick={() => setCommunityModalOpen(true)}><Globe size={21} /><span>Cộng đồng</span></button>
+      </nav>
 
       {/* Modals: Hồ sơ cá nhân & Bảng xếp hạng Du khách */}
       <ProfileModal
@@ -510,6 +539,7 @@ export default function HomeClient() {
         places={places}
         onClose={() => setCommunityModalOpen(false)}
         onUseItinerary={(selectedCommunityItinerary) => {
+          setPanelExpanded(true);
           setItinerary(selectedCommunityItinerary);
           setFocusRouteToken((t) => t + 1);
         }}

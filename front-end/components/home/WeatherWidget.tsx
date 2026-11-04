@@ -94,6 +94,10 @@ export default function WeatherWidget({
 
   return (
     <>
+      <button type="button" onClick={handleOpen} className="weather-widget-mobile flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm md:hidden" aria-label="Mở chi tiết thời tiết và lượng mưa Vrain">
+        <span aria-hidden="true">{cur ? weatherInfo(cur.weather_code, cur.is_day).emoji : "🌤️"}</span>
+        <span>{cur ? `${Math.round(cur.temperature_2m)}° · Huế` : "Thời tiết Huế"}</span><span aria-hidden="true">↗</span>
+      </button>
       <div
         role="button"
         tabIndex={0}
@@ -105,7 +109,7 @@ export default function WeatherWidget({
           }
         }}
         title="Bấm để xem chi tiết thời tiết & mạng lưới 52 trạm đo mưa Vrain Thừa Thiên Huế"
-        className="glass-strong pointer-events-auto flex flex-col gap-2 rounded-2xl px-3.5 py-2.5 transition-all duration-200 hover:shadow-xl hover:border-brand-400/80 hover:scale-[1.02] active:scale-[0.99] cursor-pointer group select-none"
+        className="weather-widget-desktop glass-strong pointer-events-auto hidden md:flex flex-col gap-2 rounded-2xl px-3.5 py-2.5 transition-all duration-200 hover:shadow-xl hover:border-brand-400/80 hover:scale-[1.02] active:scale-[0.99] cursor-pointer group select-none"
         aria-label="Mở chi tiết thời tiết và lượng mưa Vrain"
       >
         {/* Hàng trên: Đồng hồ, Ngày & Địa điểm */}

@@ -127,21 +127,21 @@ export default function AdminItinerariesPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between shrink-0">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Quản lý Lộ trình Du lịch</h1>
-          <p className="text-sm text-slate-400">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Quản lý Lộ trình Du lịch</h1>
+          <p className="text-sm text-slate-500">
             Kiểm duyệt lộ trình du lịch cộng đồng, quản lý chế độ công khai và đánh giá sao ({totalItineraries} lộ trình, {totalComments} đánh giá).
           </p>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex rounded-xl bg-slate-900 p-1 border border-slate-800 text-xs font-semibold">
+        <div className="flex rounded-xl bg-white p-1 border border-slate-200 text-xs font-semibold">
           <button
             type="button"
             onClick={() => setActiveTab("itineraries")}
             className={`rounded-lg px-3.5 py-1.5 transition cursor-pointer ${
               activeTab === "itineraries"
                 ? "bg-purple-600 text-white shadow-xs"
-                : "text-slate-400 hover:text-white"
+                : "text-slate-500 hover:text-white"
             }`}
           >
             🗺️ Danh sách Lộ trình ({totalItineraries})
@@ -152,7 +152,7 @@ export default function AdminItinerariesPage() {
             className={`rounded-lg px-3.5 py-1.5 transition cursor-pointer ${
               activeTab === "comments"
                 ? "bg-purple-600 text-white shadow-xs"
-                : "text-slate-400 hover:text-white"
+                : "text-slate-500 hover:text-white"
             }`}
           >
             ⭐ Đánh giá & Góp ý ({totalComments})
@@ -163,7 +163,7 @@ export default function AdminItinerariesPage() {
       {activeTab === "itineraries" ? (
         <>
           {/* Controls: Tìm kiếm & Lọc */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-slate-900/60 border border-slate-800 p-3.5 rounded-2xl shrink-0">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-white border border-slate-200 p-3.5 rounded-2xl shrink-0">
             <form onSubmit={handleSearchSubmit} className="flex flex-1 items-center gap-2">
               <div className="relative flex-1">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
@@ -172,7 +172,7 @@ export default function AdminItinerariesPage() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Tìm theo tiêu đề lộ trình, tên tác giả..."
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950 pl-10 pr-4 py-2 text-xs text-white placeholder:text-slate-500 focus:border-purple-500 focus:outline-none"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-2 text-xs text-slate-900 placeholder:text-slate-500 focus:border-purple-500 focus:outline-none"
                 />
               </div>
               <button
@@ -190,7 +190,7 @@ export default function AdminItinerariesPage() {
                   setFilterPublic(e.target.value);
                   setPage(1);
                 }}
-                className="rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-300 focus:outline-none cursor-pointer"
+                className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 focus:outline-none cursor-pointer"
               >
                 <option value="">Tất cả trạng thái</option>
                 <option value="true">🌍 Công khai (Public)</option>
@@ -198,13 +198,13 @@ export default function AdminItinerariesPage() {
               </select>
 
               {/* Phân trang */}
-              <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                <span>Trang <b className="text-white">{page}</b>/{totalItineraryPages}</span>
+              <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                <span>Trang <b className="text-slate-900">{page}</b>/{totalItineraryPages}</span>
                 <button
                   type="button"
                   disabled={page <= 1}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className="h-7 w-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30 flex items-center justify-center font-bold cursor-pointer"
+                  className="h-7 w-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-30 flex items-center justify-center font-bold cursor-pointer"
                 >
                   ‹
                 </button>
@@ -212,7 +212,7 @@ export default function AdminItinerariesPage() {
                   type="button"
                   disabled={page >= totalItineraryPages}
                   onClick={() => setPage((p) => p + 1)}
-                  className="h-7 w-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30 flex items-center justify-center font-bold cursor-pointer"
+                  className="h-7 w-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-30 flex items-center justify-center font-bold cursor-pointer"
                 >
                   ›
                 </button>
@@ -224,7 +224,7 @@ export default function AdminItinerariesPage() {
           <div className="flex-1 overflow-y-auto [scrollbar-width:thin]">
             {isLoadingItineraries ? (
               <div className="flex h-64 items-center justify-center">
-                <div className="flex flex-col items-center gap-2 text-slate-400">
+                <div className="flex flex-col items-center gap-2 text-slate-500">
                   <div className="h-7 w-7 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
                   <span className="text-xs">Đang tải danh sách lộ trình...</span>
                 </div>
@@ -232,7 +232,7 @@ export default function AdminItinerariesPage() {
             ) : itineraries.length === 0 ? (
               <div className="py-20 text-center text-slate-500">
                 <div className="text-3xl mb-2">🗺️</div>
-                <div className="text-sm font-semibold text-slate-400">Không tìm thấy lộ trình nào</div>
+                <div className="text-sm font-semibold text-slate-500">Không tìm thấy lộ trình nào</div>
                 <p className="text-xs text-slate-600 mt-1">Thử thay đổi từ khóa hoặc bộ lọc trạng thái</p>
               </div>
             ) : (
@@ -242,20 +242,20 @@ export default function AdminItinerariesPage() {
                   return (
                     <div
                       key={it.id}
-                      className="flex flex-col justify-between rounded-2xl border border-slate-800 bg-slate-900/80 p-4 shadow-sm hover:border-slate-700 transition space-y-3"
+                      className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:border-slate-200 transition space-y-3"
                     >
                       <div>
                         {/* Header card: Tác giả & Tag trạng thái */}
                         <div className="flex items-center justify-between gap-2 mb-2">
                           <div className="flex items-center gap-2 min-w-0">
-                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 text-xs font-bold text-white">
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 text-xs font-bold text-slate-900">
                               {it.author_name ? it.author_name.charAt(0).toUpperCase() : "U"}
                             </div>
                             <div className="min-w-0">
-                              <div className="text-xs font-bold text-white truncate">
+                              <div className="text-xs font-bold text-slate-900 truncate">
                                 {it.author_name || "Chưa đặt tên"}
                               </div>
-                              <div className="text-[10px] text-slate-400 truncate">
+                              <div className="text-[10px] text-slate-500 truncate">
                                 {it.author_email || ""}
                               </div>
                             </div>
@@ -263,15 +263,15 @@ export default function AdminItinerariesPage() {
 
                           <div className="flex items-center gap-1.5 shrink-0">
                             {it.rating && (
-                              <span className="flex items-center gap-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 px-1.5 py-0.5 text-[10px] font-bold text-amber-300">
+                              <span className="flex items-center gap-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">
                                 ⭐ {Number(it.rating).toFixed(1)}
                               </span>
                             )}
                             <span
                               className={`rounded-md px-2 py-0.5 text-[10px] font-bold border ${
                                 it.is_public
-                                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-                                  : "bg-slate-800 border-slate-700 text-slate-400"
+                                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700"
+                                  : "bg-slate-100 border-slate-200 text-slate-500"
                               }`}
                             >
                               {it.is_public ? "🌍 Công khai" : "🔒 Riêng tư"}
@@ -280,19 +280,19 @@ export default function AdminItinerariesPage() {
                         </div>
 
                         {/* Title & Summary */}
-                        <h3 className="text-sm font-bold text-white line-clamp-1">
+                        <h3 className="text-sm font-bold text-slate-900 line-clamp-1">
                           {it.title || "Lộ trình không tiêu đề"}
                         </h3>
-                        <p className="mt-1 text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                        <p className="mt-1 text-xs text-slate-500 line-clamp-2 leading-relaxed">
                           {it.summary || "Chưa có mô tả tóm tắt cho lịch trình này."}
                         </p>
 
                         {/* Chi tiết phụ */}
-                        <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
-                          <span className="rounded-md bg-slate-800/80 px-2 py-0.5 text-slate-300 font-medium">
+                        <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+                          <span className="rounded-md bg-slate-100 px-2 py-0.5 text-slate-600 font-medium">
                             ⏱️ {daysCount} ngày
                           </span>
-                          <span className="rounded-md bg-slate-800/80 px-2 py-0.5 text-slate-300 font-medium">
+                          <span className="rounded-md bg-slate-100 px-2 py-0.5 text-slate-600 font-medium">
                             💰 {formatVND(Number(it.total_estimated_cost || 0))}
                           </span>
                           <span>❤️ {it.likes_count || 0}</span>
@@ -302,14 +302,14 @@ export default function AdminItinerariesPage() {
                       </div>
 
                       {/* Actions footer */}
-                      <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                      <div className="pt-3 border-t border-slate-200 flex items-center justify-between gap-2">
                         <button
                           type="button"
                           onClick={() => handleToggleVisibility(it)}
                           className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
                             it.is_public
-                              ? "bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20"
-                              : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20"
+                              ? "bg-amber-500/10 border border-amber-500/30 text-amber-700 hover:bg-amber-500/20"
+                              : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 hover:bg-emerald-500/20"
                           }`}
                         >
                           <span>{it.is_public ? "Ẩn khỏi cộng đồng" : "Cho phép công khai"}</span>
@@ -325,7 +325,7 @@ export default function AdminItinerariesPage() {
                               title: it.title || "lịch trình này",
                             })
                           }
-                          className="flex items-center gap-1 rounded-xl bg-red-500/10 border border-red-500/30 px-3 py-1.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 transition cursor-pointer"
+                          className="flex items-center gap-1 rounded-xl bg-red-500/10 border border-red-500/30 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-500/20 transition cursor-pointer"
                         >
                           <span>Xóa</span>
                         </button>
@@ -340,19 +340,19 @@ export default function AdminItinerariesPage() {
       ) : (
         /* Tab Comments & Ratings */
         <div className="flex flex-1 flex-col space-y-4 min-h-0">
-          <div className="flex items-center justify-between bg-slate-900/60 border border-slate-800 p-3.5 rounded-2xl shrink-0">
-            <span className="text-xs text-slate-400">
-              Tổng số nhận xét & đánh giá sao: <b className="text-white">{totalComments}</b>
+          <div className="flex items-center justify-between bg-white border border-slate-200 p-3.5 rounded-2xl shrink-0">
+            <span className="text-xs text-slate-500">
+              Tổng số nhận xét & đánh giá sao: <b className="text-slate-900">{totalComments}</b>
             </span>
 
             {/* Phân trang comments */}
-            <div className="flex items-center gap-1.5 text-xs text-slate-400">
-              <span>Trang <b className="text-white">{commentPage}</b>/{totalCommentPages}</span>
+            <div className="flex items-center gap-1.5 text-xs text-slate-500">
+              <span>Trang <b className="text-slate-900">{commentPage}</b>/{totalCommentPages}</span>
               <button
                 type="button"
                 disabled={commentPage <= 1}
                 onClick={() => setCommentPage((p) => Math.max(1, p - 1))}
-                className="h-7 w-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30 flex items-center justify-center font-bold cursor-pointer"
+                className="h-7 w-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-30 flex items-center justify-center font-bold cursor-pointer"
               >
                 ‹
               </button>
@@ -360,7 +360,7 @@ export default function AdminItinerariesPage() {
                 type="button"
                 disabled={commentPage >= totalCommentPages}
                 onClick={() => setCommentPage((p) => p + 1)}
-                className="h-7 w-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30 flex items-center justify-center font-bold cursor-pointer"
+                className="h-7 w-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-30 flex items-center justify-center font-bold cursor-pointer"
               >
                 ›
               </button>
@@ -370,7 +370,7 @@ export default function AdminItinerariesPage() {
           <div className="flex-1 overflow-y-auto [scrollbar-width:thin]">
             {isLoadingComments ? (
               <div className="flex h-64 items-center justify-center">
-                <div className="flex flex-col items-center gap-2 text-slate-400">
+                <div className="flex flex-col items-center gap-2 text-slate-500">
                   <div className="h-7 w-7 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
                   <span className="text-xs">Đang tải danh sách đánh giá...</span>
                 </div>
@@ -378,21 +378,21 @@ export default function AdminItinerariesPage() {
             ) : comments.length === 0 ? (
               <div className="py-20 text-center text-slate-500">
                 <div className="text-3xl mb-2">💬</div>
-                <div className="text-sm font-semibold text-slate-400">Chưa có nhận xét hay đánh giá nào</div>
+                <div className="text-sm font-semibold text-slate-500">Chưa có nhận xét hay đánh giá nào</div>
               </div>
             ) : (
               <div className="space-y-3">
                 {comments.map((c) => (
                   <div
                     key={c.id}
-                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-900/80 p-4 shadow-sm"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
                   >
                     <div className="space-y-1.5 flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-bold text-white">{c.user_name || "Du khách"}</span>
-                        <span className="text-[11px] text-slate-400">({c.user_email || "user"})</span>
+                        <span className="text-xs font-bold text-slate-900">{c.user_name || "Du khách"}</span>
+                        <span className="text-[11px] text-slate-500">({c.user_email || "user"})</span>
                         {c.rating && (
-                          <span className="flex items-center text-xs text-amber-400 font-bold ml-1">
+                          <span className="flex items-center text-xs text-amber-700 font-bold ml-1">
                             {"★".repeat(c.rating)}{"☆".repeat(5 - c.rating)} ({c.rating}/5 sao)
                           </span>
                         )}
@@ -401,13 +401,13 @@ export default function AdminItinerariesPage() {
                         </span>
                       </div>
 
-                      <p className="text-xs text-slate-300 leading-relaxed bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/60">
+                      <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                         {c.content}
                       </p>
 
-                      <div className="text-[11px] text-purple-400 flex items-center gap-1">
+                      <div className="text-[11px] text-purple-700 flex items-center gap-1">
                         <span>Lộ trình:</span>
-                        <span className="font-semibold text-slate-200">
+                        <span className="font-semibold text-slate-800">
                           {c.itinerary_title || `ID: ${c.itinerary_id}`}
                         </span>
                       </div>
@@ -423,7 +423,7 @@ export default function AdminItinerariesPage() {
                           title: `đánh giá của "${c.user_name || "du khách"}"`,
                         })
                       }
-                      className="self-end sm:self-center shrink-0 rounded-xl bg-red-500/10 border border-red-500/30 px-3 py-1.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 transition cursor-pointer"
+                      className="self-end sm:self-center shrink-0 rounded-xl bg-red-500/10 border border-red-500/30 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-500/20 transition cursor-pointer"
                     >
                       Xóa nhận xét
                     </button>

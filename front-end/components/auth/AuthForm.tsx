@@ -132,12 +132,12 @@ export default function AuthForm({ mode }: AuthFormProps) {
   };
 
   return (
-    <div className="w-full max-w-[420px] rounded-[32px] border border-purple-100/90 bg-white/95 p-7 sm:p-9 shadow-[0_20px_60px_-12px_rgba(109,40,217,0.12)] backdrop-blur-2xl transition-all ring-1 ring-purple-500/5">
+    <div className="w-full max-w-[420px] rounded-2xl border border-slate-200 bg-white p-5 sm:p-8 shadow-sm">
       {/* Tab Switcher mượt mà giữa Đăng nhập và Đăng ký */}
       <div className="mb-6 flex rounded-2xl bg-purple-100/50 border border-purple-200/50 p-1 text-xs font-semibold text-purple-900/70">
         <Link
           href="/login"
-          className={`flex-1 rounded-xl py-2 text-center transition-all ${
+          className={`flex-1 rounded-xl py-3 text-center transition-all ${
             isLogin
               ? "bg-white text-brand-700 shadow-xs font-bold ring-1 ring-purple-200/60"
               : "hover:text-purple-900"
@@ -147,7 +147,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
         </Link>
         <Link
           href="/register"
-          className={`flex-1 rounded-xl py-2 text-center transition-all ${
+          className={`flex-1 rounded-xl py-3 text-center transition-all ${
             !isLogin
               ? "bg-white text-brand-700 shadow-xs font-bold ring-1 ring-purple-200/60"
               : "hover:text-purple-900"
@@ -249,7 +249,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Nguyễn Văn A"
                 autoComplete="name"
-                className="w-full bg-transparent px-3 py-2.5 text-xs text-slate-900 outline-none placeholder:text-slate-400"
+                className="w-full bg-transparent px-3 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400"
               />
             </div>
           </div>
@@ -270,7 +270,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               autoComplete="email"
-              className="w-full bg-transparent px-3 py-2.5 text-xs text-slate-900 outline-none placeholder:text-slate-400"
+              className="w-full bg-transparent px-3 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400"
             />
           </div>
         </div>
@@ -297,7 +297,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Tối thiểu 6 ký tự"
               autoComplete={isLogin ? "current-password" : "new-password"}
-              className="w-full bg-transparent px-3 py-2.5 pr-10 text-xs text-slate-900 outline-none placeholder:text-slate-400"
+              className="w-full bg-transparent px-3 py-2.5 pr-10 text-sm text-slate-900 outline-none placeholder:text-slate-400"
             />
             <button
               type="button"

@@ -238,9 +238,8 @@ export default function WeatherDetailModal({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center pt-24 sm:pt-28 pb-6 px-4 sm:px-6 md:px-8 bg-ink-900/50 backdrop-blur-md transition-all duration-200 ease-out ${
-        isClosing ? "opacity-0 pointer-events-none" : "opacity-100 animate-in fade-in"
-      }`}
+      className={`home-modal fixed inset-0 z-50 flex items-center justify-center pt-24 sm:pt-28 pb-6 px-4 sm:px-6 md:px-8 bg-ink-900/50 backdrop-blur-md transition-all duration-200 ease-out ${isClosing ? "opacity-0 pointer-events-none" : "opacity-100 animate-in fade-in"
+        }`}
       role="dialog"
       aria-modal="true"
       aria-labelledby="weather-modal-title"
@@ -249,11 +248,10 @@ export default function WeatherDetailModal({
       }}
     >
       <div
-        className={`glass-strong relative flex flex-col w-full max-w-4xl lg:max-w-5xl max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-8.5rem)] rounded-3xl border border-white/80 shadow-2xl overflow-hidden transition-all duration-300 ease-out ${
-          isClosing
+        className={`glass-strong relative flex flex-col w-full max-w-4xl lg:max-w-5xl max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-8.5rem)] rounded-3xl border border-white/80 shadow-2xl overflow-hidden transition-all duration-300 ease-out ${isClosing
             ? "opacity-0 scale-95 translate-y-3 pointer-events-none"
             : "opacity-100 scale-100 translate-y-0 animate-in zoom-in-95"
-        }`}
+          }`}
       >
         {/* Header bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/60 bg-white/60 px-5 py-3.5 backdrop-blur-md">
@@ -269,8 +267,8 @@ export default function WeatherDetailModal({
                   {activeTab === "vwater"
                     ? "Mực nước sông & Cảnh báo ngập lụt Huế"
                     : activeTab === "forecast"
-                    ? "Dự báo thời tiết & Khám phá Cố Đô"
-                    : "Thời tiết & Mạng lưới mưa Thừa Thiên Huế"}
+                      ? "Dự báo thời tiết & Khám phá Cố Đô"
+                      : "Thời tiết & Mạng lưới mưa Thừa Thiên Huế"}
                 </h2>
                 <span className="relative flex h-2.5 w-2.5">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
@@ -335,17 +333,15 @@ export default function WeatherDetailModal({
           <button
             type="button"
             onClick={() => setActiveTab("vrain")}
-            className={`relative flex-1 flex items-center justify-center gap-1.5 py-2 px-2 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-200 cursor-pointer ${
-              activeTab === "vrain"
+            className={`relative flex-1 flex items-center justify-center gap-1.5 py-2 px-2 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-200 cursor-pointer ${activeTab === "vrain"
                 ? "bg-white text-brand-700 font-bold shadow-sm ring-1 ring-black/5"
                 : "text-ink-600 hover:text-ink-900 hover:bg-white/40"
-            }`}
+              }`}
           >
             <span>🌧️ Mưa Vrain</span>
             <span
-              className={`rounded-full px-1.5 py-0.5 text-[10px] sm:text-[11px] font-bold ${
-                activeTab === "vrain" ? "bg-brand-600 text-white" : "bg-black/5 text-ink-600"
-              }`}
+              className={`rounded-full px-1.5 py-0.5 text-[10px] sm:text-[11px] font-bold ${activeTab === "vrain" ? "bg-brand-600 text-white" : "bg-black/5 text-ink-600"
+                }`}
             >
               {vrainData?.stations.length ?? 52}
             </span>
@@ -354,17 +350,15 @@ export default function WeatherDetailModal({
           <button
             type="button"
             onClick={() => setActiveTab("vwater")}
-            className={`relative flex-1 flex items-center justify-center gap-1.5 py-2 px-2 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-200 cursor-pointer ${
-              activeTab === "vwater"
+            className={`relative flex-1 flex items-center justify-center gap-1.5 py-2 px-2 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-200 cursor-pointer ${activeTab === "vwater"
                 ? "bg-white text-brand-700 font-bold shadow-sm ring-1 ring-black/5"
                 : "text-ink-600 hover:text-ink-900 hover:bg-white/40"
-            }`}
+              }`}
           >
             <span>🌊 Mực nước & Ngập</span>
             <span
-              className={`rounded-full px-1.5 py-0.5 text-[10px] sm:text-[11px] font-bold ${
-                activeTab === "vwater" ? "bg-sky-600 text-white" : "bg-black/5 text-ink-600"
-              }`}
+              className={`rounded-full px-1.5 py-0.5 text-[10px] sm:text-[11px] font-bold ${activeTab === "vwater" ? "bg-sky-600 text-white" : "bg-black/5 text-ink-600"
+                }`}
             >
               {vwaterData?.stations.length ?? 17}
             </span>
@@ -379,11 +373,10 @@ export default function WeatherDetailModal({
           <button
             type="button"
             onClick={() => setActiveTab("forecast")}
-            className={`relative flex-1 flex items-center justify-center gap-1.5 py-2 px-2 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-200 cursor-pointer ${
-              activeTab === "forecast"
+            className={`relative flex-1 flex items-center justify-center gap-1.5 py-2 px-2 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-200 cursor-pointer ${activeTab === "forecast"
                 ? "bg-white text-brand-700 font-bold shadow-sm ring-1 ring-black/5"
                 : "text-ink-600 hover:text-ink-900 hover:bg-white/40"
-            }`}
+              }`}
           >
             <span>☀️ Dự báo Du lịch</span>
             {cur && (
@@ -462,7 +455,7 @@ export default function WeatherDetailModal({
                         </span>
                         <span className="text-xs font-semibold text-emerald-600">mm</span>
                       </div>
-                      <div className="text-xs font-medium text-ink-600 mt-0.5">Toàn tỉnh Thừa Thiên Huế</div>
+                      <div className="text-xs font-medium text-ink-600 mt-0.5">Toàn Thành Phố Huế</div>
                     </div>
                     <span className="text-[10px] text-emerald-800 bg-emerald-100/80 px-1.5 py-0.5 rounded-md w-fit font-medium">
                       52 trạm tự động
@@ -756,8 +749,8 @@ export default function WeatherDetailModal({
                     <span className="font-bold">
                       {vwaterData?.summary?.perfumeriverDelta !== null && vwaterData?.summary?.perfumeriverDelta !== undefined
                         ? (vwaterData.summary.perfumeriverDelta > 0 ? "+" : "") +
-                          vwaterData.summary.perfumeriverDelta.toFixed(2) +
-                          "m"
+                        vwaterData.summary.perfumeriverDelta.toFixed(2) +
+                        "m"
                         : "0.00m"}
                     </span>
                   </div>
@@ -794,8 +787,8 @@ export default function WeatherDetailModal({
                     <span className="font-bold">
                       {vwaterData?.summary?.maxStation?.deltaDepth !== null && vwaterData?.summary?.maxStation?.deltaDepth !== undefined
                         ? (vwaterData.summary.maxStation.deltaDepth > 0 ? "+" : "") +
-                          vwaterData.summary.maxStation.deltaDepth.toFixed(2) +
-                          "m"
+                        vwaterData.summary.maxStation.deltaDepth.toFixed(2) +
+                        "m"
                         : "0.00m"}
                     </span>
                   </div>
@@ -803,26 +796,23 @@ export default function WeatherDetailModal({
 
                 {/* Card 3: Điểm ngập đô thị */}
                 <div
-                  className={`rounded-2xl border p-3.5 sm:p-4 flex flex-col justify-between shadow-2xs hover:shadow-sm transition ${
-                    (vwaterData?.summary?.floodingPoints ?? 0) > 0
+                  className={`rounded-2xl border p-3.5 sm:p-4 flex flex-col justify-between shadow-2xs hover:shadow-sm transition ${(vwaterData?.summary?.floodingPoints ?? 0) > 0
                       ? "bg-gradient-to-br from-red-500/10 via-white/80 to-amber-500/10 border-red-200/70"
                       : "bg-gradient-to-br from-emerald-500/10 via-white/80 to-teal-500/10 border-emerald-200/70"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <span
-                      className={`text-xs font-semibold flex items-center gap-1.5 ${
-                        (vwaterData?.summary?.floodingPoints ?? 0) > 0 ? "text-red-800" : "text-emerald-800"
-                      }`}
+                      className={`text-xs font-semibold flex items-center gap-1.5 ${(vwaterData?.summary?.floodingPoints ?? 0) > 0 ? "text-red-800" : "text-emerald-800"
+                        }`}
                     >
                       <span>🏙️</span> Ngập đô thị
                     </span>
                     <span
-                      className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${
-                        (vwaterData?.summary?.floodingPoints ?? 0) > 0
+                      className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${(vwaterData?.summary?.floodingPoints ?? 0) > 0
                           ? "bg-red-100 text-red-700 animate-pulse border border-red-200"
                           : "bg-emerald-100 text-emerald-700"
-                      }`}
+                        }`}
                     >
                       {(vwaterData?.summary?.floodingPoints ?? 0) > 0 ? "Cảnh báo" : "An toàn"}
                     </span>
@@ -830,9 +820,8 @@ export default function WeatherDetailModal({
                   <div className="my-2.5">
                     <div className="flex items-baseline gap-1">
                       <span
-                        className={`text-2xl sm:text-3xl font-black tracking-tight ${
-                          (vwaterData?.summary?.floodingPoints ?? 0) > 0 ? "text-red-600" : "text-emerald-700"
-                        }`}
+                        className={`text-2xl sm:text-3xl font-black tracking-tight ${(vwaterData?.summary?.floodingPoints ?? 0) > 0 ? "text-red-600" : "text-emerald-700"
+                          }`}
                       >
                         {vwaterData?.summary?.floodingPoints ?? 0}
                       </span>
@@ -848,11 +837,10 @@ export default function WeatherDetailModal({
                     </div>
                   </div>
                   <div
-                    className={`flex items-center justify-between text-[10px] font-medium rounded-lg px-2 py-1 ${
-                      (vwaterData?.summary?.floodingPoints ?? 0) > 0
+                    className={`flex items-center justify-between text-[10px] font-medium rounded-lg px-2 py-1 ${(vwaterData?.summary?.floodingPoints ?? 0) > 0
                         ? "text-red-800 bg-red-50/80"
                         : "text-emerald-800 bg-emerald-50/80"
-                    }`}
+                      }`}
                   >
                     <span>Tình trạng:</span>
                     <span className="font-bold">
@@ -879,7 +867,7 @@ export default function WeatherDetailModal({
                       <span className="text-xs font-bold text-brand-600">trạm</span>
                     </div>
                     <div className="text-xs font-bold text-ink-900 mt-1 leading-snug">Mạng lưới IoT Đô thị</div>
-                    <div className="text-[11px] text-ink-500">Toàn tỉnh Thừa Thiên Huế</div>
+                    <div className="text-[11px] text-ink-500">Toàn Thành Phố Huế</div>
                   </div>
                   <div className="flex items-center justify-between text-[10px] font-medium text-brand-800 bg-brand-50/80 rounded-lg px-2 py-1">
                     <span>Phân loại:</span>
@@ -930,11 +918,10 @@ export default function WeatherDetailModal({
                   <button
                     type="button"
                     onClick={() => setWaterFilter("all")}
-                    className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
-                      waterFilter === "all"
+                    className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${waterFilter === "all"
                         ? "bg-brand-600 text-white shadow-sm"
                         : "bg-white/80 text-ink-600 hover:bg-white border border-ink-100"
-                    }`}
+                      }`}
                   >
                     Tất cả ({vwaterData?.stations.length ?? 17})
                   </button>
@@ -942,11 +929,10 @@ export default function WeatherDetailModal({
                   <button
                     type="button"
                     onClick={() => setWaterFilter("river")}
-                    className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
-                      waterFilter === "river"
+                    className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${waterFilter === "river"
                         ? "bg-sky-600 text-white shadow-sm"
                         : "bg-white/80 text-sky-800 hover:bg-white border border-sky-200/80"
-                    }`}
+                      }`}
                   >
                     🌊 Mực nước sông ({vwaterData?.summary?.riverCount ?? 7})
                   </button>
@@ -954,11 +940,10 @@ export default function WeatherDetailModal({
                   <button
                     type="button"
                     onClick={() => setWaterFilter("flood")}
-                    className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
-                      waterFilter === "flood"
+                    className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${waterFilter === "flood"
                         ? "bg-indigo-600 text-white shadow-sm"
                         : "bg-white/80 text-indigo-800 hover:bg-white border border-indigo-200/80"
-                    }`}
+                      }`}
                   >
                     🏙️ Điểm đo ngập đô thị ({vwaterData?.summary?.floodCount ?? 10})
                   </button>
@@ -967,11 +952,10 @@ export default function WeatherDetailModal({
                     <button
                       type="button"
                       onClick={() => setWaterFilter("flooding")}
-                      className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-                        waterFilter === "flooding"
+                      className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${waterFilter === "flooding"
                           ? "bg-red-600 text-white shadow-sm"
                           : "bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
-                      }`}
+                        }`}
                     >
                       <span className="relative flex h-2 w-2">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -1038,13 +1022,12 @@ export default function WeatherDetailModal({
                               {/* Badges */}
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <span
-                                  className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
-                                    isRiver
+                                  className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${isRiver
                                       ? "bg-sky-100 text-sky-800 border border-sky-200/60"
                                       : item.waterStationType === "flood_1m5"
-                                      ? "bg-purple-100 text-purple-800 border border-purple-200/60"
-                                      : "bg-indigo-100 text-indigo-800 border border-indigo-200/60"
-                                  }`}
+                                        ? "bg-purple-100 text-purple-800 border border-purple-200/60"
+                                        : "bg-indigo-100 text-indigo-800 border border-indigo-200/60"
+                                    }`}
                                 >
                                   {item.typeLabel}
                                 </span>
@@ -1095,13 +1078,12 @@ export default function WeatherDetailModal({
                               {item.currDepth !== null ? (
                                 <div className="flex items-baseline justify-end gap-0.5 mt-0.5">
                                   <span
-                                    className={`text-2xl sm:text-3xl font-black tracking-tight ${
-                                      isFlooding
+                                    className={`text-2xl sm:text-3xl font-black tracking-tight ${isFlooding
                                         ? "text-red-600"
                                         : isRiver
-                                        ? "text-sky-700"
-                                        : "text-emerald-700"
-                                    }`}
+                                          ? "text-sky-700"
+                                          : "text-emerald-700"
+                                      }`}
                                   >
                                     {item.currDepth.toFixed(2)}
                                   </span>
@@ -1149,13 +1131,12 @@ export default function WeatherDetailModal({
                               <div className="px-1">
                                 <span className="text-[10px] font-medium text-ink-500 block">Chênh lệch</span>
                                 <span
-                                  className={`text-xs sm:text-sm font-bold ${
-                                    (item.deltaDepth ?? 0) > 0
+                                  className={`text-xs sm:text-sm font-bold ${(item.deltaDepth ?? 0) > 0
                                       ? "text-amber-600"
                                       : (item.deltaDepth ?? 0) < 0
-                                      ? "text-emerald-600"
-                                      : "text-ink-700"
-                                  }`}
+                                        ? "text-emerald-600"
+                                        : "text-ink-700"
+                                    }`}
                                 >
                                   {item.deltaDepth !== null
                                     ? `${(item.deltaDepth ?? 0) > 0 ? "+" : ""}${item.deltaDepth.toFixed(2)} m`
@@ -1447,23 +1428,22 @@ export default function WeatherDetailModal({
               )}
             </span>
             <span
-              className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
-                activeTab === "vwater"
+              className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${activeTab === "vwater"
                   ? vwaterData?.success
                     ? "bg-sky-100 text-sky-800"
                     : "bg-amber-100 text-amber-800"
                   : vrainData?.source === "live"
-                  ? "bg-emerald-100 text-emerald-800"
-                  : "bg-amber-100 text-amber-800"
-              }`}
+                    ? "bg-emerald-100 text-emerald-800"
+                    : "bg-amber-100 text-amber-800"
+                }`}
             >
               {activeTab === "vwater"
                 ? vwaterData?.success
                   ? "VFASS Trực Tuyến"
                   : "Đang Đồng Bộ"
                 : vrainData?.source === "live"
-                ? "Dữ liệu Trực tiếp"
-                : "Dữ liệu Dự phòng"}
+                  ? "Dữ liệu Trực tiếp"
+                  : "Dữ liệu Dự phòng"}
             </span>
           </div>
 
@@ -1471,8 +1451,8 @@ export default function WeatherDetailModal({
             {activeTab === "vwater" && vwaterData?.timestamp
               ? `Cập nhật: ${new Date(vwaterData.timestamp).toLocaleTimeString("vi-VN")}`
               : vrainData?.updatedAt
-              ? `Cập nhật: ${new Date(vrainData.updatedAt).toLocaleTimeString("vi-VN")}`
-              : ""}
+                ? `Cập nhật: ${new Date(vrainData.updatedAt).toLocaleTimeString("vi-VN")}`
+                : ""}
           </span>
         </div>
       </div>

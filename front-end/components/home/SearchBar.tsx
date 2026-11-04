@@ -107,7 +107,8 @@ export default function SearchBar({
         )}
 
         <input
-          type="text"
+          type="search"
+          aria-label="Tìm địa điểm tại Huế"
           value={value}
           onFocus={() => {
             setFocused(true);
@@ -119,7 +120,7 @@ export default function SearchBar({
             setShowDropdown(true);
           }}
           placeholder="Tìm kiếm danh lam, lăng tẩm, món ăn ở Huế..."
-          className="w-full bg-transparent text-ink-900 outline-none placeholder:text-ink-500 text-sm"
+          className="min-w-0 w-full bg-transparent text-ink-900 outline-none placeholder:text-ink-500 text-sm"
         />
 
         {value && (
@@ -140,7 +141,7 @@ export default function SearchBar({
 
       {/* Suggested 5 Places Dropdown */}
       {showDropdown && debouncedQuery.trim().length > 0 && (
-        <div className="absolute left-0 right-0 top-full mt-2 overflow-hidden rounded-2xl border border-white/40 bg-white/95 p-2 shadow-2xl backdrop-blur-xl z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute left-0 right-0 top-full mt-2 max-h-[45dvh] overflow-y-auto rounded-2xl border border-white/40 bg-white/95 p-2 shadow-2xl backdrop-blur-xl z-50 animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-ink-500 flex items-center justify-between border-b border-gray-100">
             <span>Gợi ý địa điểm hàng đầu</span>
             <span className="text-[10px] text-brand-600 font-normal">Tối đa 5 kết quả</span>

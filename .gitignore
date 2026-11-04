@@ -6,3 +6,10 @@ node_modules
 .claude
 .opencode
 /docs
+# Local credentials; only blank templates belong in Git.
+.env*
+!.env.example
+!.env.local.example
+application-local.properties
+application-local.yml
+application-local.yaml

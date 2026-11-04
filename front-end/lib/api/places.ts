@@ -90,8 +90,8 @@ export async function contributePlace(data: Partial<Place>): Promise<ContributeP
   }
 
   return {
-    place: normalizePlace(json.data?.place),
-    message: json.data?.message || "Đóng góp địa điểm thành công!",
+    place: normalizePlace(json.data?.place || json.data),
+    message: json.data?.message || json.message || "Đóng góp địa điểm thành công!",
   };
 }
 

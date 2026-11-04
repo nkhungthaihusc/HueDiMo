@@ -445,13 +445,13 @@ export default function PlaceDetailPanel({
   return (
     <>
       <div
-        className={`glass-strong pointer-events-auto flex h-full w-full max-w-[calc(100vw-1rem)] sm:w-[410px] sm:max-w-[410px] flex-col overflow-hidden rounded-3xl border border-white/40 shadow-2xl backdrop-blur-xl transition-all duration-200 ease-out ${isClosing
+        className={`place-detail-panel glass-strong pointer-events-auto flex h-full w-full max-w-[calc(100vw-1rem)] sm:w-[410px] sm:max-w-[410px] flex-col overflow-hidden rounded-3xl border border-white/40 shadow-2xl backdrop-blur-xl transition-all duration-200 ease-out ${isClosing
           ? "opacity-0 translate-x-10 scale-95 pointer-events-none"
           : "opacity-100 translate-x-0 scale-100 animate-in fade-in slide-in-from-right-4"
           }`}
       >
         {/* Top Hero: Image Slider hoặc Gradient Banner */}
-        <div className="relative h-60 w-full shrink-0 overflow-hidden bg-ink-900 select-none">
+        <div className="place-detail-hero relative h-60 w-full shrink-0 overflow-hidden bg-ink-900 select-none">
           {images.length > 0 && !heroImageError ? (
             <div
               className="group relative h-full w-full cursor-pointer"
@@ -745,7 +745,7 @@ export default function PlaceDetailPanel({
         </div>
 
         {/* Nội dung cuộn mượt mà */}
-        <div className="flex-1 overflow-y-auto overscroll-contain no-scrollbar p-4 space-y-4">
+        <div className="place-detail-content flex-1 overflow-y-auto overscroll-contain no-scrollbar p-4 space-y-4">
           {activeTab === "info" ? (
             <div key="tab-info" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out">
               {/* Mô tả giới thiệu */}

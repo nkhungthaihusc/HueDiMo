@@ -1,14 +1,6 @@
 {
-    "configurations": [
-        {
-            "type": "java",
-            "name": "Spring Boot-BackendSpringApplication<backend-spring>",
-            "request": "launch",
-            "cwd": "${workspaceFolder}",
-            "mainClass": "com.huedimo.BackendSpringApplication",
-            "projectName": "backend-spring",
-            "args": "",
-            "envFile": "${workspaceFolder}/.env"
-        }
-    ]
+    // Cấu hình launch đã được để trống để VS Code không tự động kích hoạt Spring Boot chạy ngầm.
+    // Khi muốn khởi động server, bạn hãy chạy file run.bat hoặc run.sh trong terminal.
+    "version": "0.2.0",
+    "configurations": []
 }

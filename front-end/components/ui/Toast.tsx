@@ -295,7 +295,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {/* Vị trí cố định ở góc trên bên phải màn hình */}
       <aside
         aria-live="assertive"
-        className="pointer-events-none fixed top-4 right-4 z-[99999] flex w-full max-w-sm flex-col gap-2.5 p-2 sm:p-0"
+        className="pointer-events-none fixed top-[max(1rem,env(safe-area-inset-top))] right-3 left-3 sm:left-auto sm:right-4 z-[99999] flex sm:w-full sm:max-w-sm flex-col gap-2.5 p-2 sm:p-0"
       >
         {toasts.map((item) => (
           <ToastCard key={item.id} item={item} onClose={removeToast} />
