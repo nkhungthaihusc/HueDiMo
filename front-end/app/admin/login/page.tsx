@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { AdminThemeToggle } from "@/components/admin/AdminThemeProvider";
 
 export default function AdminLoginPage() {
   const { login } = useAuth();
@@ -41,8 +42,9 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="flex h-dvh overflow-y-auto items-center justify-center bg-slate-50 p-4 font-sans text-slate-900">
-      <div className="w-full max-w-md">
+    <div className="relative flex h-dvh overflow-y-auto items-center justify-center bg-admin-canvas p-4 font-sans text-admin-strong">
+      <div className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))]"><AdminThemeToggle /></div>
+      <div className="w-full max-w-md py-16">
         {/* Logo and Header */}
         <div className="text-center mb-8">
           <div className="mx-auto mb-4 relative h-16 w-16 overflow-hidden rounded-2xl shadow-sm ring-2 ring-purple-500/40">
@@ -53,27 +55,27 @@ export default function AdminLoginPage() {
               className="h-full w-full object-cover"
             />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">HueDiMo Console</h1>
-          <p className="mt-1 text-xs text-purple-700 font-medium">
+          <h1 className="text-2xl font-bold tracking-tight text-admin-strong">HueDiMo Console</h1>
+          <p className="mt-1 text-xs text-purple-700 dark:text-purple-300 font-medium">
             Di sản văn hóa với hội nhập và phát triển
           </p>
-          <p className="mt-0.5 text-xs text-slate-500">
+          <p className="mt-0.5 text-xs text-admin-subtle">
             Hệ thống Quản trị & Điều hành Dữ liệu Du lịch Huế
           </p>
         </div>
 
         {/* Login Card */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-2xl backdrop-blur-xl">
+        <div className="rounded-2xl border border-admin-border bg-admin-surface p-8 shadow-2xl backdrop-blur-xl">
           {errorMsg && (
-            <div className="mb-6 flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3.5 text-xs font-medium text-red-600">
+            <div className="mb-6 flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3.5 text-xs font-medium text-red-600 dark:text-red-300">
               <span>⚠️</span>
               <span>{errorMsg}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="admin-login-form space-y-4">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-admin-body">
                 Email Quản trị
               </label>
               <input
@@ -82,13 +84,13 @@ export default function AdminLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@huedimo.vn"
-                className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder-slate-500 transition focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                className="mt-1.5 w-full rounded-xl border border-admin-border bg-admin-canvas px-4 py-2.5 text-sm text-admin-strong placeholder-admin-subtle transition focus:border-slate-400 focus:outline-none"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-admin-body">
                   Mật khẩu
                 </label>
               </div>
@@ -98,7 +100,7 @@ export default function AdminLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder-slate-500 transition focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                className="mt-1.5 w-full rounded-xl border border-admin-border bg-admin-canvas px-4 py-2.5 text-sm text-admin-strong placeholder-admin-subtle transition focus:border-slate-400 focus:outline-none"
               />
             </div>
 
@@ -122,8 +124,8 @@ export default function AdminLoginPage() {
           </form>
 
           {/* Preset Hint */}
-          <div className="mt-6 rounded-xl border border-purple-200 bg-purple-50 p-3 text-xs text-purple-700/80">
-            <div className="font-semibold text-purple-700">Tài khoản Admin mặc định:</div>
+          <div className="mt-6 rounded-xl border border-purple-200 bg-purple-50 dark:bg-purple-950/50 p-3 text-xs text-purple-700/80 dark:text-purple-300">
+            <div className="font-semibold text-purple-700 dark:text-purple-300">Tài khoản Admin mặc định:</div>
             <div className="mt-1 flex justify-between">
               <span>Email: <code>admin@huedimo.vn</code></span>
             </div>
@@ -137,7 +139,7 @@ export default function AdminLoginPage() {
         <div className="mt-6 text-center">
           <Link
             href="/"
-            className="text-xs font-medium text-slate-500 transition hover:text-slate-800"
+            className="text-xs font-medium text-admin-subtle transition hover:text-admin-strong"
           >
             ← Quay lại trang bản đồ du khách
           </Link>

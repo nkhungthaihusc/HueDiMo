@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect, type FormEvent } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { supabase } from "@/lib/supabase/client";
+import { getOAuthRedirectUrl } from "@/lib/auth/oauth";
 import { toast } from "@/components/ui/Toast";
 import { Mail, Lock, User as UserIcon, Eye, EyeOff, ArrowRight } from "lucide-react";
 
@@ -83,7 +84,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
     try {
       setGoogleLoading(true);
       setError(null);
-      const redirectTo = `${window.location.origin}/auth/callback`;
+      const redirectTo = getOAuthRedirectUrl(window.location.origin);
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
@@ -111,7 +112,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
     try {
       setFacebookLoading(true);
       setError(null);
-      const redirectTo = `${window.location.origin}/auth/callback`;
+      const redirectTo = getOAuthRedirectUrl(window.location.origin);
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "facebook",
         options: {
@@ -232,13 +233,13 @@ export default function AuthForm({ mode }: AuthFormProps) {
       </div>
 
       {/* Form nhập thông tin */}
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+      <form onSubmit={handleSubmit} className="auth-form flex flex-col gap-3.5">
         {!isLogin && (
           <div>
             <label className="mb-1.5 block text-xs font-semibold text-slate-700">
               Họ và tên
             </label>
-            <div className="relative flex items-center rounded-2xl border border-purple-100/90 bg-purple-50/25 transition-all focus-within:border-brand-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-brand-500/10">
+            <div className="relative flex items-center rounded-2xl border border-purple-100/90 bg-purple-50/25 transition-all focus-within:border-slate-400 focus-within:bg-white">
               <span className="pl-3.5 text-purple-400">
                 <UserIcon className="h-4 w-4" />
               </span>
@@ -259,7 +260,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
           <label className="mb-1.5 block text-xs font-semibold text-slate-700">
             Địa chỉ Email
           </label>
-          <div className="relative flex items-center rounded-2xl border border-purple-100/90 bg-purple-50/25 transition-all focus-within:border-brand-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-brand-500/10">
+          <div className="relative flex items-center rounded-2xl border border-purple-100/90 bg-purple-50/25 transition-all focus-within:border-slate-400 focus-within:bg-white">
             <span className="pl-3.5 text-purple-400">
               <Mail className="h-4 w-4" />
             </span>
@@ -286,7 +287,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
               </span>
             )}
           </div>
-          <div className="relative flex items-center rounded-2xl border border-purple-100/90 bg-purple-50/25 transition-all focus-within:border-brand-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-brand-500/10">
+          <div className="relative flex items-center rounded-2xl border border-purple-100/90 bg-purple-50/25 transition-all focus-within:border-slate-400 focus-within:bg-white">
             <span className="pl-3.5 text-purple-400">
               <Lock className="h-4 w-4" />
             </span>

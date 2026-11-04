@@ -1,8 +1,22 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-admin-theme="dark"], [data-admin-theme="dark"] *));
+
 :root {
   --background: #ffffff;
   --foreground: #1e1b2e;
+}
+
+@theme inline {
+  --color-admin-canvas: var(--admin-canvas);
+  --color-admin-surface: var(--admin-surface);
+  --color-admin-muted: var(--admin-muted);
+  --color-admin-border: var(--admin-border);
+  --color-admin-strong: var(--admin-strong);
+  --color-admin-body: var(--admin-body);
+  --color-admin-subtle: var(--admin-subtle);
+  --color-admin-accent: var(--admin-accent);
+  --color-admin-accent-ink: var(--admin-accent-ink);
 }
 
 @theme {
@@ -318,7 +332,7 @@ button:disabled { cursor: not-allowed; }
 .admin-content thead { text-transform: uppercase; font-size: 11px; letter-spacing: .04em; }
 .admin-content th { white-space: nowrap; }
 .admin-content tbody tr { transition: background-color .15s; }
-.admin-content tbody tr:hover { background-color: var(--color-brand-50); }
+.admin-content tbody tr:hover { background-color: var(--admin-hover, var(--color-brand-50)); }
 .admin-content input, .admin-content select, .admin-content textarea { min-height: 44px; }
 .admin-content input[type="checkbox"], .admin-content input[type="radio"] { min-height: auto; }
 .admin-content form { min-width: 0; }
@@ -335,7 +349,7 @@ button:disabled { cursor: not-allowed; }
 .admin-content table th:first-child, .admin-content table td:first-child { min-width: 220px; }
 .admin-content table td { vertical-align: middle; }
 .admin-content table td > span { white-space: nowrap; }
-.admin-content table tbody { border-color: #e2e8f0; }
+.admin-content table tbody { border-color: var(--admin-border, #e2e8f0); }
 @media (min-width: 375px) and (max-width: 639px) {
   .admin-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   .admin-kpis > * { padding: 16px; }
@@ -418,4 +432,38 @@ button:disabled { cursor: not-allowed; }
   .home-shell[data-panel-expanded="true"] .home-panel-position { top: var(--safe-top); }
   .place-detail-hero { height: 112px; }
   .map-controls { top: calc(132px + var(--safe-top)); flex-direction: row; }
+}
+
+/* Auth fields use their container border as the focus indicator. */
+.auth-form input:focus-visible,
+.admin-login-form input:focus-visible {
+  outline: none;
+}
+
+.admin-theme {
+  --admin-canvas: #f8fafc;
+  --admin-surface: #ffffff;
+  --admin-muted: #f1f5f9;
+  --admin-border: #e2e8f0;
+  --admin-strong: #0f172a;
+  --admin-body: #475569;
+  --admin-subtle: #64748b;
+  --admin-accent: #f5f3ff;
+  --admin-accent-ink: #6d28d9;
+  --admin-hover: #f5f3ff;
+  background-color: var(--admin-canvas);
+  color: var(--admin-strong);
+}
+
+.admin-theme[data-admin-theme="dark"] {
+  --admin-canvas: #020617;
+  --admin-surface: #0f172a;
+  --admin-muted: #1e293b;
+  --admin-border: #334155;
+  --admin-strong: #f1f5f9;
+  --admin-body: #cbd5e1;
+  --admin-subtle: #94a3b8;
+  --admin-accent: #2e1b4b;
+  --admin-accent-ink: #c4b5fd;
+  --admin-hover: #1e293b;
 }

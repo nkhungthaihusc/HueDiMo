@@ -5,6 +5,7 @@ import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Menu, X, MapPin, Sparkles, Route, Globe, Wallet, Trophy, UserRound, LogOut } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import UserAvatar from "@/components/ui/UserAvatar";
 
 interface TopBarProps {
   isAddMode?: boolean;
@@ -61,8 +62,8 @@ export default function TopBar(props: TopBarProps) {
           <Sparkles size={17} aria-hidden="true" />Tạo lịch trình AI
         </button>
         {user ? (
-          <button type="button" onClick={props.onOpenProfile} className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-50 font-bold text-brand-700" aria-label={`Hồ sơ ${user.name}`}>
-            {user.name.charAt(0).toUpperCase()}
+          <button type="button" onClick={props.onOpenProfile} className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-50 font-bold text-brand-700" aria-label={`Hồ sơ ${user.name}`}>
+            <UserAvatar user={user} className="h-full w-full" />
           </button>
         ) : (
           <Link href="/login" className="flex min-h-11 items-center rounded-xl px-2 text-sm font-semibold text-brand-700 md:px-3">Đăng nhập</Link>

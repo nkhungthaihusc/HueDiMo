@@ -249,8 +249,8 @@ export default function AdminPlacesPage() {
       {/* Header and Actions */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between shrink-0">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Quản lý Địa điểm Du lịch</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-2xl font-bold tracking-tight text-admin-strong">Quản lý Địa điểm Du lịch</h1>
+          <p className="text-sm text-admin-subtle">
             Quản lý toàn bộ {total} địa điểm trên bản đồ và hệ thống gợi ý AI của HueDiMo.
           </p>
         </div>
@@ -259,13 +259,13 @@ export default function AdminPlacesPage() {
           <button
             onClick={handleExportCSV}
             disabled={isExporting}
-            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-3.5 py-2.5 text-xs font-semibold text-slate-800 shadow-sm transition hover:bg-slate-200 hover:text-slate-900 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl border border-admin-border bg-admin-muted px-3.5 py-2.5 text-xs font-semibold text-admin-strong shadow-sm transition hover:bg-admin-muted hover:text-admin-strong disabled:opacity-50"
             title="Xuất toàn bộ hoặc danh sách địa điểm đang lọc ra file CSV"
           >
             {isExporting ? (
-              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-300 border-t-transparent" />
+              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-admin-border border-t-transparent" />
             ) : (
-              <svg className="w-4 h-4 text-emerald-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4 text-emerald-700 dark:text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
             )}
@@ -275,10 +275,10 @@ export default function AdminPlacesPage() {
           {/* Nút Nhập CSV */}
           <button
             onClick={() => setIsImportModalOpen(true)}
-            className="flex items-center gap-2 rounded-xl border border-purple-500/40 bg-purple-50 px-3.5 py-2.5 text-xs font-semibold text-purple-700 shadow-sm transition hover:bg-purple-50 hover:text-slate-900"
+            className="flex items-center gap-2 rounded-xl border border-purple-500/40 bg-purple-50 dark:bg-purple-950/50 px-3.5 py-2.5 text-xs font-semibold text-purple-700 dark:text-purple-300 shadow-sm transition hover:bg-purple-50 dark:hover:bg-purple-950/50 hover:text-admin-strong"
             title="Thêm hàng loạt địa điểm từ tệp CSV có kiểm tra trùng khớp"
           >
-            <svg className="w-4 h-4 text-purple-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4 text-purple-700 dark:text-purple-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12" />
             </svg>
             <span>Nhập CSV</span>
@@ -296,7 +296,7 @@ export default function AdminPlacesPage() {
       </div>
 
       {/* Tabs lọc trạng thái kiểm duyệt */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-admin-border pb-3">
         <button
           type="button"
           onClick={() => {
@@ -305,11 +305,11 @@ export default function AdminPlacesPage() {
           }}
           className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition ${statusFilter === "all"
               ? "bg-purple-600 text-white shadow-md shadow-purple-900/30"
-              : "bg-white text-slate-500 hover:bg-slate-100 hover:text-white"
+              : "bg-admin-surface text-admin-subtle hover:bg-admin-muted hover:text-white"
             }`}
         >
           <span>Tất cả</span>
-          <span className="rounded-md bg-white/20 px-1.5 py-0.5 text-[10px]">{total}</span>
+          <span className="rounded-md bg-admin-surface/20 px-1.5 py-0.5 text-[10px]">{total}</span>
         </button>
 
         <button
@@ -319,8 +319,8 @@ export default function AdminPlacesPage() {
             setPage(1);
           }}
           className={`relative flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition ${statusFilter === "pending"
-              ? "bg-amber-600 text-slate-900 shadow-md shadow-amber-900/30"
-              : "bg-white text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+              ? "bg-amber-600 text-admin-strong shadow-md shadow-amber-900/30"
+              : "bg-admin-surface text-admin-subtle hover:bg-admin-muted hover:text-admin-strong"
             }`}
         >
           <span>⏳ Chờ duyệt (Pending)</span>
@@ -339,7 +339,7 @@ export default function AdminPlacesPage() {
           }}
           className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition ${statusFilter === "approved"
               ? "bg-emerald-600 text-white shadow-md shadow-emerald-900/30"
-              : "bg-white text-slate-500 hover:bg-slate-100 hover:text-white"
+              : "bg-admin-surface text-admin-subtle hover:bg-admin-muted hover:text-white"
             }`}
         >
           <span>✓ Đã duyệt (Approved)</span>
@@ -353,7 +353,7 @@ export default function AdminPlacesPage() {
           }}
           className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition ${statusFilter === "rejected"
               ? "bg-rose-600 text-white shadow-md shadow-rose-900/30"
-              : "bg-white text-slate-500 hover:bg-slate-100 hover:text-white"
+              : "bg-admin-surface text-admin-subtle hover:bg-admin-muted hover:text-white"
             }`}
         >
           <span>✕ Đã từ chối (Rejected)</span>
@@ -361,18 +361,18 @@ export default function AdminPlacesPage() {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center shrink-0">
+      <div className="flex flex-col gap-3 rounded-2xl border border-admin-border bg-admin-surface p-4 sm:flex-row sm:items-center shrink-0">
         <form onSubmit={handleSearchSubmit} className="flex-1 flex items-center gap-2">
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Tìm theo tên, địa chỉ hoặc mô tả..."
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs text-slate-900 placeholder-slate-500 focus:border-purple-500 focus:outline-none"
+            className="w-full rounded-xl border border-admin-border bg-admin-canvas px-4 py-2 text-xs text-admin-strong placeholder-admin-subtle focus:border-purple-500 focus:outline-none"
           />
           <button
             type="submit"
-            className="rounded-xl bg-slate-100 px-4 py-2 text-xs font-semibold text-slate-900 hover:bg-slate-200 transition"
+            className="rounded-xl bg-admin-muted px-4 py-2 text-xs font-semibold text-admin-strong hover:bg-admin-muted transition"
           >
             Tìm
           </button>
@@ -384,7 +384,7 @@ export default function AdminPlacesPage() {
             setCategoryFilter(e.target.value);
             setPage(1);
           }}
-          className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 focus:border-purple-500 focus:outline-none"
+          className="rounded-xl border border-admin-border bg-admin-canvas px-3 py-2 text-xs text-admin-body focus:border-purple-500 focus:outline-none"
         >
           <option value="">Tất cả Thể loại</option>
           {CATEGORIES.map((c) => (
@@ -395,14 +395,14 @@ export default function AdminPlacesPage() {
         </select>
 
         {/* Thanh chuyển trang nhanh ở đầu trang (Không cần cuộn xuống) */}
-        <div className="flex items-center gap-2 text-xs border border-slate-200 bg-slate-50 rounded-xl px-3 py-1.5 shrink-0">
-          <span className="text-slate-500">Trang <span className="text-slate-900 font-bold">{page}</span>/{totalPages}</span>
+        <div className="flex items-center gap-2 text-xs border border-admin-border bg-admin-canvas rounded-xl px-3 py-1.5 shrink-0">
+          <span className="text-admin-subtle">Trang <span className="text-admin-strong font-bold">{page}</span>/{totalPages}</span>
           <div className="flex items-center gap-1">
             <button
               type="button"
               disabled={page <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="h-6 w-6 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 disabled:opacity-30 transition flex items-center justify-center font-bold cursor-pointer"
+              className="h-6 w-6 rounded-lg bg-admin-muted hover:bg-admin-muted text-admin-body hover:text-admin-strong disabled:opacity-30 transition flex items-center justify-center font-bold cursor-pointer"
               title="Trang trước"
             >
               ‹
@@ -411,7 +411,7 @@ export default function AdminPlacesPage() {
               type="button"
               disabled={page >= totalPages}
               onClick={() => setPage((p) => p + 1)}
-              className="h-6 w-6 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 disabled:opacity-30 transition flex items-center justify-center font-bold cursor-pointer"
+              className="h-6 w-6 rounded-lg bg-admin-muted hover:bg-admin-muted text-admin-body hover:text-admin-strong disabled:opacity-30 transition flex items-center justify-center font-bold cursor-pointer"
               title="Trang sau"
             >
               ›
@@ -421,21 +421,21 @@ export default function AdminPlacesPage() {
       </div>
 
       {/* Table Display */}
-      <div className="flex-1 min-h-[450px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col">
+      <div className="flex-1 min-h-[450px] overflow-hidden rounded-2xl border border-admin-border bg-admin-surface shadow-sm flex flex-col">
         {isLoading ? (
           <div className="flex flex-1 items-center justify-center min-h-[300px]">
             <div className="h-7 w-7 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
           </div>
         ) : places.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center text-slate-500 min-h-[300px]">
+          <div className="flex flex-1 flex-col items-center justify-center text-admin-subtle min-h-[300px]">
             <span className="text-3xl">🏜️</span>
             <p className="mt-2 text-xs">Không tìm thấy địa điểm nào phù hợp.</p>
           </div>
         ) : (
           <div className="flex-1 overflow-x-auto overflow-y-auto min-h-0">
             <table className="w-full text-left text-xs">
-                <caption className="caption-top px-4 py-3 text-left text-xs font-medium text-slate-500 md:hidden">Vuốt ngang để xem đầy đủ thông tin và thao tác →</caption>
-              <thead className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50 backdrop-blur-md text-slate-500">
+                <caption className="caption-top px-4 py-3 text-left text-xs font-medium text-admin-subtle md:hidden">Vuốt ngang để xem đầy đủ thông tin và thao tác →</caption>
+              <thead className="sticky top-0 z-10 border-b border-admin-border bg-admin-canvas backdrop-blur-md text-admin-subtle">
                 <tr>
                   <th className="px-5 py-3 font-semibold">Tên & Ảnh</th>
                   <th className="px-4 py-3 font-semibold">Danh mục</th>
@@ -446,9 +446,9 @@ export default function AdminPlacesPage() {
                   <th className="px-5 py-3 font-semibold text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-admin-border">
                 {places.map((place) => (
-                  <tr key={place.id} className="hover:bg-slate-100 transition">
+                  <tr key={place.id} className="hover:bg-admin-muted transition">
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
                         {(place.imageUrl || place.image_url || place.images?.[0]) ? (
@@ -458,46 +458,46 @@ export default function AdminPlacesPage() {
                             className="h-10 w-10 shrink-0 rounded-xl object-cover"
                           />
                         ) : (
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-admin-muted text-admin-subtle">
                             🏛️
                           </div>
                         )}
                         <div>
-                          <div className="font-semibold text-slate-900">{place.name}</div>
-                          <div className="text-[11px] text-slate-500 truncate max-w-[220px]">
+                          <div className="font-semibold text-admin-strong">{place.name}</div>
+                          <div className="text-[11px] text-admin-subtle truncate max-w-[220px]">
                             {place.address || "TP. Huế"}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3.5">
-                      <span className="rounded-md bg-purple-50 border border-purple-200 px-2 py-0.5 text-[11px] font-medium text-purple-700 capitalize">
+                      <span className="rounded-md bg-purple-50 dark:bg-purple-950/50 border border-purple-200 px-2 py-0.5 text-[11px] font-medium text-purple-700 dark:text-purple-300 capitalize">
                         {place.category}
                       </span>
                     </td>
                     <td className="px-4 py-3.5">
                       {place.status === "pending" ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 border border-amber-500/40 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
+                        <span className="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/50 border border-amber-500/40 px-2.5 py-1 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
                           <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
                           <span>Chờ duyệt</span>
                         </span>
                       ) : place.status === "rejected" ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-lg bg-rose-50 border border-rose-500/40 px-2.5 py-1 text-[11px] font-semibold text-rose-700">
+                        <span className="inline-flex items-center gap-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/50 border border-rose-500/40 px-2.5 py-1 text-[11px] font-semibold text-rose-700 dark:text-rose-300">
                           <span>✕ Từ chối</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 border border-emerald-500/40 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+                        <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-500/40 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
                           <span>✓ Đã duyệt</span>
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3.5 text-slate-500 font-mono text-[11px]">
+                    <td className="px-4 py-3.5 text-admin-subtle font-mono text-[11px]">
                       {place.lat.toFixed(4)}, {place.lng.toFixed(4)}
                     </td>
-                    <td className="px-4 py-3.5 text-slate-800 font-medium">
+                    <td className="px-4 py-3.5 text-admin-strong font-medium">
                       {place.price ? `${place.price.toLocaleString()} đ` : "Miễn phí"}
                     </td>
-                    <td className="px-4 py-3.5 text-amber-700 font-semibold">
+                    <td className="px-4 py-3.5 text-amber-700 dark:text-amber-300 font-semibold">
                       ★ {place.rating}
                     </td>
                     <td className="px-5 py-3.5 text-right">
@@ -516,7 +516,7 @@ export default function AdminPlacesPage() {
                             <button
                               type="button"
                               onClick={() => handleReject(place.id, place.name)}
-                              className="inline-flex items-center gap-1 rounded-lg bg-rose-50 border border-rose-200 px-2.5 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 transition active:scale-95 cursor-pointer"
+                              className="inline-flex items-center gap-1 rounded-lg bg-rose-50 dark:bg-rose-950/50 border border-rose-200 px-2.5 py-1.5 text-xs font-semibold text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition active:scale-95 cursor-pointer"
                               title="Từ chối địa điểm này"
                             >
                               <span>✕</span>
@@ -529,7 +529,7 @@ export default function AdminPlacesPage() {
                           <button
                             type="button"
                             onClick={() => handleApprove(place.id, place.name)}
-                            className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-600 hover:text-slate-900 transition cursor-pointer"
+                            className="inline-flex items-center gap-1 rounded-lg bg-admin-muted px-2.5 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-600 hover:text-admin-strong transition cursor-pointer"
                             title="Duyệt lại địa điểm này"
                           >
                             <span>✓ Duyệt lại</span>
@@ -540,7 +540,7 @@ export default function AdminPlacesPage() {
                           <button
                             type="button"
                             onClick={() => handleReject(place.id, place.name)}
-                            className="rounded-lg bg-slate-100 px-2 py-1 text-xs font-medium text-slate-500 hover:bg-rose-50 hover:text-rose-700 transition cursor-pointer"
+                            className="rounded-lg bg-admin-muted px-2 py-1 text-xs font-medium text-admin-subtle hover:bg-rose-50 dark:hover:bg-rose-950/50 hover:text-rose-700 dark:hover:text-rose-300 transition cursor-pointer"
                             title="Thu hồi khỏi bản đồ"
                           >
                             Thu hồi
@@ -550,14 +550,14 @@ export default function AdminPlacesPage() {
                         <button
                           type="button"
                           onClick={() => handleOpenEdit(place)}
-                          className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-purple-600 hover:text-slate-900 transition cursor-pointer"
+                          className="rounded-lg bg-admin-muted px-2.5 py-1 text-xs font-medium text-admin-body hover:bg-purple-600 hover:text-admin-strong transition cursor-pointer"
                         >
                           Sửa
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDelete(place.id, place.name)}
-                          className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-600 hover:text-slate-900 transition cursor-pointer"
+                          className="rounded-lg bg-admin-muted px-2.5 py-1 text-xs font-medium text-red-600 dark:text-red-300 hover:bg-red-600 hover:text-admin-strong transition cursor-pointer"
                         >
                           Xóa
                         </button>
@@ -574,21 +574,21 @@ export default function AdminPlacesPage() {
       {/* Modal Add / Edit Place */}
       {isModalOpen && editingPlace && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm overflow-y-auto">
-          <div className="relative w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-200">
-              <h2 className="text-lg font-bold text-slate-900">
+          <div className="relative w-full max-w-2xl rounded-2xl border border-admin-border bg-admin-surface p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-4 border-b border-admin-border">
+              <h2 className="text-lg font-bold text-admin-strong">
                 {editingPlace.id ? "Chỉnh sửa Địa điểm" : "Thêm Địa điểm Mới"}
               </h2>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="rounded-lg p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                className="rounded-lg p-1 text-admin-subtle hover:bg-admin-muted hover:text-admin-strong"
               >
                 ✕
               </button>
             </div>
 
             {formError && (
-              <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-600">
+              <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-600 dark:text-red-300">
                 ⚠️ {formError}
               </div>
             )}
@@ -596,23 +596,23 @@ export default function AdminPlacesPage() {
             <form onSubmit={handleSavePlace} className="mt-5 space-y-4 text-xs">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="font-semibold text-slate-600">Tên địa điểm *</label>
+                  <label className="font-semibold text-admin-body">Tên địa điểm *</label>
                   <input
                     type="text"
                     required
                     value={editingPlace.name || ""}
                     onChange={(e) => setEditingPlace({ ...editingPlace, name: e.target.value })}
                     placeholder="VD: Chùa Thiên Mụ"
-                    className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 focus:border-purple-500 focus:outline-none"
+                    className="mt-1.5 w-full rounded-xl border border-admin-border bg-admin-canvas px-3 py-2 text-admin-strong focus:border-purple-500 focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="font-semibold text-slate-600">Thể loại *</label>
+                  <label className="font-semibold text-admin-body">Thể loại *</label>
                   <select
                     value={editingPlace.category || "ancient"}
                     onChange={(e) => setEditingPlace({ ...editingPlace, category: e.target.value as any })}
-                    className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 focus:border-purple-500 focus:outline-none"
+                    className="mt-1.5 w-full rounded-xl border border-admin-border bg-admin-canvas px-3 py-2 text-admin-strong focus:border-purple-500 focus:outline-none"
                   >
                     {CATEGORIES.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -625,11 +625,11 @@ export default function AdminPlacesPage() {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="font-semibold text-slate-600">Trạng thái phê duyệt *</label>
+                  <label className="font-semibold text-admin-body">Trạng thái phê duyệt *</label>
                   <select
                     value={editingPlace.status || "approved"}
                     onChange={(e) => setEditingPlace({ ...editingPlace, status: e.target.value as any })}
-                    className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 focus:border-purple-500 focus:outline-none"
+                    className="mt-1.5 w-full rounded-xl border border-admin-border bg-admin-canvas px-3 py-2 text-admin-strong focus:border-purple-500 focus:outline-none"
                   >
                     <option value="approved">✓ Đã duyệt (Approved - Hiển thị công khai)</option>
                     <option value="pending">⏳ Chờ duyệt (Pending - Chưa hiển thị)</option>
@@ -638,16 +638,16 @@ export default function AdminPlacesPage() {
                 </div>
 
                 <div>
-                  <label className="font-semibold text-slate-600">Nguồn gốc</label>
+                  <label className="font-semibold text-admin-body">Nguồn gốc</label>
                   <div className="mt-3 flex items-center gap-2">
                     <input
                       type="checkbox"
                       id="isLocalCheckbox"
                       checked={Boolean(editingPlace.isLocal)}
                       onChange={(e) => setEditingPlace({ ...editingPlace, isLocal: e.target.checked })}
-                      className="h-4 w-4 rounded border-slate-200 bg-slate-50 text-purple-600 focus:ring-purple-500"
+                      className="h-4 w-4 rounded border-admin-border bg-admin-canvas text-purple-600 dark:text-purple-300 focus:ring-purple-500"
                     />
-                    <label htmlFor="isLocalCheckbox" className="text-slate-600 cursor-pointer">
+                    <label htmlFor="isLocalCheckbox" className="text-admin-body cursor-pointer">
                       Địa điểm do cộng đồng đóng góp
                     </label>
                   </div>
@@ -656,34 +656,34 @@ export default function AdminPlacesPage() {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
-                  <label className="font-semibold text-slate-600">Vĩ độ (Lat) *</label>
+                  <label className="font-semibold text-admin-body">Vĩ độ (Lat) *</label>
                   <input
                     type="number"
                     step="0.0001"
                     required
                     value={editingPlace.lat || 16.4637}
                     onChange={(e) => setEditingPlace({ ...editingPlace, lat: parseFloat(e.target.value) })}
-                    className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 focus:border-purple-500 focus:outline-none"
+                    className="mt-1.5 w-full rounded-xl border border-admin-border bg-admin-canvas px-3 py-2 text-admin-strong focus:border-purple-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-600">Kinh độ (Lng) *</label>
+                  <label className="font-semibold text-admin-body">Kinh độ (Lng) *</label>
                   <input
                     type="number"
                     step="0.0001"
                     required
                     value={editingPlace.lng || 107.5907}
                     onChange={(e) => setEditingPlace({ ...editingPlace, lng: parseFloat(e.target.value) })}
-                    className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 focus:border-purple-500 focus:outline-none"
+                    className="mt-1.5 w-full rounded-xl border border-admin-border bg-admin-canvas px-3 py-2 text-admin-strong focus:border-purple-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-600">Giá vé (VNĐ)</label>
+                  <label className="font-semibold text-admin-body">Giá vé (VNĐ)</label>
                   <input
                     type="number"
                     value={editingPlace.price || 0}
                     onChange={(e) => setEditingPlace({ ...editingPlace, price: parseInt(e.target.value, 10) || 0 })}
-                    className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 focus:border-purple-500 focus:outline-none"
+                    className="mt-1.5 w-full rounded-xl border border-admin-border bg-admin-canvas px-3 py-2 text-admin-strong focus:border-purple-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -691,7 +691,7 @@ export default function AdminPlacesPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <div className="flex items-center justify-between">
-                    <label className="font-semibold text-slate-600">Địa chỉ cụ thể</label>
+                    <label className="font-semibold text-admin-body">Địa chỉ cụ thể</label>
                     <button
                       type="button"
                       disabled={isGeocodingAdmin || !editingPlace.lat || !editingPlace.lng}
@@ -713,7 +713,7 @@ export default function AdminPlacesPage() {
                           setIsGeocodingAdmin(false);
                         }
                       }}
-                      className="text-[11px] text-purple-700 hover:text-purple-700 flex items-center gap-1 hover:underline cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="text-[11px] text-purple-700 dark:text-purple-300 hover:text-purple-700 dark:hover:text-purple-300 flex items-center gap-1 hover:underline cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                       title="Tự động tra cứu địa chỉ từ toạ độ Lat/Lng"
                     >
                       {isGeocodingAdmin ? "⏳ Đang tra cứu..." : "📍 Lấy từ toạ độ"}
@@ -724,24 +724,24 @@ export default function AdminPlacesPage() {
                     value={editingPlace.address || ""}
                     onChange={(e) => setEditingPlace({ ...editingPlace, address: e.target.value })}
                     placeholder="VD: Đường Kim Long, TP Huế"
-                    className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 focus:border-purple-500 focus:outline-none"
+                    className="mt-1.5 w-full rounded-xl border border-admin-border bg-admin-canvas px-3 py-2 text-admin-strong focus:border-purple-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-600">Giờ hoạt động</label>
+                  <label className="font-semibold text-admin-body">Giờ hoạt động</label>
                   <input
                     type="text"
                     value={editingPlace.openingHours || ""}
                     onChange={(e) => setEditingPlace({ ...editingPlace, openingHours: e.target.value })}
                     placeholder="VD: 07:00 - 17:30 hoặc 24/24"
-                    className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 focus:border-purple-500 focus:outline-none"
+                    className="mt-1.5 w-full rounded-xl border border-admin-border bg-admin-canvas px-3 py-2 text-admin-strong focus:border-purple-500 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center justify-between">
-                  <label className="font-semibold text-slate-600">Hình ảnh địa điểm (URL hoặc Tải lên)</label>
+                  <label className="font-semibold text-admin-body">Hình ảnh địa điểm (URL hoặc Tải lên)</label>
                   <input
                     ref={placeFileInputRef}
                     type="file"
@@ -773,7 +773,7 @@ export default function AdminPlacesPage() {
                     type="button"
                     disabled={isUploadingImage}
                     onClick={() => placeFileInputRef.current?.click()}
-                    className="text-[11px] text-purple-700 hover:text-purple-700 transition flex items-center gap-1 font-medium disabled:opacity-50"
+                    className="text-[11px] text-purple-700 dark:text-purple-300 hover:text-purple-700 dark:hover:text-purple-300 transition flex items-center gap-1 font-medium disabled:opacity-50"
                   >
                     {isUploadingImage ? (
                       <>
@@ -806,7 +806,7 @@ export default function AdminPlacesPage() {
                       });
                     }}
                     placeholder="https://vhyfauholmouikskxecp.supabase.co/... hoặc link ảnh bất kỳ"
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 focus:border-purple-500 focus:outline-none"
+                    className="w-full rounded-xl border border-admin-border bg-admin-canvas px-3 py-2 text-admin-strong focus:border-purple-500 focus:outline-none"
                   />
                   {(editingPlace.imageUrl || editingPlace.image_url) && (
                     <a
@@ -814,7 +814,7 @@ export default function AdminPlacesPage() {
                       target="_blank"
                       rel="noreferrer"
                       title="Bấm để xem ảnh gốc kích thước lớn"
-                      className="h-9 w-9 shrink-0 rounded-lg overflow-hidden border border-slate-200 block hover:scale-105 transition"
+                      className="h-9 w-9 shrink-0 rounded-lg overflow-hidden border border-admin-border block hover:scale-105 transition"
                     >
                       <img
                         src={editingPlace.imageUrl || editingPlace.image_url}
@@ -827,12 +827,12 @@ export default function AdminPlacesPage() {
 
                 {/* Danh sách Album ảnh của địa điểm */}
                 {editingPlace.images && editingPlace.images.length > 0 && (
-                  <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-2.5">
+                  <div className="mt-3 rounded-xl border border-admin-border bg-admin-canvas p-2.5">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-[11px] font-semibold text-slate-500">
+                      <span className="text-[11px] font-semibold text-admin-subtle">
                         Album Thư viện ảnh ({editingPlace.images.length} ảnh):
                       </span>
-                      <span className="text-[10px] text-slate-500">Bấm ảnh để đặt làm ảnh đại diện</span>
+                      <span className="text-[10px] text-admin-subtle">Bấm ảnh để đặt làm ảnh đại diện</span>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {editingPlace.images.map((imgUrl, imgIdx) => {
@@ -840,7 +840,7 @@ export default function AdminPlacesPage() {
                         return (
                           <div
                             key={imgIdx}
-                            className={`group relative h-14 w-14 rounded-lg overflow-hidden border transition cursor-pointer ${isMain ? "border-purple-500 ring-2 ring-purple-500/40" : "border-slate-200 opacity-80 hover:opacity-100"
+                            className={`group relative h-14 w-14 rounded-lg overflow-hidden border transition cursor-pointer ${isMain ? "border-purple-500 ring-2 ring-purple-500/40" : "border-admin-border opacity-80 hover:opacity-100"
                               }`}
                             onClick={() => {
                               setEditingPlace((prev) => prev ? ({ ...prev, imageUrl: imgUrl, image_url: imgUrl }) : prev);
@@ -868,7 +868,7 @@ export default function AdminPlacesPage() {
                                   };
                                 });
                               }}
-                              className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/80 text-[9px] text-slate-900 hover:bg-red-600 transition"
+                              className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/80 text-[9px] text-admin-strong hover:bg-red-600 transition"
                               title="Xóa ảnh này khỏi album"
                             >
                               ✕
@@ -883,43 +883,43 @@ export default function AdminPlacesPage() {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="font-semibold text-slate-600">Giờ mở cửa</label>
+                  <label className="font-semibold text-admin-body">Giờ mở cửa</label>
                   <input
                     type="text"
                     value={editingPlace.openingHours || ""}
                     onChange={(e) => setEditingPlace({ ...editingPlace, openingHours: e.target.value })}
                     placeholder="VD: 07:00 - 17:30"
-                    className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 focus:border-purple-500 focus:outline-none"
+                    className="mt-1.5 w-full rounded-xl border border-admin-border bg-admin-canvas px-3 py-2 text-admin-strong focus:border-purple-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-600">Thời điểm thích hợp nhất</label>
+                  <label className="font-semibold text-admin-body">Thời điểm thích hợp nhất</label>
                   <input
                     type="text"
                     value={editingPlace.bestTime || ""}
                     onChange={(e) => setEditingPlace({ ...editingPlace, bestTime: e.target.value })}
                     placeholder="VD: Buổi hoàng hôn chiều tà"
-                    className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 focus:border-purple-500 focus:outline-none"
+                    className="mt-1.5 w-full rounded-xl border border-admin-border bg-admin-canvas px-3 py-2 text-admin-strong focus:border-purple-500 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="font-semibold text-slate-600">Mô tả chi tiết</label>
+                <label className="font-semibold text-admin-body">Mô tả chi tiết</label>
                 <textarea
                   rows={3}
                   value={editingPlace.description || ""}
                   onChange={(e) => setEditingPlace({ ...editingPlace, description: e.target.value })}
                   placeholder="Giới thiệu về lịch sử, nét đặc sắc của danh thắng..."
-                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 focus:border-purple-500 focus:outline-none"
+                  className="mt-1.5 w-full rounded-xl border border-admin-border bg-admin-canvas px-3 py-2 text-admin-strong focus:border-purple-500 focus:outline-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-admin-border">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="rounded-xl border border-slate-200 px-4 py-2 font-medium text-slate-600 hover:bg-slate-100 transition"
+                  className="rounded-xl border border-admin-border px-4 py-2 font-medium text-admin-body hover:bg-admin-muted transition"
                 >
                   Hủy
                 </button>

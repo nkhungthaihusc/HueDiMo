@@ -125,21 +125,21 @@ export default function AdminUsersPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between shrink-0">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Quản lý Người dùng & Phân quyền</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-2xl font-bold tracking-tight text-admin-strong">Quản lý Người dùng & Phân quyền</h1>
+          <p className="text-sm text-admin-subtle">
             Danh sách tài khoản hệ thống ({total} người dùng). Phân quyền & Quản lý trạng thái tài khoản.
           </p>
         </div>
 
         {/* Thanh chuyển trang nhanh ở đầu trang */}
-        <div className="flex items-center gap-2 text-xs border border-slate-200 bg-slate-50 rounded-xl px-3 py-1.5 shrink-0 self-start sm:self-auto">
-          <span className="text-slate-500">Trang <span className="text-slate-900 font-bold">{page}</span>/{totalPages}</span>
+        <div className="flex items-center gap-2 text-xs border border-admin-border bg-admin-canvas rounded-xl px-3 py-1.5 shrink-0 self-start sm:self-auto">
+          <span className="text-admin-subtle">Trang <span className="text-admin-strong font-bold">{page}</span>/{totalPages}</span>
           <div className="flex items-center gap-1">
             <button
               type="button"
               disabled={page <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="h-6 w-6 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 disabled:opacity-30 transition flex items-center justify-center font-bold cursor-pointer"
+              className="h-6 w-6 rounded-lg bg-admin-muted hover:bg-admin-muted text-admin-body hover:text-admin-strong disabled:opacity-30 transition flex items-center justify-center font-bold cursor-pointer"
               title="Trang trước"
             >
               ‹
@@ -148,7 +148,7 @@ export default function AdminUsersPage() {
               type="button"
               disabled={page >= totalPages}
               onClick={() => setPage((p) => p + 1)}
-              className="h-6 w-6 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 disabled:opacity-30 transition flex items-center justify-center font-bold cursor-pointer"
+              className="h-6 w-6 rounded-lg bg-admin-muted hover:bg-admin-muted text-admin-body hover:text-admin-strong disabled:opacity-30 transition flex items-center justify-center font-bold cursor-pointer"
               title="Trang sau"
             >
               ›
@@ -158,18 +158,18 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Filter and Search */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center shrink-0">
+      <div className="flex flex-col gap-3 rounded-2xl border border-admin-border bg-admin-surface p-4 sm:flex-row sm:items-center shrink-0">
         <form onSubmit={handleSearchSubmit} className="flex-1 flex items-center gap-2">
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Tìm theo họ tên hoặc email..."
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs text-slate-900 placeholder-slate-500 focus:border-purple-500 focus:outline-none"
+            className="w-full rounded-xl border border-admin-border bg-admin-canvas px-4 py-2 text-xs text-admin-strong placeholder-admin-subtle focus:border-purple-500 focus:outline-none"
           />
           <button
             type="submit"
-            className="rounded-xl bg-slate-100 px-4 py-2 text-xs font-semibold text-slate-900 hover:bg-slate-200 transition"
+            className="rounded-xl bg-admin-muted px-4 py-2 text-xs font-semibold text-admin-strong hover:bg-admin-muted transition"
           >
             Tìm
           </button>
@@ -181,7 +181,7 @@ export default function AdminUsersPage() {
             setRoleFilter(e.target.value);
             setPage(1);
           }}
-          className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 focus:border-purple-500 focus:outline-none"
+          className="rounded-xl border border-admin-border bg-admin-canvas px-3 py-2 text-xs text-admin-body focus:border-purple-500 focus:outline-none"
         >
           <option value="">Tất cả Vai trò</option>
           <option value="admin">Quản trị viên (Admin)</option>
@@ -190,7 +190,7 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Table Display */}
-      <div className="flex-1 min-h-[450px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col">
+      <div className="flex-1 min-h-[450px] overflow-hidden rounded-2xl border border-admin-border bg-admin-surface shadow-sm flex flex-col">
         {isLoading ? (
           <div className="flex flex-1 items-center justify-center min-h-[300px]">
             <div className="h-7 w-7 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
@@ -198,8 +198,8 @@ export default function AdminUsersPage() {
         ) : (
           <div className="flex-1 overflow-x-auto overflow-y-auto min-h-0">
             <table className="w-full text-left text-xs">
-                <caption className="caption-top px-4 py-3 text-left text-xs font-medium text-slate-500 md:hidden">Vuốt ngang để xem đầy đủ thông tin và thao tác →</caption>
-              <thead className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50 backdrop-blur-md text-slate-500">
+                <caption className="caption-top px-4 py-3 text-left text-xs font-medium text-admin-subtle md:hidden">Vuốt ngang để xem đầy đủ thông tin và thao tác →</caption>
+              <thead className="sticky top-0 z-10 border-b border-admin-border bg-admin-canvas backdrop-blur-md text-admin-subtle">
                 <tr>
                   <th className="px-5 py-3 font-semibold">Người dùng</th>
                   <th className="px-4 py-3 font-semibold">Email</th>
@@ -208,7 +208,7 @@ export default function AdminUsersPage() {
                   <th className="px-5 py-3 font-semibold text-right">Hành động</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-admin-border">
                 {users.map((u) => {
                   const isCurrent = u.id === currentUser?.id;
                   const isAdmin = u.role === "admin";
@@ -218,40 +218,40 @@ export default function AdminUsersPage() {
                   return (
                     <tr
                       key={u.id || u.email}
-                      className={`hover:bg-slate-100 transition ${isBanned ? "opacity-60" : ""}`}
+                      className={`hover:bg-admin-muted transition ${isBanned ? "opacity-60" : ""}`}
                     >
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
-                          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${isBanned ? "bg-rose-50 border border-rose-700/40 text-rose-700" : "bg-purple-50 border border-purple-700/50 text-purple-700"}`}>
+                          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${isBanned ? "bg-rose-50 dark:bg-rose-950/50 border border-rose-700/40 text-rose-700 dark:text-rose-300" : "bg-purple-50 dark:bg-purple-950/50 border border-purple-700/50 text-purple-700 dark:text-purple-300"}`}>
                             {u.name ? u.name.charAt(0).toUpperCase() : "U"}
                           </div>
                           <div>
-                            <div className="font-semibold text-slate-900 flex items-center gap-2 flex-wrap">
+                            <div className="font-semibold text-admin-strong flex items-center gap-2 flex-wrap">
                               <span>{u.name}</span>
                               {isCurrent && (
-                                <span className="rounded-md bg-purple-500/20 px-1.5 py-0.5 text-[10px] font-medium text-purple-700">
+                                <span className="rounded-md bg-purple-500/20 px-1.5 py-0.5 text-[10px] font-medium text-purple-700 dark:text-purple-300">
                                   Bạn
                                 </span>
                               )}
                               {isBanned && (
-                                <span className="rounded-md bg-rose-50 border border-rose-600/40 px-1.5 py-0.5 text-[10px] font-bold text-rose-700">
+                                <span className="rounded-md bg-rose-50 dark:bg-rose-950/50 border border-rose-600/40 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-300">
                                   🔒 Đã khóa
                                 </span>
                               )}
                             </div>
-                            <div className="text-[11px] text-slate-500 font-mono">
+                            <div className="text-[11px] text-admin-subtle font-mono">
                               ID: {u.id?.slice(0, 8)}...
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3.5 text-slate-600 font-mono text-xs">{u.email}</td>
+                      <td className="px-4 py-3.5 text-admin-body font-mono text-xs">{u.email}</td>
                       <td className="px-4 py-3.5">
                         <span
                           className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                             isAdmin
-                              ? "bg-purple-500/20 text-purple-700 border border-purple-500/40"
-                              : "bg-slate-100 text-slate-500 border border-slate-200"
+                              ? "bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/40"
+                              : "bg-admin-muted text-admin-subtle border border-admin-border"
                           }`}
                         >
                           <span>{isAdmin ? "👑 Admin" : "👤 User"}</span>
@@ -261,8 +261,8 @@ export default function AdminUsersPage() {
                         <span
                           className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                             isBanned
-                              ? "bg-rose-50 text-rose-700 border border-rose-700/50"
-                              : "bg-emerald-50 text-emerald-700 border border-emerald-700/50"
+                              ? "bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-700/50"
+                              : "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-700/50"
                           }`}
                         >
                           {isBanned ? "🔒 Bị khóa" : "✓ Hoạt động"}
@@ -276,8 +276,8 @@ export default function AdminUsersPage() {
                             onClick={() => handleToggleRole(u)}
                             className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
                               isAdmin
-                                ? "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-50"
-                                : "bg-purple-50 text-purple-700 border border-purple-700/40 hover:bg-purple-800/50"
+                                ? "bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/50"
+                                : "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-700/40 hover:bg-purple-800/50"
                             } disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer`}
                           >
                             {isUpdating
@@ -293,8 +293,8 @@ export default function AdminUsersPage() {
                             onClick={() => handleToggleStatus(u)}
                             className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
                               isBanned
-                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-50"
-                                : "bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-50"
+                                ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-950/50"
+                                : "bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/50"
                             } disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer`}
                           >
                             {isUpdating ? "..." : isBanned ? "🔓 Kích hoạt" : "🔒 Khóa TK"}

@@ -187,7 +187,7 @@ export default function AdminAISettingsPage() {
   if (isLoading) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <div className="flex flex-col items-center gap-3 text-slate-500">
+        <div className="flex flex-col items-center gap-3 text-admin-subtle">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-500 border-t-transparent" />
           <p className="text-xs">Đang nạp cấu hình AI từ máy chủ...</p>
         </div>
@@ -204,14 +204,14 @@ export default function AdminAISettingsPage() {
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
           <div className="flex items-center gap-2.5">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-600/20 text-xl text-purple-700 border border-purple-500/30">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-600/20 text-xl text-purple-700 dark:text-purple-300 border border-purple-500/30">
               🤖
             </span>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-slate-900">
+              <h1 className="text-2xl font-black tracking-tight text-admin-strong">
                 Cấu hình Model AI Tư Vấn
               </h1>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-admin-subtle">
                 Tùy biến model trí tuệ nhân tạo, thiết lập Google Gemini API key và chỉ thị hệ thống chuyên biệt cho du lịch Huế
               </p>
             </div>
@@ -222,7 +222,7 @@ export default function AdminAISettingsPage() {
           <button
             type="button"
             onClick={handleResetDefaults}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 cursor-pointer"
+            className="rounded-xl border border-admin-border bg-admin-surface px-3 py-2 text-xs font-semibold text-admin-subtle transition hover:bg-admin-muted hover:text-admin-strong cursor-pointer"
           >
             ↺ Mặc định
           </button>
@@ -230,7 +230,7 @@ export default function AdminAISettingsPage() {
             type="button"
             onClick={handleTestConnection}
             disabled={isTesting}
-            className="flex items-center gap-1.5 rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-3.5 py-2 text-xs font-bold text-cyan-700 transition hover:bg-cyan-500/20 disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-1.5 rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-3.5 py-2 text-xs font-bold text-cyan-700 dark:text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-50 cursor-pointer"
           >
             {isTesting ? (
               <>
@@ -251,7 +251,7 @@ export default function AdminAISettingsPage() {
             className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold shadow-sm transition cursor-pointer ${
               hasChanges
                 ? "bg-purple-600 text-white hover:bg-purple-500"
-                : "bg-slate-100 hover:bg-slate-200 text-slate-600"
+                : "bg-admin-muted hover:bg-admin-muted text-admin-body"
             } disabled:opacity-50`}
           >
             {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
@@ -264,63 +264,63 @@ export default function AdminAISettingsPage() {
         {/* Google Gemini Card */}
         <div className={`rounded-2xl border p-4 backdrop-blur-xl transition ${
           provider === "google"
-            ? "border-purple-500/60 bg-purple-50 shadow-md shadow-purple-900/10"
-            : "border-slate-200 bg-white"
+            ? "border-purple-500/60 bg-purple-50 dark:bg-purple-950/50 shadow-md shadow-purple-900/10"
+            : "border-admin-border bg-admin-surface"
         }`}>
           <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-600 font-bold flex items-center gap-1.5">
+            <span className="text-admin-body font-bold flex items-center gap-1.5">
               <span>💎</span> Google Gemini API
             </span>
             <span
               className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                 data?.apiKeyStatus?.gemini?.configured
-                  ? "bg-emerald-500/10 text-emerald-700 border border-emerald-500/30"
-                  : "bg-amber-500/10 text-amber-700 border border-amber-500/30"
+                  ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
+                  : "bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30"
               }`}
             >
               {data?.apiKeyStatus?.gemini?.configured ? "Đã sẵn sàng" : "Chưa có Key"}
             </span>
           </div>
-          <div className="mt-2 font-mono text-xs font-semibold text-slate-800 truncate">
+          <div className="mt-2 font-mono text-xs font-semibold text-admin-strong truncate">
             {data?.apiKeyStatus?.gemini?.maskedKey || "Chưa cấu hình"}
           </div>
-          <p className="mt-1 text-[11px] text-slate-500">
+          <p className="mt-1 text-[11px] text-admin-subtle">
             Khuyên dùng: Miễn phí, tốc độ cao và phản hồi tiếng Việt mượt mà.
           </p>
         </div>
 
         {/* Current Active Engine */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 backdrop-blur-xl">
-          <div className="text-xs text-slate-500 font-medium">Model Đang Áp Dụng</div>
-          <div className="mt-2 text-sm font-black text-purple-700 font-mono truncate">
+        <div className="rounded-2xl border border-admin-border bg-admin-surface p-4 backdrop-blur-xl">
+          <div className="text-xs text-admin-subtle font-medium">Model Đang Áp Dụng</div>
+          <div className="mt-2 text-sm font-black text-purple-700 dark:text-purple-300 font-mono truncate">
             {data?.config.model}
           </div>
-          <p className="mt-1 text-[11px] text-slate-500">
-            Kênh: <strong className="text-slate-600 uppercase">{data?.config.provider || "google"}</strong> • Cập nhật: {data?.config.updatedAt ? new Date(data.config.updatedAt).toLocaleTimeString("vi-VN") : "Hệ thống"}
+          <p className="mt-1 text-[11px] text-admin-subtle">
+            Kênh: <strong className="text-admin-body uppercase">{data?.config.provider || "google"}</strong> • Cập nhật: {data?.config.updatedAt ? new Date(data.config.updatedAt).toLocaleTimeString("vi-VN") : "Hệ thống"}
           </p>
         </div>
 
         {/* Inference Params */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 backdrop-blur-xl">
-          <div className="text-xs text-slate-500 font-medium">Tham số vận hành</div>
-          <div className="mt-2 text-sm font-bold text-slate-800">
-            Temp: <span className="text-amber-700 font-mono">{temperature}</span> | Tokens: <span className="text-cyan-700 font-mono">{maxTokens}</span>
+        <div className="rounded-2xl border border-admin-border bg-admin-surface p-4 backdrop-blur-xl">
+          <div className="text-xs text-admin-subtle font-medium">Tham số vận hành</div>
+          <div className="mt-2 text-sm font-bold text-admin-strong">
+            Temp: <span className="text-amber-700 dark:text-amber-300 font-mono">{temperature}</span> | Tokens: <span className="text-cyan-700 dark:text-cyan-300 font-mono">{maxTokens}</span>
           </div>
-          <p className="mt-1 text-[11px] text-slate-500">
+          <p className="mt-1 text-[11px] text-admin-subtle">
             Tối ưu cho lịch trình từ 1 đến 7 ngày tại Thừa Thiên Huế
           </p>
         </div>
       </div>
 
       {/* Main Settings Form */}
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 backdrop-blur-xl space-y-6">
-        <h2 className="text-base font-bold text-slate-900 flex items-center gap-2 border-b border-slate-200 pb-3">
+      <div className="rounded-3xl border border-admin-border bg-admin-surface p-6 md:p-8 backdrop-blur-xl space-y-6">
+        <h2 className="text-base font-bold text-admin-strong flex items-center gap-2 border-b border-admin-border pb-3">
           <span>⚙️</span> Thiết lập Nguồn Cung Cấp & API Key
         </h2>
 
         {/* Provider Switcher */}
         <div className="space-y-3">
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
+          <label className="block text-xs font-bold uppercase tracking-wider text-admin-body">
             Kênh dịch vụ (Provider)
           </label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -336,11 +336,11 @@ export default function AdminAISettingsPage() {
               className={`flex flex-col justify-between rounded-2xl border p-4 transition cursor-pointer select-none ${
                 provider === "google"
                   ? "border-purple-500 bg-purple-500/15 shadow-md shadow-purple-900/20"
-                  : "border-slate-200 bg-slate-50 hover:border-slate-200"
+                  : "border-admin-border bg-admin-canvas hover:border-admin-border"
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-slate-900 flex items-center gap-2">
+                <span className="text-xs font-black text-admin-strong flex items-center gap-2">
                   <span>✨</span> Google Gemini API (Khuyên dùng)
                 </span>
                 {provider === "google" && (
@@ -349,7 +349,7 @@ export default function AdminAISettingsPage() {
                   </span>
                 )}
               </div>
-              <p className="mt-1.5 text-xs text-slate-500 leading-relaxed">
+              <p className="mt-1.5 text-xs text-admin-subtle leading-relaxed">
                 Gọi trực tiếp Google AI Studio. Tốc độ cực nhanh, ổn định cao và có gói miễn phí chính thức.
               </p>
             </div>
@@ -362,11 +362,11 @@ export default function AdminAISettingsPage() {
               className={`flex flex-col justify-between rounded-2xl border p-4 transition cursor-pointer select-none ${
                 provider === "opencode-zen"
                   ? "border-purple-500 bg-purple-500/15 shadow-md shadow-purple-900/20"
-                  : "border-slate-200 bg-slate-50 hover:border-slate-200"
+                  : "border-admin-border bg-admin-canvas hover:border-admin-border"
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-slate-900 flex items-center gap-2">
+                <span className="text-xs font-black text-admin-strong flex items-center gap-2">
                   <span>⚡</span> OpenCode Zen Gateway
                 </span>
                 {provider === "opencode-zen" && (
@@ -375,7 +375,7 @@ export default function AdminAISettingsPage() {
                   </span>
                 )}
               </div>
-              <p className="mt-1.5 text-xs text-slate-500 leading-relaxed">
+              <p className="mt-1.5 text-xs text-admin-subtle leading-relaxed">
                 Cổng ủy quyền đa model của OpenCode (yêu cầu key có credits hoặc token nội bộ).
               </p>
             </div>
@@ -385,14 +385,14 @@ export default function AdminAISettingsPage() {
         {/* Gemini API Key Input */}
         <div className="space-y-2 pt-2">
           <div className="flex items-center justify-between">
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-admin-body flex items-center gap-1.5">
               <span>🔑</span> Google Gemini API Key
             </label>
             <a
               href="https://aistudio.google.com/app/apikey"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[11px] text-cyan-700 hover:text-cyan-700 underline flex items-center gap-1"
+              className="text-[11px] text-cyan-700 dark:text-cyan-300 hover:text-cyan-700 dark:hover:text-cyan-300 underline flex items-center gap-1"
             >
               Lấy API Key miễn phí tại Google AI Studio ↗
             </a>
@@ -406,24 +406,24 @@ export default function AdminAISettingsPage() {
                 setHasChanges(true);
               }}
               placeholder="Dán mã API Key dạng AIzaSy... vào đây (hoặc cấu hình qua GEMINI_API_KEY trong file .env)"
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono text-xs text-slate-900 placeholder:text-slate-600 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition pr-20"
+              className="w-full rounded-2xl border border-admin-border bg-admin-canvas px-4 py-3 font-mono text-xs text-admin-strong placeholder:text-admin-body focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition pr-20"
             />
             <button
               type="button"
               onClick={() => setShowGeminiKey(!showGeminiKey)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-200 transition"
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg bg-admin-muted px-2 py-1 text-[11px] font-semibold text-admin-body hover:bg-admin-muted transition"
             >
               {showGeminiKey ? "Ẩn" : "Hiện"}
             </button>
           </div>
-          <p className="text-[11px] text-slate-500">
+          <p className="text-[11px] text-admin-subtle">
             Khóa API này được lưu trữ an toàn trong cơ sở dữ liệu và chỉ backend dùng để kết nối với Google.
           </p>
         </div>
 
         {/* Model Selection */}
-        <div className="space-y-3 pt-4 border-t border-slate-200">
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
+        <div className="space-y-3 pt-4 border-t border-admin-border">
+          <label className="block text-xs font-bold uppercase tracking-wider text-admin-body">
             Chọn Model AI (LLM Engine)
           </label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -436,11 +436,11 @@ export default function AdminAISettingsPage() {
                   className={`flex flex-col justify-between rounded-2xl border p-3.5 transition cursor-pointer select-none ${
                     isSelected
                       ? "border-purple-500 bg-purple-500/15 shadow-md shadow-purple-900/20"
-                      : "border-slate-200 bg-slate-50 hover:border-slate-200 hover:bg-slate-100"
+                      : "border-admin-border bg-admin-canvas hover:border-admin-border hover:bg-admin-muted"
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="font-mono text-xs font-bold text-purple-700">
+                    <div className="font-mono text-xs font-bold text-purple-700 dark:text-purple-300">
                       {preset.id}
                     </div>
                     {isSelected && (
@@ -449,10 +449,10 @@ export default function AdminAISettingsPage() {
                       </span>
                     )}
                   </div>
-                  <div className="mt-1 text-xs text-slate-600 font-medium leading-snug">
+                  <div className="mt-1 text-xs text-admin-body font-medium leading-snug">
                     {preset.name}
                   </div>
-                  <div className="mt-2 text-[10px] text-slate-500 uppercase tracking-wider">
+                  <div className="mt-2 text-[10px] text-admin-subtle uppercase tracking-wider">
                     Provider: {preset.provider}
                   </div>
                 </div>
@@ -465,11 +465,11 @@ export default function AdminAISettingsPage() {
               className={`flex flex-col justify-between rounded-2xl border p-3.5 transition cursor-pointer select-none md:col-span-2 ${
                 isCustomModel
                   ? "border-purple-500 bg-purple-500/15 shadow-md shadow-purple-900/20"
-                  : "border-slate-200 bg-slate-50 hover:border-slate-200 hover:bg-slate-100"
+                  : "border-admin-border bg-admin-canvas hover:border-admin-border hover:bg-admin-muted"
               }`}
             >
               <div className="flex items-center justify-between">
-                <div className="font-mono text-xs font-bold text-slate-800 flex items-center gap-2">
+                <div className="font-mono text-xs font-bold text-admin-strong flex items-center gap-2">
                   <span>✍️</span> Nhập tên Model Tùy Chỉnh (Custom Identifier)
                 </div>
                 {isCustomModel && (
@@ -478,7 +478,7 @@ export default function AdminAISettingsPage() {
                   </span>
                 )}
               </div>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-admin-subtle">
                 Nhập bất kỳ mã model nào (Ví dụ: `gemini-2.0-flash`, `gemini-1.5-flash-8b`, `deepseek-chat`...)
               </p>
 
@@ -498,12 +498,12 @@ export default function AdminAISettingsPage() {
                       }
                     }}
                     placeholder="VD: Gemini 2.0 Flash hoặc nemotron-3-ultra-free"
-                    className="w-full rounded-xl border border-purple-500/50 bg-slate-50 px-3.5 py-2 font-mono text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full rounded-xl border border-purple-500/50 bg-admin-canvas px-3.5 py-2 font-mono text-xs text-admin-strong focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
                   {customModelInput.trim() && normalizeModelName(customModelInput) !== customModelInput && (
-                    <div className="flex items-center gap-1.5 text-[11px] text-purple-700 font-mono">
+                    <div className="flex items-center gap-1.5 text-[11px] text-purple-700 dark:text-purple-300 font-mono">
                       <span>↳ Tự động chuẩn hóa thành:</span>
-                      <span className="font-bold text-cyan-700 bg-cyan-50 px-1.5 py-0.5 rounded border border-cyan-200">
+                      <span className="font-bold text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/50 px-1.5 py-0.5 rounded border border-cyan-200">
                         {normalizeModelName(customModelInput)}
                       </span>
                     </div>
@@ -515,14 +515,14 @@ export default function AdminAISettingsPage() {
         </div>
 
         {/* Parameters Sliders */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-200">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-admin-border">
           {/* Temperature */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
-              <label className="font-bold text-slate-600 uppercase tracking-wider">
-                Nhiệt độ (Temperature): <span className="text-amber-700 font-mono text-sm">{temperature}</span>
+              <label className="font-bold text-admin-body uppercase tracking-wider">
+                Nhiệt độ (Temperature): <span className="text-amber-700 dark:text-amber-300 font-mono text-sm">{temperature}</span>
               </label>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-[11px] text-admin-subtle">
                 {temperature <= 0.2
                   ? "Chính xác, kỷ luật cao"
                   : temperature <= 0.6
@@ -542,7 +542,7 @@ export default function AdminAISettingsPage() {
               }}
               className="w-full accent-purple-500 cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] text-slate-500">
+            <div className="flex justify-between text-[10px] text-admin-subtle">
               <span>0.0 (Tập trung catalog)</span>
               <span>0.5</span>
               <span>1.0 (Phóng khoáng)</span>
@@ -552,10 +552,10 @@ export default function AdminAISettingsPage() {
           {/* Max Tokens */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
-              <label className="font-bold text-slate-600 uppercase tracking-wider">
-                Giới hạn Tokens: <span className="text-cyan-700 font-mono text-sm">{maxTokens}</span>
+              <label className="font-bold text-admin-body uppercase tracking-wider">
+                Giới hạn Tokens: <span className="text-cyan-700 dark:text-cyan-300 font-mono text-sm">{maxTokens}</span>
               </label>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-[11px] text-admin-subtle">
                 ~ {Math.round(maxTokens * 0.75)} từ
               </span>
             </div>
@@ -571,7 +571,7 @@ export default function AdminAISettingsPage() {
               }}
               className="w-full accent-cyan-500 cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] text-slate-500">
+            <div className="flex justify-between text-[10px] text-admin-subtle">
               <span>1024 (Ngắn)</span>
               <span>4096 (Chuẩn)</span>
               <span>8192 (Chi tiết)</span>
@@ -580,14 +580,14 @@ export default function AdminAISettingsPage() {
         </div>
 
         {/* Custom System Instruction */}
-        <div className="space-y-2 pt-4 border-t border-slate-200">
+        <div className="space-y-2 pt-4 border-t border-admin-border">
           <div className="flex items-center justify-between">
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
+            <label className="block text-xs font-bold uppercase tracking-wider text-admin-body">
               Chỉ thị bổ sung từ Quản Trị Viên (Custom Instruction)
             </label>
-            <span className="text-[11px] text-slate-500">Tùy chọn</span>
+            <span className="text-[11px] text-admin-subtle">Tùy chọn</span>
           </div>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-admin-subtle">
             Nội dung này sẽ được tự động lồng ghép vào System Prompt của AI mỗi khi người dùng tạo lịch trình.
           </p>
           <textarea
@@ -598,23 +598,23 @@ export default function AdminAISettingsPage() {
               setHasChanges(true);
             }}
             placeholder="VD: Ưu tiên khuyến khích du khách trải nghiệm ca Huế trên sông Hương vào buổi tối, giới thiệu ẩm thực bánh bèo/nậm/lọc vào buổi xế chiều..."
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3.5 text-xs font-normal text-slate-900 placeholder:text-slate-600 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition resize-none"
+            className="w-full rounded-2xl border border-admin-border bg-admin-canvas p-3.5 text-xs font-normal text-admin-strong placeholder:text-admin-body focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition resize-none"
           />
         </div>
 
         {/* Save Bar */}
-        <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-          <span className="text-xs text-slate-500">
+        <div className="flex items-center justify-between pt-4 border-t border-admin-border">
+          <span className="text-xs text-admin-subtle">
             Model đang chuẩn bị áp dụng:{" "}
-            <strong className="text-purple-700 font-mono">{effectiveModel || "Chưa chọn"}</strong>
-            <span className="ml-2 text-[11px] text-slate-500">({provider})</span>
+            <strong className="text-purple-700 dark:text-purple-300 font-mono">{effectiveModel || "Chưa chọn"}</strong>
+            <span className="ml-2 text-[11px] text-admin-subtle">({provider})</span>
           </span>
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={loadSettings}
               disabled={!hasChanges}
-              className="rounded-xl px-3 py-2 text-xs font-semibold text-slate-500 hover:text-slate-900 transition disabled:opacity-30 cursor-pointer"
+              className="rounded-xl px-3 py-2 text-xs font-semibold text-admin-subtle hover:text-admin-strong transition disabled:opacity-30 cursor-pointer"
             >
               Hủy thay đổi
             </button>
@@ -635,8 +635,8 @@ export default function AdminAISettingsPage() {
         <div
           className={`rounded-2xl border p-5 backdrop-blur-xl transition ${
             testResult.success
-              ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-700"
-              : "border-red-500/30 bg-red-500/5 text-red-700"
+              ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300"
+              : "border-red-500/30 bg-red-500/5 text-red-700 dark:text-red-300"
           }`}
         >
           <div className="flex items-center justify-between border-b border-white/10 pb-2.5 mb-3">
@@ -649,7 +649,7 @@ export default function AdminAISettingsPage() {
               </span>
             </div>
             {testResult.latencyMs !== undefined && (
-              <span className="rounded-md bg-white/10 px-2 py-0.5 font-mono text-[11px] font-bold">
+              <span className="rounded-md bg-admin-surface/10 px-2 py-0.5 font-mono text-[11px] font-bold">
                 {testResult.latencyMs}ms
               </span>
             )}
@@ -657,15 +657,15 @@ export default function AdminAISettingsPage() {
 
           {testResult.success && testResult.sample && (
             <div className="space-y-1 text-xs">
-              <span className="text-slate-500 font-medium">Nội dung AI phản hồi:</span>
-              <pre className="rounded-xl bg-slate-50 p-3 font-mono text-xs text-slate-800 overflow-x-auto border border-white/5">
+              <span className="text-admin-subtle font-medium">Nội dung AI phản hồi:</span>
+              <pre className="rounded-xl bg-admin-canvas p-3 font-mono text-xs text-admin-strong overflow-x-auto border border-white/5">
                 {testResult.sample}
               </pre>
             </div>
           )}
 
           {!testResult.success && (
-            <div className="text-xs font-medium text-red-600">
+            <div className="text-xs font-medium text-red-600 dark:text-red-300">
               Chi tiết lỗi: {testResult.error}
             </div>
           )}

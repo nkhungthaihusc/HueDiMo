@@ -41,3 +41,18 @@ This update covers the tourist web app, authentication screens, and admin.
 Real-device Safari, software-keyboard behavior, and notched-device safe areas
 still need physical-device verification. Chromium viewport emulation does not
 establish those behaviors.
+
+## Admin themes and avatar follow-up
+
+- Admin now supports explicit light/dark selection from both the login screen and
+  the dashboard header. The initial theme follows the OS until the user chooses.
+- `huedimo_admin_theme` stores the selection locally; changes synchronize between
+  tabs. Theme state and color variables are scoped to the admin wrapper.
+- Admin neutral surfaces use semantic `admin-*` colors, resolved with Tailwind
+  `@theme inline` so nested theme variables resolve at the point of use.
+- `UserAvatar` supports both avatar field names and falls back to the user's initial
+  when an image fails. The same component is used in the top bar and admin sidebar.
+- Login inputs use a subtle container border for focus instead of the duplicated
+  purple outline/ring. Keyboard focus remains visible on other controls.
+- Browser verification: 70 admin page/theme/viewport checks, three avatar cases,
+  persistence across reload/navigation and tabs, and computed login focus styles.
