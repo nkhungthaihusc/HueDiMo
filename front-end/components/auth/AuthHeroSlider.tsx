@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { Sparkles, Compass, ShieldCheck, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 
@@ -53,6 +54,7 @@ const FALLBACK_SLIDES: SlideItem[] = [
 ];
 
 export default function AuthHeroSlider() {
+  const reducedMotion = useReducedMotion();
   const [slides, setSlides] = useState<SlideItem[]>(FALLBACK_SLIDES);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -94,16 +96,16 @@ export default function AuthHeroSlider() {
 
   // Tự động chuyển ảnh liên tục mỗi 4.5 giây
   useEffect(() => {
-    if (isPaused) return;
+    if (isPaused || reducedMotion || slides.length < 2) return;
 
     timerRef.current = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % slides.length);
-    }, 4500);
+      if (!document.hidden) setCurrentIndex((prev) => (prev + 1) % slides.length);
+    }, 6000);
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [slides.length, isPaused]);
+  }, [slides.length, isPaused, reducedMotion]);
 
   const handlePrev = () => {
     setCurrentIndex((prev) => (prev - 1 + slides.length) % slides.length);
@@ -115,7 +117,7 @@ export default function AuthHeroSlider() {
 
   return (
     <div
-      className="relative hidden lg:flex lg:w-1/2 flex-col justify-between overflow-hidden bg-ink-900 p-10 xl:p-12 text-white select-none"
+      className="auth-hero relative hidden lg:flex lg:w-1/2 flex-col justify-between overflow-hidden bg-ink-900 p-10 xl:p-12 text-white select-none"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
@@ -126,7 +128,7 @@ export default function AuthHeroSlider() {
           return (
             <div
               key={slide.url}
-              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+              className={`absolute inset-0 transition-opacity duration-700 ease-out ${
                 isActive ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
               }`}
             >
@@ -134,7 +136,7 @@ export default function AuthHeroSlider() {
               <img
                 src={slide.url}
                 alt={slide.title}
-                className={`h-full w-full object-cover object-center transform transition-transform duration-[5000ms] ease-out ${
+                className={`h-full w-full object-cover object-center transform transition-transform duration-[6000ms] ease-out ${
                   isActive ? "scale-105" : "scale-100"
                 }`}
               />
@@ -150,7 +152,7 @@ export default function AuthHeroSlider() {
       {/* Header góc trên */}
       <div className="relative z-30 flex items-center justify-between">
         <Link href="/" className="group flex items-center gap-3">
-          <div className="relative h-11 w-11 overflow-hidden rounded-2xl border border-white/30 shadow-xl backdrop-blur-md transition-all group-hover:scale-105 group-hover:border-purple-300/60">
+          <div className="relative h-11 w-11 overflow-hidden rounded-2xl border border-white/30 shadow-xl backdrop-blur-md transition-ui group-hover:scale-105 group-hover:border-purple-300/60">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/avatars/473616240_1779979822801506_5513169442076253620_n.jpg"
@@ -197,7 +199,7 @@ export default function AuthHeroSlider() {
           <span>Nền tảng du lịch số thông minh Cố đô Huế</span>
         </div>
 
-        <div className="min-h-[110px] transition-all duration-500">
+        <div className="min-h-[110px] transition-ui duration-500">
           <h2 className="text-2xl xl:text-3xl font-extrabold leading-tight tracking-tight text-white drop-shadow-lg">
             {slides[currentIndex]?.title}
           </h2>
@@ -234,11 +236,11 @@ export default function AuthHeroSlider() {
               key={idx}
               onClick={() => setCurrentIndex(idx)}
               aria-label={`Chuyển đến ảnh ${idx + 1}`}
-              className="group relative flex-1 h-1.5 rounded-full overflow-hidden bg-white/20 transition-all hover:h-2"
+              className="group relative flex-1 h-1.5 rounded-full overflow-hidden bg-white/20 transition-colors hover:bg-white/30"
             >
               <div
-                className={`h-full bg-purple-400 transition-all duration-500 rounded-full ${
-                  idx === currentIndex ? "w-full" : "w-0 group-hover:w-full group-hover:bg-white/50"
+                className={`h-full w-full origin-left bg-purple-400 transition-transform duration-300 rounded-full ${
+                  idx === currentIndex ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100 group-hover:bg-white/50"
                 }`}
               />
             </button>

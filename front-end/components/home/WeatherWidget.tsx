@@ -109,7 +109,7 @@ export default function WeatherWidget({
           }
         }}
         title="Bấm để xem chi tiết thời tiết & mạng lưới 52 trạm đo mưa Vrain Thừa Thiên Huế"
-        className="weather-widget-desktop glass-strong pointer-events-auto hidden md:flex flex-col gap-2 rounded-2xl px-3.5 py-2.5 transition-all duration-200 hover:shadow-xl hover:border-brand-400/80 hover:scale-[1.02] active:scale-[0.99] cursor-pointer group select-none"
+        className="weather-widget-desktop glass-strong pointer-events-auto hidden md:flex flex-col gap-2 rounded-2xl px-3.5 py-2.5 transition-ui duration-200 hover:shadow-xl hover:border-brand-400/80 hover:scale-[1.02] active:scale-[0.99] cursor-pointer group select-none"
         aria-label="Mở chi tiết thời tiết và lượng mưa Vrain"
       >
         {/* Hàng trên: Đồng hồ, Ngày & Địa điểm */}

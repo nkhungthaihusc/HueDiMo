@@ -169,7 +169,7 @@ export default function PlaceListPanel({
           <button
             type="button"
             onClick={() => setCollapsed((v) => !v)}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100/90 text-slate-600 hover:bg-slate-200/90 transition-all hover:scale-105 active:scale-95 cursor-pointer text-xs shadow-xs select-none ml-1"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100/90 text-slate-600 hover:bg-slate-200/90 transition-ui hover:scale-105 active:scale-95 cursor-pointer text-xs shadow-xs select-none ml-1"
             aria-label={collapsed ? "Mở rộng danh sách" : "Thu gọn danh sách"}
             title={collapsed ? "Mở rộng" : "Thu gọn"}
           >
@@ -232,7 +232,7 @@ export default function PlaceListPanel({
                     if (hasCatDraggedRef.current) return;
                     setSelectedCategory("all");
                   }}
-                  className={`flex-shrink-0 px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer select-none ${
+                  className={`flex-shrink-0 px-2.5 py-1 rounded-xl text-[11px] font-bold transition-ui cursor-pointer select-none ${
                     selectedCategory === "all"
                       ? "bg-slate-900 text-white shadow-xs"
                       : "bg-slate-100/80 text-slate-600 hover:bg-slate-200"
@@ -247,7 +247,7 @@ export default function PlaceListPanel({
                       if (hasCatDraggedRef.current) return;
                       setSelectedCategory(selectedCategory === "my_places" ? "all" : "my_places");
                     }}
-                    className={`flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer select-none ${
+                    className={`flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold transition-ui cursor-pointer select-none ${
                       selectedCategory === "my_places"
                         ? "bg-amber-500 text-white shadow-xs ring-1 ring-amber-400/40"
                         : "bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100"
@@ -267,7 +267,7 @@ export default function PlaceListPanel({
                         if (hasCatDraggedRef.current) return;
                         setSelectedCategory(active ? "all" : cat.id);
                       }}
-                      className={`flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer select-none ${
+                      className={`flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold transition-ui cursor-pointer select-none ${
                         active
                           ? "bg-brand-600 text-white shadow-xs ring-1 ring-brand-500/30"
                           : "bg-slate-100/80 text-slate-600 hover:bg-slate-200"
@@ -301,7 +301,7 @@ export default function PlaceListPanel({
 
       {/* Danh sách địa điểm & Phân trang */}
       {!collapsed && (
-        <div className="glass-strong flex-1 flex flex-col min-h-0 rounded-3xl border border-white/70 shadow-2xl backdrop-blur-xl transition-all duration-300 overflow-hidden">
+        <div className="glass-strong flex-1 flex flex-col min-h-0 rounded-3xl border border-white/70 shadow-2xl backdrop-blur-xl transition-ui duration-300 overflow-hidden">
           {filteredPlaces.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-8 text-center my-auto">
               <span className="text-3xl mb-2">🔍</span>
@@ -333,7 +333,7 @@ export default function PlaceListPanel({
                         <button
                           type="button"
                           onClick={() => onSelect(place)}
-                          className={`group relative flex w-full items-center gap-3 rounded-2xl p-3 text-left transition-all duration-200 cursor-pointer border select-none ${
+                          className={`group relative flex w-full items-center gap-3 rounded-2xl p-3 text-left transition-ui duration-200 cursor-pointer border select-none ${
                             active
                               ? "bg-gradient-to-r from-brand-600 via-brand-700 to-indigo-700 text-white shadow-xl shadow-brand-600/30 border-transparent scale-[1.01]"
                               : "bg-white/85 hover:bg-white border-slate-200/80 hover:border-brand-300 hover:shadow-lg hover:-translate-y-0.5 text-slate-800"

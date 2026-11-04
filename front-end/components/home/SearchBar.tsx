@@ -88,7 +88,7 @@ export default function SearchBar({
     <div ref={dropdownRef} className="relative w-full max-w-xl pointer-events-auto">
       {/* Main Input Box */}
       <div
-        className={`glass-strong flex w-full items-center gap-2.5 rounded-full px-4 py-2.5 transition-all shadow-md ${
+        className={`glass-strong flex w-full items-center gap-2.5 rounded-full px-4 py-2.5 transition-ui shadow-md ${
           focused ? "ring-2 ring-brand-500 bg-white shadow-lg" : "hover:bg-white/95"
         }`}
       >

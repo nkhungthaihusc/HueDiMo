@@ -1,5 +1,7 @@
 "use client";
 
+import { usePresence } from "@/hooks/usePresence";
+
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { uploadMedia } from "@/lib/api/media";
@@ -36,6 +38,7 @@ export default function ProfileModal({
   userContributedPlaces = [],
   onSelectPlace,
 }: ProfileModalProps) {
+  const { present, phase } = usePresence(isOpen);
   const { user, updateProfile, refreshUser } = useAuth();
 
   const [activeTab, setActiveTab] = useState<"info" | "places">("info");
@@ -56,7 +59,7 @@ export default function ProfileModal({
     }
   }, [user]);
 
-  if (!isOpen) return null;
+  if (!present) return null;
 
   const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -158,7 +161,7 @@ export default function ProfileModal({
   const rankBadge = getBadgeTitle(currentPoints);
 
   return (
-    <div className="home-modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div data-state={phase} inert={!isOpen} className="motion-overlay home-modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div
         className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden"
         onClick={(e) => e.stopPropagation()}

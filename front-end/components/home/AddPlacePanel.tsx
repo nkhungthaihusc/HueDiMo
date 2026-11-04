@@ -168,7 +168,7 @@ export default function AddPlacePanel({ position, onCancel, onSubmit }: AddPlace
   };
 
   return (
-    <div className="pointer-events-auto flex h-full w-full max-w-[calc(100vw-1rem)] sm:w-[410px] sm:max-w-[410px] flex-col overflow-hidden rounded-3xl bg-white border border-slate-200/90 shadow-2xl backdrop-blur-xl transition-all duration-300 animate-in fade-in slide-in-from-right-4">
+    <div className="pointer-events-auto flex h-full w-full max-w-[calc(100vw-1rem)] sm:w-[410px] sm:max-w-[410px] flex-col overflow-hidden rounded-3xl bg-white border border-slate-200/90 shadow-2xl backdrop-blur-xl transition-ui duration-300 animate-in fade-in slide-in-from-right-4">
       {/* Header */}
       <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-3.5 sm:px-5 py-3 sm:py-4 bg-gradient-to-r from-slate-50/80 to-white">
         <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
@@ -502,7 +502,7 @@ export default function AddPlacePanel({ position, onCancel, onSubmit }: AddPlace
                             setOpeningHours(`${preset.open} - ${preset.close}`);
                           }
                         }}
-                        className={`shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                        className={`shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-ui cursor-pointer ${
                           isSelected
                             ? "bg-indigo-600 text-white shadow-xs"
                             : "bg-white text-slate-600 border border-slate-200/80 hover:bg-slate-100"

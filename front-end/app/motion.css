@@ -1,0 +1,120 @@
+/* Shared motion timings. Entry/exit only animate compositor-friendly properties. */
+:root {
+  --motion-fast: 140ms;
+  --motion-standard: 200ms;
+  --motion-enter: 240ms;
+  --motion-exit: 160ms;
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@utility transition-ui {
+  transition-property: color, background-color, border-color, opacity, transform, translate, scale, rotate, box-shadow;
+  transition-duration: var(--motion-fast);
+  transition-timing-function: var(--motion-ease);
+}
+
+@utility animate-in {
+  animation: ui-enter var(--motion-enter) var(--motion-ease) both;
+}
+@utility fade-in { --enter-opacity: 0; }
+@utility zoom-in-90 { --enter-scale: 0.97; }
+@utility zoom-in-95 { --enter-scale: 0.98; }
+@utility slide-in-from-right-4 { --enter-x: 12px; }
+@utility slide-in-from-left-4 { --enter-x: -12px; }
+@utility slide-in-from-top-1 { --enter-y: -4px; }
+@utility slide-in-from-top-2 { --enter-y: -6px; }
+@utility slide-in-from-top-3 { --enter-y: -8px; }
+@utility slide-in-from-bottom-2 { --enter-y: 6px; }
+
+@keyframes ui-enter {
+  from { opacity: var(--enter-opacity, 1); transform: translate3d(var(--enter-x, 0px), var(--enter-y, 0px), 0) scale(var(--enter-scale, 1)); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes overlay-enter { from { opacity: 0; } to { opacity: 1; } }
+@keyframes overlay-exit { from { opacity: 1; } to { opacity: 0; } }
+@keyframes surface-enter {
+  from { opacity: 0; transform: translate3d(0, 10px, 0) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes surface-exit {
+  from { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  to { opacity: 0; transform: translate3d(0, 6px, 0) scale(0.99); }
+}
+
+.motion-overlay[data-state="open"] { animation: overlay-enter var(--motion-standard) ease-out both; }
+.motion-overlay[data-state="closing"] { animation: overlay-exit var(--motion-exit) ease-in both; }
+.motion-overlay[data-state="open"] > :not(.motion-backdrop) { animation: surface-enter var(--motion-enter) var(--motion-ease) both; }
+.motion-overlay[data-state="closing"] > :not(.motion-backdrop) { animation: surface-exit var(--motion-exit) ease-in both; }
+.motion-place-panel[data-state="open"] { animation: surface-enter var(--motion-enter) var(--motion-ease) both; }
+.motion-place-panel[data-state="closing"] { animation: surface-exit var(--motion-exit) ease-in both; }
+
+/* Native dialogs keep browser focus management and animate display discretely. */
+.app-menu, .admin-drawer {
+  opacity: 0;
+  translate: 0 8px;
+  scale: 0.985;
+  transition: opacity var(--motion-exit) ease, translate var(--motion-exit) ease, scale var(--motion-exit) ease, display var(--motion-exit) allow-discrete, overlay var(--motion-exit) allow-discrete;
+}
+.admin-drawer { translate: -24px 0; scale: 1; }
+.app-menu[open], .admin-drawer[open] { opacity: 1; translate: 0 0; scale: 1; }
+.app-menu::backdrop, .admin-drawer::backdrop {
+  opacity: 0;
+  transition: opacity var(--motion-exit) ease, display var(--motion-exit) allow-discrete, overlay var(--motion-exit) allow-discrete;
+}
+.app-menu[open]::backdrop, .admin-drawer[open]::backdrop { opacity: 1; }
+@starting-style {
+  .app-menu[open] { opacity: 0; translate: 0 8px; scale: 0.985; }
+  .admin-drawer[open] { opacity: 0; translate: -24px 0; }
+  .app-menu[open]::backdrop, .admin-drawer[open]::backdrop { opacity: 0; }
+}
+
+.motion-beacon { animation: beacon-fade 2.8s ease-in-out infinite; }
+@keyframes beacon-fade { 0%, 100% { opacity: 0.8; } 50% { opacity: 0.35; } }
+.motion-toast[data-state="open"] { animation: surface-enter var(--motion-enter) var(--motion-ease) both; }
+.motion-toast[data-state="closing"] { animation: surface-exit var(--motion-exit) ease-in both; }
+.motion-toast-progress { transform-origin: left; animation: toast-countdown linear both; }
+@keyframes toast-countdown { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+@media (hover: none) {
+  .home-shell .place-marker-inner:hover { transform: none; }
+  .home-shell .place-marker-inner.is-selected:hover { transform: scale(1.16); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .motion-toast-progress { animation: none !important; transform: none; }
+}
+
+.place-marker-inner.is-pending::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border: 2px solid rgb(245 158 11 / 0.5);
+  border-radius: inherit;
+  pointer-events: none;
+  animation: gps-wave 2.8s ease-out infinite;
+}
+
+.radial-trigger {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  translate: 0 0;
+  transition: translate var(--motion-enter) var(--motion-ease), scale var(--motion-fast) ease, background-color var(--motion-fast) ease;
+}
+.radial-menu[data-open="true"] .radial-trigger { translate: 148px -148px; }
+.radial-wheel { transform-origin: 32px calc(100% - 32px); }
+.radial-wheel[data-state="open"] { animation: radial-enter var(--motion-enter) var(--motion-ease) both; }
+.radial-wheel[data-state="closing"] { animation: radial-exit var(--motion-exit) ease-in both; }
+@keyframes radial-enter { from { opacity: 0; transform: scale(0.88); } to { opacity: 1; transform: none; } }
+@keyframes radial-exit { from { opacity: 1; transform: none; } to { opacity: 0; transform: scale(0.94); } }
+.admin-page { --enter-y: 6px; }
+
+@media (max-width: 767px) {
+  .home-panel-content .animate-in { --enter-x: 0px; --enter-y: 6px; }
+}

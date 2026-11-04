@@ -34,9 +34,9 @@ interface MapViewProps {
 
 function withApiKey(url: string, apiKey?: string): string {
   if (!apiKey) return url;
-  if (url.includes("api_key=")) return url;
-  const sep = url.includes("?") ? "&" : "?";
-  return `${url}${sep}api_key=${apiKey}`;
+  const resource = new URL(url);
+  if (!resource.searchParams.has("api_key")) resource.searchParams.set("api_key", apiKey);
+  return resource.toString();
 }
 
 function calculateDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -163,6 +163,7 @@ export default function MapView({
   const markersRef = useRef<Marker[]>([]);
   const addModeRef = useRef(false);
   const addMarkerRef = useRef<Marker | null>(null);
+  const lastRouteFocusRef = useRef<string | null>(null);
 
   // Tracking Real-time Geolocation refs & states
   const watchIdRef = useRef<number | null>(null);
@@ -205,7 +206,7 @@ export default function MapView({
       watchIdRef.current = null;
     }
 
-    let isFirstFly = true;
+    let isFirstFix = true;
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
@@ -323,15 +324,18 @@ export default function MapView({
           }
         }
 
-        // Tự động chuyển cam đến vị trí người dùng khi mới lấy được hoặc khi đang ở chế độ follow
-        if (isFirstFly || isFollowingRef.current) {
-          map.flyTo({
-            center: [longitude, latitude],
+        // The first GPS fix sets the initial view directly. Later fixes only
+        // move the camera after 20m, avoiding repeated animations from GPS jitter.
+        const center = map.getCenter();
+        const distanceFromCenter = calculateDistanceMeters(center.lat, center.lng, latitude, longitude);
+        if (isFollowingRef.current && (isFirstFix || distanceFromCenter >= 20)) {
+          const cameraOptions = {
+            center: [longitude, latitude] as [number, number],
             zoom: Math.max(map.getZoom(), 15),
-            duration: 900,
-            essential: true,
-          });
-          isFirstFly = false;
+          };
+          if (isFirstFix) map.jumpTo(cameraOptions);
+          else map.easeTo({ ...cameraOptions, duration: 650, essential: false });
+          isFirstFix = false;
         }
       },
       (err) => {
@@ -366,7 +370,7 @@ export default function MapView({
       attributionControl: false,
       style: withApiKey(GOONG_STYLE, apiKey),
       transformRequest: (url) => {
-        if (url.startsWith("https://tiles.goong.io")) {
+        if (new URL(url, window.location.origin).origin === "https://tiles.goong.io") {
           return { url: withApiKey(url, apiKey) };
         }
         return { url };
@@ -457,6 +461,7 @@ export default function MapView({
       }
       map.remove();
       mapRef.current = null;
+      lastRouteFocusRef.current = null;
       markersRef.current = [];
     };
   }, [startLocationWatch]);
@@ -473,7 +478,7 @@ export default function MapView({
         center: [userCoordsRef.current.lng, userCoordsRef.current.lat],
         zoom: Math.max(map.getZoom(), 15),
         duration: 800,
-        essential: true,
+        essential: false,
       });
     } else {
       startLocationWatch(true);
@@ -490,16 +495,13 @@ export default function MapView({
       center: [HUE_CENTER.lng, HUE_CENTER.lat],
       zoom: 12,
       duration: 800,
-      essential: true,
+      essential: false,
     });
   }, []);
 
-  // Điều khiển Zoom và Hướng Bắc
+  // Điều khiển Zoom
   const handleZoomIn = useCallback(() => mapRef.current?.zoomIn(), []);
   const handleZoomOut = useCallback(() => mapRef.current?.zoomOut(), []);
-  const handleResetNorth = useCallback(() => {
-    mapRef.current?.easeTo({ pitch: 0, bearing: 0, duration: 600 });
-  }, []);
 
   // Chế độ thêm địa điểm: cursor + pointer-events của markers
   useEffect(() => {
@@ -565,10 +567,16 @@ export default function MapView({
     if (!map) return;
 
     const focusBounds = () => {
+      const focusKey = JSON.stringify([focusRouteToken, routePlaces?.map((p) => [p.lng, p.lat]) ?? []]);
+      if (lastRouteFocusRef.current === focusKey) return;
+      lastRouteFocusRef.current = focusKey;
       if (map.getLayer("route-line")) map.removeLayer("route-line");
       if (map.getSource("route")) map.removeSource("route");
 
       if (!routePlaces || routePlaces.length === 0) return;
+
+      isFollowingRef.current = false;
+      setIsFollowing(false);
 
       if (routePlaces.length === 1) {
         map.flyTo({ center: [routePlaces[0].lng, routePlaces[0].lat], zoom: 14, duration: 800 });
@@ -593,14 +601,15 @@ export default function MapView({
         ],
         {
           padding: 80,
-          duration: 900,
-          essential: true,
+          duration: 650,
+          essential: false,
         },
       );
     };
 
     if (map.isStyleLoaded()) focusBounds();
     else map.once("load", focusBounds);
+    return () => { map.off("load", focusBounds); };
   }, [routePlaces, focusRouteToken]);
 
   // Render marker theo danh sách đã lọc (có đánh số thứ tự chặng nếu thuộc lộ trình)
@@ -692,14 +701,17 @@ export default function MapView({
   }, [visiblePlaces, selectedId, onSelect, routePlaces, isAddMode]);
 
 
-  // Bay tới địa điểm được chọn
+  // List refreshes must not restart the camera for the same destination.
+  const selectedCameraPlace = visiblePlaces.find((place) => place.id === selectedId);
+  const selectedLatitude = selectedCameraPlace?.lat;
+  const selectedLongitude = selectedCameraPlace?.lng;
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !selectedId) return;
-    const place = visiblePlaces.find((p) => p.id === selectedId);
-    if (!place) return;
-    map.flyTo({ center: [place.lng, place.lat], zoom: 14, duration: 900, essential: true });
-  }, [selectedId, visiblePlaces]);
+    if (!map || !selectedId || selectedLatitude === undefined || selectedLongitude === undefined) return;
+    isFollowingRef.current = false;
+    setIsFollowing(false);
+    map.flyTo({ center: [selectedLongitude, selectedLatitude], zoom: 14, duration: 650, essential: false });
+  }, [selectedId, selectedLatitude, selectedLongitude]);
 
   return (
     <div className="relative h-full w-full isolate">
@@ -744,12 +756,12 @@ export default function MapView({
         <button
           type="button"
           onClick={handleRecenter}
-          className={`map-follow-button pointer-events-auto absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 shadow-2xl backdrop-blur-md text-xs font-bold tracking-wide transition-all duration-300 hover:scale-105 active:scale-95 border border-blue-400/40 ring-4 ring-blue-500/25 ${
+          className={`map-follow-button pointer-events-auto absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 shadow-2xl backdrop-blur-md text-xs font-bold tracking-wide transition-ui duration-300 hover:scale-105 active:scale-95 border border-blue-400/40 ring-4 ring-blue-500/25 ${
             hideControls ? "opacity-0 pointer-events-none translate-y-8 scale-95 invisible" : "opacity-100 translate-y-0 scale-100 visible"
           }`}
         >
           <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+            <span className="motion-beacon absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
           </span>
           <span>Chuyển cam về vị trí của bạn</span>
@@ -757,9 +769,9 @@ export default function MapView({
         </button>
       )}
 
-      {/* Cụm công cụ điều khiển Bản đồ (Zoom, Reset Hướng Bắc, Chuyển cam vị trí của tôi, Về trung tâm Huế) */}
+      {/* Cụm công cụ điều khiển Bản đồ (Zoom, Chuyển cam vị trí của tôi, Về trung tâm Huế) */}
       <div
-        className={`map-controls pointer-events-auto absolute left-4 top-1/2 z-20 flex flex-col gap-2 transition-all duration-300 ease-out ${
+        className={`map-controls pointer-events-auto absolute left-4 top-1/2 z-20 flex flex-col gap-2 transition-ui duration-300 ease-out ${
           hideControls
             ? "opacity-0 pointer-events-none -translate-x-8 scale-95 invisible"
             : "opacity-100 translate-x-0 scale-100 visible"
@@ -787,17 +799,6 @@ export default function MapView({
           −
         </button>
 
-        {/* Nút Quay về hướng Bắc */}
-        <button
-          type="button"
-          onClick={handleResetNorth}
-          className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/90 text-base text-ink-800 shadow-md backdrop-blur-md transition hover:bg-white hover:scale-105 active:scale-95 border border-white/60"
-          title="Quay về hướng Bắc"
-          aria-label="Quay về hướng Bắc"
-        >
-          🧭
-        </button>
-
         <div className="my-0.5 h-px w-full bg-ink-200/50" />
 
         {/* Nút Tương tác CHUYỂN CAM ĐẾN VỊ TRÍ HIỆN TẠI (Locate Me) */}
@@ -805,7 +806,7 @@ export default function MapView({
           <button
             type="button"
             onClick={handleRecenter}
-            className={`relative flex h-11 w-11 items-center justify-center rounded-2xl shadow-md transition-all duration-200 active:scale-95 ${
+            className={`relative flex h-11 w-11 items-center justify-center rounded-2xl shadow-md transition-ui duration-200 active:scale-95 ${
               gpsStatus === "active" && isFollowing
                 ? "bg-blue-600 text-white shadow-blue-500/50 ring-2 ring-blue-400 scale-105"
                 : gpsStatus === "active" && !isFollowing
@@ -873,7 +874,7 @@ export default function MapView({
                 {/* Chấm ping thông báo khi có GPS nhưng người dùng đang lướt đi chỗ khác */}
                 {gpsStatus === "active" && !isFollowing && (
                   <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                    <span className="motion-beacon absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-600 border-2 border-white"></span>
                   </span>
                 )}

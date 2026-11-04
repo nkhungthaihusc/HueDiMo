@@ -69,7 +69,7 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
       <div className="flex min-h-screen w-full flex-col items-center justify-center bg-gradient-to-br from-brand-50 via-white to-amber-50/50 p-4">
         <div className="flex flex-col items-center gap-4 text-center">
           <div className="relative flex h-14 w-14 items-center justify-center">
-            <div className="absolute inset-0 animate-ping rounded-full bg-brand-400/20" />
+            <div className="absolute inset-0 motion-beacon rounded-full bg-brand-400/20" />
             <div className="h-10 w-10 animate-spin rounded-full border-3 border-brand-600 border-t-transparent" />
           </div>
           <div>

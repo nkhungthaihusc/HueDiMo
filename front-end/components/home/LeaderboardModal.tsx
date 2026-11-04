@@ -1,5 +1,7 @@
 "use client";
 
+import { usePresence } from "@/hooks/usePresence";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -26,6 +28,7 @@ export default function LeaderboardModal({
   onClose,
   onOpenProfile,
 }: LeaderboardModalProps) {
+  const { present, phase } = usePresence(isOpen);
   const { user } = useAuth();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -48,7 +51,7 @@ export default function LeaderboardModal({
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!present) return null;
 
   const top3 = leaderboard.slice(0, 3);
   const remaining = leaderboard.slice(3);
@@ -60,7 +63,7 @@ export default function LeaderboardModal({
   const myRank = myRankIndex >= 0 ? myRankIndex + 1 : null;
 
   return (
-    <div className="home-modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div data-state={phase} inert={!isOpen} className="motion-overlay home-modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div
         className="relative w-full max-w-xl max-h-[90vh] flex flex-col bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
@@ -140,7 +143,7 @@ export default function LeaderboardModal({
               {top3[0] && (
                 <div className="flex flex-col items-center flex-1 max-w-[125px]">
                   <div className="relative mb-1.5 -top-2">
-                    <Crown className="w-6 h-6 text-amber-300 absolute -top-5 left-1/2 -translate-x-1/2 animate-bounce" />
+                    <Crown className="w-6 h-6 text-amber-300 absolute -top-5 left-1/2 -translate-x-1/2" />
                     <div className="w-16 h-16 rounded-2xl overflow-hidden ring-4 ring-amber-300 shadow-xl bg-amber-50 flex items-center justify-center">
                       {top3[0].avatar_url ? (
                         // eslint-disable-next-line @next/next/no-img-element

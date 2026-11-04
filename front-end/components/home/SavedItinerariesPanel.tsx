@@ -175,7 +175,7 @@ export default function SavedItinerariesPanel({
   }, [list, activeFilter]);
 
   return (
-    <div className="pointer-events-auto flex h-full w-full max-w-[calc(100vw-1rem)] sm:w-[440px] sm:max-w-[440px] flex-col overflow-hidden rounded-3xl bg-white/95 border border-slate-200/80 shadow-2xl backdrop-blur-xl transition-all duration-300 animate-in fade-in slide-in-from-right-4">
+    <div className="pointer-events-auto flex h-full w-full max-w-[calc(100vw-1rem)] sm:w-[440px] sm:max-w-[440px] flex-col overflow-hidden rounded-3xl bg-white/95 border border-slate-200/80 shadow-2xl backdrop-blur-xl transition-ui duration-300 animate-in fade-in slide-in-from-right-4">
       {/* Header */}
       <div className="border-b border-slate-100 px-3.5 sm:px-5 py-3 sm:py-4 bg-gradient-to-r from-slate-50/80 to-white">
         <div className="flex items-center justify-between gap-2">
@@ -303,7 +303,7 @@ export default function SavedItinerariesPanel({
           return (
             <div
               key={it.id}
-              className="group rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs hover:shadow-md hover:border-indigo-300 transition-all"
+              className="group rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs hover:shadow-md hover:border-indigo-300 transition-ui"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">

@@ -120,7 +120,7 @@ export default function ItineraryFormPanel({
   };
 
   return (
-    <div className="pointer-events-auto flex h-full w-full max-w-[calc(100vw-1rem)] sm:w-[420px] sm:max-w-[420px] flex-col overflow-hidden rounded-3xl bg-white/95 border border-slate-200/80 shadow-2xl backdrop-blur-xl transition-all duration-300 animate-in fade-in slide-in-from-right-4">
+    <div className="pointer-events-auto flex h-full w-full max-w-[calc(100vw-1rem)] sm:w-[420px] sm:max-w-[420px] flex-col overflow-hidden rounded-3xl bg-white/95 border border-slate-200/80 shadow-2xl backdrop-blur-xl transition-ui duration-300 animate-in fade-in slide-in-from-right-4">
       {/* Header */}
       <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-3.5 sm:px-5 py-3 sm:py-4 bg-gradient-to-r from-slate-50/80 to-white">
         <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
@@ -210,7 +210,7 @@ export default function ItineraryFormPanel({
                   key={preset.count}
                   type="button"
                   onClick={() => setGroupSize(preset.count)}
-                  className={`flex flex-col items-center justify-center rounded-xl p-2 border transition-all cursor-pointer ${
+                  className={`flex flex-col items-center justify-center rounded-xl p-2 border transition-ui cursor-pointer ${
                     selected
                       ? "border-indigo-600 bg-indigo-50/70 text-indigo-900 ring-2 ring-indigo-500/20 font-bold"
                       : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-medium"
@@ -261,7 +261,7 @@ export default function ItineraryFormPanel({
                   key={opt.id}
                   type="button"
                   onClick={() => setTransportMode(opt.id)}
-                  className={`flex items-center gap-2 rounded-xl p-2.5 text-left border transition-all cursor-pointer ${
+                  className={`flex items-center gap-2 rounded-xl p-2.5 text-left border transition-ui cursor-pointer ${
                     selected
                       ? "border-indigo-600 bg-indigo-50/60 ring-2 ring-indigo-500/20 text-indigo-900"
                       : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
@@ -294,7 +294,7 @@ export default function ItineraryFormPanel({
                   key={cat.id}
                   type="button"
                   onClick={() => togglePref(cat.id)}
-                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-ui cursor-pointer ${
                     active
                       ? "bg-indigo-600 text-white shadow-xs shadow-indigo-200 ring-2 ring-indigo-600/30"
                       : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200/60"

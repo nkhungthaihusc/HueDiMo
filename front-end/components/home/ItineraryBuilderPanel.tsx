@@ -247,7 +247,7 @@ export default function ItineraryBuilderPanel({
     "w-full rounded-xl border border-slate-200/80 bg-white px-3 py-2 text-xs text-slate-900 outline-none placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition shadow-xs";
 
   return (
-    <div className="pointer-events-auto flex h-full w-full max-w-[calc(100vw-1rem)] sm:w-[420px] sm:max-w-[420px] flex-col overflow-hidden rounded-3xl bg-white/95 border border-slate-200/80 shadow-2xl backdrop-blur-xl transition-all duration-300 animate-in fade-in slide-in-from-right-4">
+    <div className="pointer-events-auto flex h-full w-full max-w-[calc(100vw-1rem)] sm:w-[420px] sm:max-w-[420px] flex-col overflow-hidden rounded-3xl bg-white/95 border border-slate-200/80 shadow-2xl backdrop-blur-xl transition-ui duration-300 animate-in fade-in slide-in-from-right-4">
       {/* Header */}
       <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-3.5 sm:px-5 py-3 sm:py-4 bg-gradient-to-r from-slate-50/80 to-white">
         <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
@@ -307,7 +307,7 @@ export default function ItineraryBuilderPanel({
                     if (hasCatDraggedRef.current) return;
                     setCatFilter(null);
                   }}
-                  className={`flex-shrink-0 px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer select-none ${
+                  className={`flex-shrink-0 px-2.5 py-1 rounded-xl text-[11px] font-bold transition-ui cursor-pointer select-none ${
                     catFilter === null
                       ? "bg-slate-900 text-white shadow-xs"
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -323,7 +323,7 @@ export default function ItineraryBuilderPanel({
                       if (hasCatDraggedRef.current) return;
                       setCatFilter((cur) => (cur === c.id ? null : c.id));
                     }}
-                    className={`flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer select-none ${
+                    className={`flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold transition-ui cursor-pointer select-none ${
                       catFilter === c.id
                         ? "bg-indigo-600 text-white shadow-xs ring-1 ring-indigo-500/30"
                         : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -365,7 +365,7 @@ export default function ItineraryBuilderPanel({
                     <button
                       type="button"
                       onClick={() => addCatalogPlace(p)}
-                      className="group flex w-full items-center gap-2.5 rounded-2xl border border-slate-200/80 bg-white p-2.5 text-left transition-all duration-150 hover:border-indigo-300 hover:shadow-md cursor-pointer select-none"
+                      className="group flex w-full items-center gap-2.5 rounded-2xl border border-slate-200/80 bg-white p-2.5 text-left transition-ui duration-150 hover:border-indigo-300 hover:shadow-md cursor-pointer select-none"
                     >
                       <span
                         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-base shadow-xs"
@@ -469,7 +469,7 @@ export default function ItineraryBuilderPanel({
                       type="button"
                       onClick={() => setTransportMode(opt.id)}
                       title={opt.description}
-                      className={`flex flex-col items-center justify-center rounded-xl py-2 px-1 text-center transition-all duration-150 cursor-pointer select-none ${
+                      className={`flex flex-col items-center justify-center rounded-xl py-2 px-1 text-center transition-ui duration-150 cursor-pointer select-none ${
                         active
                           ? "bg-indigo-600 text-white shadow-sm shadow-indigo-200 font-bold scale-[1.02]"
                           : "bg-slate-100 text-slate-700 hover:bg-slate-200/80 font-medium"
@@ -512,7 +512,7 @@ export default function ItineraryBuilderPanel({
                     if (hasDaysDraggedRef.current) return;
                     setActiveDay(i);
                   }}
-                  className={`shrink-0 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer select-none ${
+                  className={`shrink-0 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-ui cursor-pointer select-none ${
                     i === activeDay
                       ? "bg-indigo-600 text-white shadow-sm shadow-indigo-200"
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
@@ -645,7 +645,7 @@ export default function ItineraryBuilderPanel({
               type="button"
               onClick={handleSave}
               disabled={!hasPlaces}
-              className="w-full rounded-2xl bg-gradient-to-r from-indigo-600 to-indigo-700 py-3 text-sm font-bold text-white shadow-md shadow-indigo-200 transition-all hover:from-indigo-700 hover:to-indigo-800 active:scale-98 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none cursor-pointer select-none"
+              className="w-full rounded-2xl bg-gradient-to-r from-indigo-600 to-indigo-700 py-3 text-sm font-bold text-white shadow-md shadow-indigo-200 transition-ui hover:from-indigo-700 hover:to-indigo-800 active:scale-98 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none cursor-pointer select-none"
             >
               Lưu lộ trình
             </button>

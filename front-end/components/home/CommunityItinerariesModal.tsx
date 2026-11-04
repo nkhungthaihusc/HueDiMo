@@ -1,5 +1,7 @@
 "use client";
 
+import { usePresence } from "@/hooks/usePresence";
+
 import { useState, useEffect, useMemo } from "react";
 import type { Itinerary } from "@/lib/itinerary/types";
 import type { Place } from "@/lib/types";
@@ -25,6 +27,7 @@ export default function CommunityItinerariesModal({
   onUseItinerary,
   onSelectPlace,
 }: CommunityItinerariesModalProps) {
+  const { present, phase } = usePresence(isOpen);
   const { user } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [list, setList] = useState<Itinerary[]>([]);
@@ -154,11 +157,11 @@ export default function CommunityItinerariesModal({
     }
   };
 
-  if (!isOpen) return null;
+  if (!present) return null;
 
   return (
     <>
-      <div className="home-modal fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-200">
+      <div data-state={phase} inert={!isOpen} className="motion-overlay home-modal fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-200">
         <div className="flex h-full max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl border border-slate-200/80">
           {/* Header */}
           <div className="border-b border-slate-100 p-4 sm:p-6 bg-gradient-to-r from-slate-50 via-indigo-50/30 to-purple-50/20">

@@ -1,5 +1,7 @@
 "use client";
 
+import { usePresence } from "@/hooks/usePresence";
+
 import { useState, useRef } from "react";
 import { AdminAPI } from "@/lib/api/admin";
 import { toast } from "@/components/ui/Toast";
@@ -103,6 +105,7 @@ function parseCSV(text: string): Record<string, string>[] {
 }
 
 export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: ImportPlacesModalProps) {
+  const { present, phase } = usePresence(isOpen);
   const [file, setFile] = useState<File | null>(null);
   const [parsedData, setParsedData] = useState<any[]>([]);
   const [previewStats, setPreviewStats] = useState<{
@@ -121,7 +124,7 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  if (!isOpen) return null;
+  if (!present) return null;
 
   // Tải file mẫu CSV
   const handleDownloadTemplate = () => {
@@ -264,9 +267,9 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div data-state={phase} inert={!isOpen} className="motion-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onClick={onClose} />
+      <div className="motion-backdrop fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onClick={onClose} />
 
       {/* Modal Dialog */}
       <div className="relative w-full max-w-5xl rounded-2xl border border-admin-border bg-admin-surface shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -298,6 +301,7 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
             </button>
             <button
               onClick={onClose}
+              aria-label="Đóng nhập CSV"
               className="rounded-lg p-1.5 text-admin-subtle hover:bg-admin-muted hover:text-admin-strong transition"
             >
               <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">

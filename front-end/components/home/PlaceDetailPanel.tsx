@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { MOTION_EXIT_MS } from "@/hooks/usePresence";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import type { Place, Review } from "@/lib/types";
 import { getCategory } from "@/lib/data/categories";
 import { getReviews, addReview, averageRating } from "@/lib/review/logic";
@@ -46,7 +48,7 @@ function Stars({
             type="button"
             disabled={!isClickable}
             onClick={() => onChange?.(star)}
-            className={`${sizeClasses[size]} transition-all duration-150 ${isClickable ? "cursor-pointer hover:scale-125" : "cursor-default"
+            className={`${sizeClasses[size]} transition-ui duration-150 ${isClickable ? "cursor-pointer hover:scale-125" : "cursor-default"
               } ${filled ? "text-amber-400 drop-shadow-sm" : "text-ink-200"}`}
             aria-label={`${star} sao`}
           >
@@ -110,6 +112,13 @@ export default function PlaceDetailPanel({
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const reducedMotion = useReducedMotion();
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const closing = useRef(false);
+
+  useEffect(() => () => {
+    if (closeTimer.current !== null) clearTimeout(closeTimer.current);
+  }, []);
 
   // Auth & Checkin State
   const { user, refreshUser } = useAuth();
@@ -281,7 +290,10 @@ export default function PlaceDetailPanel({
   }, [place.id]);
 
   const handleBack = () => {
-    onBack();
+    if (closing.current) return;
+    closing.current = true;
+    setIsClosing(true);
+    closeTimer.current = setTimeout(onBack, reducedMotion ? 0 : MOTION_EXIT_MS);
   };
 
   const cat = getCategory(place.category);
@@ -445,10 +457,9 @@ export default function PlaceDetailPanel({
   return (
     <>
       <div
-        className={`place-detail-panel glass-strong pointer-events-auto flex h-full w-full max-w-[calc(100vw-1rem)] sm:w-[410px] sm:max-w-[410px] flex-col overflow-hidden rounded-3xl border border-white/40 shadow-2xl backdrop-blur-xl transition-all duration-200 ease-out ${isClosing
-          ? "opacity-0 translate-x-10 scale-95 pointer-events-none"
-          : "opacity-100 translate-x-0 scale-100 animate-in fade-in slide-in-from-right-4"
-          }`}
+        data-state={isClosing ? "closing" : "open"}
+        inert={isClosing}
+        className="motion-place-panel place-detail-panel glass-strong pointer-events-auto flex h-full w-full max-w-[calc(100vw-1rem)] sm:w-[410px] sm:max-w-[410px] flex-col overflow-hidden rounded-3xl border border-white/40 shadow-2xl backdrop-blur-xl"
       >
         {/* Top Hero: Image Slider hoặc Gradient Banner */}
         <div className="place-detail-hero relative h-60 w-full shrink-0 overflow-hidden bg-ink-900 select-none">
@@ -508,7 +519,7 @@ export default function PlaceDetailPanel({
                         aria-label={`Chuyển đến ảnh ${idx + 1}`}
                       >
                         <span
-                          className={`h-1.5 rounded-full transition-all pointer-events-none ${idx === currentImageIndex ? "w-5 bg-white shadow-sm" : "w-1.5 bg-white/50"
+                          className={`h-1.5 rounded-full transition-ui pointer-events-none ${idx === currentImageIndex ? "w-5 bg-white shadow-sm" : "w-1.5 bg-white/50"
                             }`}
                         />
                       </button>
@@ -550,7 +561,7 @@ export default function PlaceDetailPanel({
                 e.stopPropagation();
                 handleBack();
               }}
-              className="pointer-events-auto flex h-10 items-center gap-2 rounded-full bg-slate-950/85 hover:bg-slate-950 px-4 text-xs font-bold text-white backdrop-blur-md transition-all duration-200 hover:scale-105 active:scale-95 shadow-xl border border-white/30 cursor-pointer select-none"
+              className="pointer-events-auto flex h-10 items-center gap-2 rounded-full bg-slate-950/85 hover:bg-slate-950 px-4 text-xs font-bold text-white backdrop-blur-md transition-ui duration-200 hover:scale-105 active:scale-95 shadow-xl border border-white/30 cursor-pointer select-none"
               aria-label="Quay lại danh sách"
             >
               <span className="text-base leading-none pointer-events-none select-none">←</span>
@@ -635,7 +646,7 @@ export default function PlaceDetailPanel({
               <div className="flex items-center gap-2">
                 <span className="relative flex h-2 w-2">
                   <span
-                    className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${distanceToUser <= 500 ? "bg-emerald-400" : "bg-blue-400"
+                    className={`absolute inline-flex h-full w-full motion-beacon rounded-full opacity-75 ${distanceToUser <= 500 ? "bg-emerald-400" : "bg-blue-400"
                       }`}
                   ></span>
                   <span
@@ -663,7 +674,7 @@ export default function PlaceDetailPanel({
               type="button"
               onClick={handleCheckin}
               disabled={isCheckingIn}
-              className="flex flex-col items-center justify-center gap-1 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 py-2 px-1 text-[11px] font-bold text-white shadow-sm transition-all duration-150 hover:from-emerald-600 hover:to-teal-700 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-95 disabled:opacity-50 disabled:hover:translate-y-0 cursor-pointer select-none"
+              className="flex flex-col items-center justify-center gap-1 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 py-2 px-1 text-[11px] font-bold text-white shadow-sm transition-ui duration-150 hover:from-emerald-600 hover:to-teal-700 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-95 disabled:opacity-50 disabled:hover:translate-y-0 cursor-pointer select-none"
               title="Check-in nhận 100 điểm thưởng"
             >
               <span className="pointer-events-none select-none">{isCheckingIn ? "⏳" : "📍"}</span>
@@ -673,7 +684,7 @@ export default function PlaceDetailPanel({
             <button
               type="button"
               onClick={handleOpenGoogleMaps}
-              className="flex flex-col items-center justify-center gap-1 rounded-xl bg-brand-500 py-2 px-1 text-[11px] font-bold text-white shadow-sm transition-all duration-150 hover:bg-brand-600 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-95 cursor-pointer select-none"
+              className="flex flex-col items-center justify-center gap-1 rounded-xl bg-brand-500 py-2 px-1 text-[11px] font-bold text-white shadow-sm transition-ui duration-150 hover:bg-brand-600 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-95 cursor-pointer select-none"
             >
               <span className="pointer-events-none select-none">🧭</span>
               <span className="pointer-events-none select-none">Chỉ đường</span>
@@ -682,7 +693,7 @@ export default function PlaceDetailPanel({
             <button
               type="button"
               onClick={handleCopy}
-              className="flex flex-col items-center justify-center gap-1 rounded-xl border border-ink-200 bg-white/90 py-2 px-1 text-[11px] font-bold text-ink-800 shadow-sm transition-all duration-150 hover:bg-ink-50 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-95 cursor-pointer select-none"
+              className="flex flex-col items-center justify-center gap-1 rounded-xl border border-ink-200 bg-white/90 py-2 px-1 text-[11px] font-bold text-ink-800 shadow-sm transition-ui duration-150 hover:bg-ink-50 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-95 cursor-pointer select-none"
             >
               <span className="pointer-events-none select-none">{isCopied ? "✓" : "🔗"}</span>
               <span className="pointer-events-none select-none">{isCopied ? "Đã chép" : "Sao chép"}</span>
@@ -691,7 +702,7 @@ export default function PlaceDetailPanel({
             <button
               type="button"
               onClick={() => setActiveTab("reviews")}
-              className="flex flex-col items-center justify-center gap-1 rounded-xl border border-ink-200 bg-white/90 py-2 px-1 text-[11px] font-bold text-ink-800 shadow-sm transition-all duration-150 hover:bg-ink-50 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-95 cursor-pointer select-none"
+              className="flex flex-col items-center justify-center gap-1 rounded-xl border border-ink-200 bg-white/90 py-2 px-1 text-[11px] font-bold text-ink-800 shadow-sm transition-ui duration-150 hover:bg-ink-50 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-95 cursor-pointer select-none"
             >
               <span className="pointer-events-none select-none">✍️</span>
               <span className="pointer-events-none select-none">Đánh giá</span>
@@ -717,7 +728,7 @@ export default function PlaceDetailPanel({
           <button
             type="button"
             onClick={() => setActiveTab("info")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-center text-xs font-bold rounded-xl transition-all duration-200 cursor-pointer select-none ${activeTab === "info"
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-center text-xs font-bold rounded-xl transition-ui duration-200 cursor-pointer select-none ${activeTab === "info"
               ? "bg-white text-brand-700 shadow-sm ring-1 ring-black/5"
               : "text-ink-600 hover:text-ink-900 hover:bg-white/50"
               }`}
@@ -727,7 +738,7 @@ export default function PlaceDetailPanel({
           <button
             type="button"
             onClick={() => setActiveTab("reviews")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-center text-xs font-bold rounded-xl transition-all duration-200 cursor-pointer select-none ${activeTab === "reviews"
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-center text-xs font-bold rounded-xl transition-ui duration-200 cursor-pointer select-none ${activeTab === "reviews"
               ? "bg-white text-brand-700 shadow-sm ring-1 ring-black/5"
               : "text-ink-600 hover:text-ink-900 hover:bg-white/50"
               }`}
@@ -1198,7 +1209,7 @@ export default function PlaceDetailPanel({
                   <button
                     type="submit"
                     disabled={!comment.trim() || isSubmittingReview || isUploadingImage}
-                    className="w-full rounded-xl bg-brand-600 py-2.5 text-xs font-bold text-white transition-all hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-40 shadow-sm flex items-center justify-center gap-2 cursor-pointer select-none"
+                    className="w-full rounded-xl bg-brand-600 py-2.5 text-xs font-bold text-white transition-ui hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-40 shadow-sm flex items-center justify-center gap-2 cursor-pointer select-none"
                   >
                     {isSubmittingReview ? (
                       <>

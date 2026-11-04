@@ -4,10 +4,13 @@ import React, {
   createContext,
   useContext,
   useState,
+  useRef,
   useCallback,
   useEffect,
   type ReactNode,
 } from "react";
+import { MOTION_EXIT_MS } from "@/hooks/usePresence";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { AlertCircle, CheckCircle2, AlertTriangle, Info, X } from "lucide-react";
 
 export type ToastType = "error" | "success" | "warning" | "info";
@@ -149,41 +152,34 @@ function ToastCard({
   onClose: (id: string) => void;
 }) {
   const [isExiting, setIsExiting] = useState(false);
-  const [progress, setProgress] = useState(100);
+  const reducedMotion = useReducedMotion();
+  const closing = useRef(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const config = TYPE_CONFIG[item.type];
   const Icon = config.icon;
   const duration = item.duration || 4500;
 
   const handleClose = useCallback(() => {
+    if (closing.current) return;
+    closing.current = true;
     setIsExiting(true);
-    setTimeout(() => {
-      onClose(item.id);
-    }, 250);
-  }, [item.id, onClose]);
+    closeTimer.current = setTimeout(() => onClose(item.id), reducedMotion ? 0 : MOTION_EXIT_MS);
+  }, [item.id, onClose, reducedMotion]);
 
   useEffect(() => {
-    const startTime = Date.now();
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const remaining = Math.max(0, 100 - (elapsed / duration) * 100);
-      setProgress(remaining);
-      if (remaining <= 0) {
-        clearInterval(interval);
-        handleClose();
-      }
-    }, 30);
-
-    return () => clearInterval(interval);
+    const timer = setTimeout(handleClose, duration);
+    return () => clearTimeout(timer);
   }, [duration, handleClose]);
+
+  useEffect(() => () => {
+    if (closeTimer.current !== null) clearTimeout(closeTimer.current);
+  }, []);
 
   return (
     <div
       role="alert"
-      className={`group relative pointer-events-auto flex w-full max-w-sm overflow-hidden rounded-2xl border ${config.accentBorder} bg-white/95 p-4 shadow-2xl backdrop-blur-xl transition-all duration-300 ease-out hover:scale-[1.01] ${
-        isExiting
-          ? "translate-x-full opacity-0 scale-95"
-          : "translate-x-0 opacity-100 scale-100 animate-in slide-in-from-top-3 fade-in duration-300"
-      }`}
+      data-state={isExiting ? "closing" : "open"}
+      className={`motion-toast group relative pointer-events-auto flex w-full max-w-sm overflow-hidden rounded-2xl border ${config.accentBorder} bg-white/95 p-4 shadow-xl`}
     >
       <div className="flex w-full items-start gap-3">
         {/* Icon */}
@@ -216,8 +212,8 @@ function ToastCard({
       {/* Thanh tiến trình thời gian tự động đóng */}
       <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/5">
         <div
-          className={`h-full ${config.progressBar} transition-all duration-75 ease-linear`}
-          style={{ width: `${progress}%` }}
+          className={`motion-toast-progress h-full w-full ${config.progressBar}`}
+          style={{ animationDuration: `${duration}ms` }}
         />
       </div>
     </div>

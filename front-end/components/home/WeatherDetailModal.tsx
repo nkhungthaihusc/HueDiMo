@@ -1,5 +1,7 @@
 "use client";
 
+import { usePresence } from "@/hooks/usePresence";
+
 import { useEffect, useState, useMemo, useCallback } from "react";
 import type {
   VrainApiResponse,
@@ -84,16 +86,10 @@ export default function WeatherDetailModal({
     dragProps: hourlyDragProps,
   } = useHorizontalScroll<HTMLDivElement>();
 
-  const [isClosing, setIsClosing] = useState(false);
+  const { present, phase } = usePresence(isOpen);
+  const isClosing = phase === "closing";
 
-  const handleClose = useCallback(() => {
-    if (isClosing) return;
-    setIsClosing(true);
-    setTimeout(() => {
-      setIsClosing(false);
-      onClose();
-    }, 200);
-  }, [isClosing, onClose]);
+  const handleClose = useCallback(() => onClose(), [onClose]);
 
   const fetchOpenMeteo = useCallback(async () => {
     try {
@@ -229,7 +225,7 @@ export default function WeatherDetailModal({
     setTimeout(() => setCopiedStationId(null), 2000);
   };
 
-  if (!isOpen && !isClosing) return null;
+  if (!present) return null;
 
   const meteo = internalMeteoData || openMeteoData;
   const cur = meteo?.current;
@@ -238,8 +234,9 @@ export default function WeatherDetailModal({
 
   return (
     <div
-      className={`home-modal fixed inset-0 z-50 flex items-center justify-center pt-24 sm:pt-28 pb-6 px-4 sm:px-6 md:px-8 bg-ink-900/50 backdrop-blur-md transition-all duration-200 ease-out ${isClosing ? "opacity-0 pointer-events-none" : "opacity-100 animate-in fade-in"
-        }`}
+      data-state={phase}
+      inert={!isOpen}
+      className="motion-overlay home-modal fixed inset-0 z-50 flex items-center justify-center pt-24 sm:pt-28 pb-6 px-4 sm:px-6 md:px-8 bg-ink-900/50 backdrop-blur-md"
       role="dialog"
       aria-modal="true"
       aria-labelledby="weather-modal-title"
@@ -248,10 +245,7 @@ export default function WeatherDetailModal({
       }}
     >
       <div
-        className={`glass-strong relative flex flex-col w-full max-w-4xl lg:max-w-5xl max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-8.5rem)] rounded-3xl border border-white/80 shadow-2xl overflow-hidden transition-all duration-300 ease-out ${isClosing
-            ? "opacity-0 scale-95 translate-y-3 pointer-events-none"
-            : "opacity-100 scale-100 translate-y-0 animate-in zoom-in-95"
-          }`}
+        className="glass-strong relative flex flex-col w-full max-w-4xl lg:max-w-5xl max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-8.5rem)] rounded-3xl border border-white/80 shadow-2xl overflow-hidden"
       >
         {/* Header bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/60 bg-white/60 px-5 py-3.5 backdrop-blur-md">
@@ -271,7 +265,7 @@ export default function WeatherDetailModal({
                       : "Thời tiết & Mạng lưới mưa Thừa Thiên Huế"}
                 </h2>
                 <span className="relative flex h-2.5 w-2.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="absolute inline-flex h-full w-full motion-beacon rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
                 </span>
               </div>
@@ -333,7 +327,7 @@ export default function WeatherDetailModal({
           <button
             type="button"
             onClick={() => setActiveTab("vrain")}
-            className={`relative flex-1 flex items-center justify-center gap-1.5 py-2 px-2 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-200 cursor-pointer ${activeTab === "vrain"
+            className={`relative flex-1 flex items-center justify-center gap-1.5 py-2 px-2 text-xs sm:text-sm font-semibold rounded-xl transition-ui duration-200 cursor-pointer ${activeTab === "vrain"
                 ? "bg-white text-brand-700 font-bold shadow-sm ring-1 ring-black/5"
                 : "text-ink-600 hover:text-ink-900 hover:bg-white/40"
               }`}
@@ -350,7 +344,7 @@ export default function WeatherDetailModal({
           <button
             type="button"
             onClick={() => setActiveTab("vwater")}
-            className={`relative flex-1 flex items-center justify-center gap-1.5 py-2 px-2 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-200 cursor-pointer ${activeTab === "vwater"
+            className={`relative flex-1 flex items-center justify-center gap-1.5 py-2 px-2 text-xs sm:text-sm font-semibold rounded-xl transition-ui duration-200 cursor-pointer ${activeTab === "vwater"
                 ? "bg-white text-brand-700 font-bold shadow-sm ring-1 ring-black/5"
                 : "text-ink-600 hover:text-ink-900 hover:bg-white/40"
               }`}
@@ -364,7 +358,7 @@ export default function WeatherDetailModal({
             </span>
             {(vwaterData?.summary?.floodingPoints ?? 0) > 0 && (
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="motion-beacon absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
               </span>
             )}
@@ -373,7 +367,7 @@ export default function WeatherDetailModal({
           <button
             type="button"
             onClick={() => setActiveTab("forecast")}
-            className={`relative flex-1 flex items-center justify-center gap-1.5 py-2 px-2 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-200 cursor-pointer ${activeTab === "forecast"
+            className={`relative flex-1 flex items-center justify-center gap-1.5 py-2 px-2 text-xs sm:text-sm font-semibold rounded-xl transition-ui duration-200 cursor-pointer ${activeTab === "forecast"
                 ? "bg-white text-brand-700 font-bold shadow-sm ring-1 ring-black/5"
                 : "text-ink-600 hover:text-ink-900 hover:bg-white/40"
               }`}
@@ -435,7 +429,7 @@ export default function WeatherDetailModal({
                     </div>
                     <div className="h-1.5 w-full rounded-full bg-blue-100 overflow-hidden">
                       <div
-                        className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                        className="h-full bg-blue-500 rounded-full transition-ui duration-500"
                         style={{
                           width: `${(summary.rainingStations / (summary.totalStations || 1)) * 100}%`,
                         }}
@@ -612,7 +606,7 @@ export default function WeatherDetailModal({
                     return (
                       <div
                         key={item.station.uuid}
-                        className="group relative rounded-2xl border border-white/75 bg-white/70 p-3.5 sm:p-4 hover:bg-white/95 hover:shadow-md transition-all duration-200"
+                        className="group relative rounded-2xl border border-white/75 bg-white/70 p-3.5 sm:p-4 hover:bg-white/95 hover:shadow-md transition-ui duration-200"
                       >
                         <div className="flex items-start justify-between gap-4 sm:gap-6">
                           <div className="min-w-0 flex-1">
@@ -658,7 +652,7 @@ export default function WeatherDetailModal({
                         <div className="mt-2.5 flex items-center gap-2">
                           <div className="h-2 flex-1 rounded-full bg-ink-100 overflow-hidden">
                             <div
-                              className="h-full rounded-full transition-all duration-500"
+                              className="h-full rounded-full transition-ui duration-500"
                               style={{
                                 width: `${Math.max(percent, depth > 0 ? 3 : 0)}%`,
                                 backgroundColor: item.color,
@@ -958,7 +952,7 @@ export default function WeatherDetailModal({
                         }`}
                     >
                       <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span className="motion-beacon absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
                       </span>
                       <span>Đang ngập ({vwaterData?.summary?.floodingPoints})</span>
@@ -1013,7 +1007,7 @@ export default function WeatherDetailModal({
                     return (
                       <div
                         key={item.uuid}
-                        className="group relative rounded-2xl border border-ink-100 bg-white/90 p-4 sm:p-5 hover:bg-white hover:shadow-xl hover:border-brand-200 transition-all duration-200 flex flex-col justify-between space-y-3.5 backdrop-blur-sm"
+                        className="group relative rounded-2xl border border-ink-100 bg-white/90 p-4 sm:p-5 hover:bg-white hover:shadow-xl hover:border-brand-200 transition-ui duration-200 flex flex-col justify-between space-y-3.5 backdrop-blur-sm"
                       >
                         <div className="space-y-3">
                           {/* Top: Header trạm & Mực nước chính */}
@@ -1169,7 +1163,7 @@ export default function WeatherDetailModal({
                             <div className="space-y-1">
                               <div className="h-2 flex-1 rounded-full bg-ink-100 overflow-hidden">
                                 <div
-                                  className="h-full rounded-full transition-all duration-500"
+                                  className="h-full rounded-full transition-ui duration-500"
                                   style={{
                                     width: `${isError ? 0 : progressPercent}%`,
                                     backgroundColor: barColor,

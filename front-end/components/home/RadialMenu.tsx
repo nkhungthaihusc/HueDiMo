@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { usePresence } from "@/hooks/usePresence";
 import { CATEGORIES } from "@/lib/data/categories";
 import type { CategoryId } from "@/lib/types";
 
@@ -11,6 +12,7 @@ interface RadialMenuProps {
 
 export default function RadialMenu({ activeCategory, onToggle }: RadialMenuProps) {
   const [open, setOpen] = useState(false);
+  const { present, phase } = usePresence(open);
   const [rotation, setRotation] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [showHint, setShowHint] = useState(true);
@@ -134,16 +136,17 @@ export default function RadialMenu({ activeCategory, onToggle }: RadialMenuProps
   return (
     <div
       ref={containerRef}
-      className={`pointer-events-auto relative flex items-center justify-center select-none touch-none ${
-        open ? `h-[360px] w-[360px] ${isDragging ? "cursor-grabbing" : "cursor-grab"}` : "h-16 w-16"
-      }`}
+      data-open={open}
+      className="radial-menu pointer-events-none relative flex h-[360px] w-[360px] items-center justify-center select-none touch-none"
     >
       {/* Vòng menu radial */}
-      {open && (
+      {present && (
         <div
           ref={wheelRef}
+          data-state={phase}
+          inert={!open}
           onPointerDown={handlePointerDown}
-          className="pointer-events-auto absolute h-[360px] w-[360px] rounded-full glass-strong shadow-2xl border border-white/80 animate-in zoom-in-90 duration-200 cursor-grab active:cursor-grabbing select-none touch-none flex items-center justify-center"
+          className="radial-wheel pointer-events-auto absolute h-[360px] w-[360px] rounded-full glass-strong shadow-2xl border border-white/80 cursor-grab active:cursor-grabbing select-none touch-none flex items-center justify-center"
         >
           {/* Đường ray xoay (Rotation Track) dạng nét đứt */}
           <div
@@ -157,7 +160,7 @@ export default function RadialMenu({ activeCategory, onToggle }: RadialMenuProps
 
           {/* Gợi ý tương tác xoay */}
           {showHint && (
-            <div className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 rounded-full bg-ink-900/85 px-3 py-1 text-[11px] font-medium text-white shadow-lg backdrop-blur-md whitespace-nowrap animate-bounce">
+            <div className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 rounded-full bg-ink-900/85 px-3 py-1 text-[11px] font-medium text-white shadow-lg backdrop-blur-md whitespace-nowrap ">
               <span>🔄</span>
               <span>Lăn chuột hoặc giữ để xoay</span>
             </div>
@@ -192,7 +195,7 @@ export default function RadialMenu({ activeCategory, onToggle }: RadialMenuProps
                 title={`Chọn: ${cat.label} (Có thể xoay vòng)`}
               >
                 <span
-                  className={`flex h-11 w-11 items-center justify-center rounded-full text-xl shadow-md transition-all duration-200 ${
+                  className={`flex h-11 w-11 items-center justify-center rounded-full text-xl shadow-md transition-ui duration-200 ${
                     isActive
                       ? "text-white ring-4 ring-white shadow-lg scale-110"
                       : "bg-white/95 text-ink-900 hover:bg-white hover:scale-110 group-hover:shadow-lg"
@@ -202,7 +205,7 @@ export default function RadialMenu({ activeCategory, onToggle }: RadialMenuProps
                   {cat.emoji}
                 </span>
                 <span
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold whitespace-nowrap shadow-sm transition-all ${
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold whitespace-nowrap shadow-sm transition-ui ${
                     isActive
                       ? "bg-brand-600 text-white shadow-md scale-105"
                       : "glass text-ink-800 group-hover:bg-white"
@@ -222,7 +225,8 @@ export default function RadialMenu({ activeCategory, onToggle }: RadialMenuProps
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label="Bộ lọc thể loại"
-        className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full text-2xl shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer ring-4 ring-white/60"
+        aria-expanded={open}
+        className="radial-trigger pointer-events-auto z-10 flex h-16 w-16 items-center justify-center rounded-full text-2xl shadow-xl transition-ui duration-200 hover:scale-105 active:scale-95 cursor-pointer ring-4 ring-white/60"
         style={{
           background: open
             ? "linear-gradient(135deg, #ef4444, #f43f5e)"

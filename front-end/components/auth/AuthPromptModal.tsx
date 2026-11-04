@@ -1,5 +1,7 @@
 "use client";
 
+import { usePresence } from "@/hooks/usePresence";
+
 import { useEffect } from "react";
 import Link from "next/link";
 import { X, LogIn, UserPlus, ShieldAlert, Sparkles } from "lucide-react";
@@ -21,6 +23,7 @@ export default function AuthPromptModal({
   icon = "🔐",
   redirectPath,
 }: AuthPromptModalProps) {
+  const { present, phase } = usePresence(isOpen);
   useEffect(() => {
     if (!isOpen) return;
 
@@ -32,7 +35,7 @@ export default function AuthPromptModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!present) return null;
 
   const loginHref = redirectPath
     ? `/login?redirect=${encodeURIComponent(redirectPath)}`
@@ -42,16 +45,16 @@ export default function AuthPromptModal({
     : "/register";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div data-state={phase} inert={!isOpen} className="motion-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop kính mờ */}
       <div
-        className="fixed inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
+        className="motion-backdrop fixed inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
         onClick={onClose}
         aria-hidden="true"
       />
 
       {/* Modal Dialog Card */}
-      <div className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white/95 p-6 shadow-2xl border border-slate-100 backdrop-blur-xl transition-all duration-200 animate-in fade-in zoom-in-95 sm:p-7 z-10 select-none">
+      <div className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white/95 p-6 shadow-2xl border border-slate-100 backdrop-blur-xl transition-ui duration-200 animate-in fade-in zoom-in-95 sm:p-7 z-10 select-none">
         {/* Nút đóng */}
         <button
           type="button"
@@ -80,7 +83,7 @@ export default function AuthPromptModal({
             <Link
               href={loginHref}
               onClick={onClose}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3 text-xs sm:text-sm font-bold text-white shadow-md shadow-emerald-600/20 hover:from-emerald-700 hover:to-teal-700 hover:shadow-lg transition-all active:scale-[0.99] cursor-pointer"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3 text-xs sm:text-sm font-bold text-white shadow-md shadow-emerald-600/20 hover:from-emerald-700 hover:to-teal-700 hover:shadow-lg transition-ui active:scale-[0.99] cursor-pointer"
             >
               <LogIn className="h-4 w-4" />
               <span>Đăng nhập ngay</span>
@@ -89,7 +92,7 @@ export default function AuthPromptModal({
             <Link
               href={registerHref}
               onClick={onClose}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-100/90 border border-slate-200/70 px-4 py-3 text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-200/80 hover:text-slate-900 transition-all active:scale-[0.99] cursor-pointer"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-100/90 border border-slate-200/70 px-4 py-3 text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-200/80 hover:text-slate-900 transition-ui active:scale-[0.99] cursor-pointer"
             >
               <UserPlus className="h-4 w-4" />
               <span>Tạo tài khoản mới</span>

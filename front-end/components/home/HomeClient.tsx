@@ -419,7 +419,7 @@ export default function HomeClient() {
             }}
           />
           <div
-            className={`home-toolbar flex flex-col gap-2 transition-all duration-300 ease-out pointer-events-none ${
+            className={`home-toolbar flex flex-col gap-2 transition-ui duration-300 ease-out pointer-events-none ${
               weatherModalOpen
                 ? "-translate-y-4 opacity-0 scale-95 invisible"
                 : "translate-y-0 opacity-100 scale-100 visible"
@@ -445,7 +445,7 @@ export default function HomeClient() {
             )}
             {addMode && addPosition !== null && (
               <span className="glass-strong pointer-events-auto rounded-full px-4 py-1.5 text-xs font-semibold text-indigo-700 border border-indigo-200/70 shadow-sm flex items-center gap-1.5 bg-white/90 backdrop-blur-md">
-                <span className="inline-block w-2 h-2 rounded-full bg-indigo-600 animate-ping"></span>
+                <span className="inline-block w-2 h-2 rounded-full bg-indigo-600 motion-beacon"></span>
                 🎯 Bấm điểm khác trên bản đồ hoặc kéo thả ghim để đổi vị trí
               </span>
             )}
@@ -456,7 +456,7 @@ export default function HomeClient() {
 
       {/* Overlay: panel bên phải */}
       <div
-        className={`home-panel-position z-20 flex justify-end pointer-events-none transition-all duration-300 ease-out ${
+        className={`home-panel-position z-20 flex justify-end pointer-events-none transition-ui duration-300 ease-out ${
           weatherModalOpen
             ? "translate-x-10 opacity-0 invisible"
             : "translate-x-0 opacity-100 visible"
@@ -502,10 +502,10 @@ export default function HomeClient() {
 
       {/* Overlay: radial menu góc trái dưới */}
       <div
-        className={`absolute bottom-6 left-6 z-10 hidden md:block transition-all duration-300 ease-out ${
+        className={`absolute bottom-6 left-6 z-10 hidden md:block transition-ui duration-300 ease-out ${
           weatherModalOpen
             ? "pointer-events-none -translate-x-10 translate-y-10 scale-90 opacity-0 invisible"
-            : "pointer-events-auto translate-x-0 translate-y-0 scale-100 opacity-100 visible"
+            : "pointer-events-none translate-x-0 translate-y-0 scale-100 opacity-100 visible"
         }`}
       >
         <RadialMenu activeCategory={activeCategory} onToggle={handleToggleCategory} />

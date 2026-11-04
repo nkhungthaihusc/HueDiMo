@@ -229,7 +229,7 @@ export default function AdminDashboardPage() {
                   </div>
                   <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-admin-muted">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-purple-600 to-indigo-500 transition-all duration-500"
+                      className="h-full rounded-full bg-gradient-to-r from-purple-600 to-indigo-500 transition-ui duration-500"
                       style={{ width: `${percentage}%` }}
                     />
                   </div>

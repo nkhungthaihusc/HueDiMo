@@ -1,5 +1,7 @@
 "use client";
 
+import { usePresence } from "@/hooks/usePresence";
+
 import { useEffect } from "react";
 import { AlertTriangle, Trash2, X, CheckCircle2, HelpCircle } from "lucide-react";
 
@@ -26,6 +28,7 @@ export default function ConfirmModal({
   variant = "danger",
   isLoading = false,
 }: ConfirmModalProps) {
+  const { present, phase } = usePresence(isOpen);
   useEffect(() => {
     if (!isOpen) return;
 
@@ -39,7 +42,7 @@ export default function ConfirmModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, isLoading, onClose]);
 
-  if (!isOpen) return null;
+  if (!present) return null;
 
   const config = {
     danger: {
@@ -66,10 +69,10 @@ export default function ConfirmModal({
   const modalTitle = title || config.defaultTitle;
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+    <div data-state={phase} inert={!isOpen} className="motion-overlay fixed inset-0 z-[99999] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
+        className="motion-backdrop fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
         onClick={() => !isLoading && onClose()}
         aria-hidden="true"
       />
@@ -79,7 +82,7 @@ export default function ConfirmModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="confirm-modal-title"
-        className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white p-6 shadow-2xl border border-slate-100 backdrop-blur-xl transition-all duration-200 animate-in fade-in zoom-in-95 sm:p-7 z-10 select-none"
+        className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white p-6 shadow-2xl border border-slate-100 backdrop-blur-xl transition-ui duration-200 animate-in fade-in zoom-in-95 sm:p-7 z-10 select-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Nút đóng góc phải */}

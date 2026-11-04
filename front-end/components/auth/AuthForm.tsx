@@ -138,7 +138,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
       <div className="mb-6 flex rounded-2xl bg-purple-100/50 border border-purple-200/50 p-1 text-xs font-semibold text-purple-900/70">
         <Link
           href="/login"
-          className={`flex-1 rounded-xl py-3 text-center transition-all ${
+          className={`flex-1 rounded-xl py-3 text-center transition-ui ${
             isLogin
               ? "bg-white text-brand-700 shadow-xs font-bold ring-1 ring-purple-200/60"
               : "hover:text-purple-900"
@@ -148,7 +148,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
         </Link>
         <Link
           href="/register"
-          className={`flex-1 rounded-xl py-3 text-center transition-all ${
+          className={`flex-1 rounded-xl py-3 text-center transition-ui ${
             !isLogin
               ? "bg-white text-brand-700 shadow-xs font-bold ring-1 ring-purple-200/60"
               : "hover:text-purple-900"
@@ -177,7 +177,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
           type="button"
           onClick={handleGoogleLogin}
           disabled={submitting || googleLoading || facebookLoading}
-          className="group relative flex items-center justify-center gap-2.5 rounded-2xl border border-purple-100/90 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 shadow-2xs transition-all hover:border-purple-200 hover:bg-purple-50/40 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
+          className="group relative flex items-center justify-center gap-2.5 rounded-2xl border border-purple-100/90 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 shadow-2xs transition-ui hover:border-purple-200 hover:bg-purple-50/40 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {googleLoading ? (
             <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
@@ -209,7 +209,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
           type="button"
           onClick={handleFacebookLogin}
           disabled={submitting || googleLoading || facebookLoading}
-          className="group relative flex items-center justify-center gap-2.5 rounded-2xl border border-purple-100/90 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 shadow-2xs transition-all hover:border-purple-200 hover:bg-purple-50/40 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
+          className="group relative flex items-center justify-center gap-2.5 rounded-2xl border border-purple-100/90 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 shadow-2xs transition-ui hover:border-purple-200 hover:bg-purple-50/40 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {facebookLoading ? (
             <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[#1877F2] border-t-transparent" />
@@ -239,7 +239,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
             <label className="mb-1.5 block text-xs font-semibold text-slate-700">
               Họ và tên
             </label>
-            <div className="relative flex items-center rounded-2xl border border-purple-100/90 bg-purple-50/25 transition-all focus-within:border-slate-400 focus-within:bg-white">
+            <div className="relative flex items-center rounded-2xl border border-purple-100/90 bg-purple-50/25 transition-ui focus-within:border-slate-400 focus-within:bg-white">
               <span className="pl-3.5 text-purple-400">
                 <UserIcon className="h-4 w-4" />
               </span>
@@ -260,7 +260,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
           <label className="mb-1.5 block text-xs font-semibold text-slate-700">
             Địa chỉ Email
           </label>
-          <div className="relative flex items-center rounded-2xl border border-purple-100/90 bg-purple-50/25 transition-all focus-within:border-slate-400 focus-within:bg-white">
+          <div className="relative flex items-center rounded-2xl border border-purple-100/90 bg-purple-50/25 transition-ui focus-within:border-slate-400 focus-within:bg-white">
             <span className="pl-3.5 text-purple-400">
               <Mail className="h-4 w-4" />
             </span>
@@ -287,7 +287,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
               </span>
             )}
           </div>
-          <div className="relative flex items-center rounded-2xl border border-purple-100/90 bg-purple-50/25 transition-all focus-within:border-slate-400 focus-within:bg-white">
+          <div className="relative flex items-center rounded-2xl border border-purple-100/90 bg-purple-50/25 transition-ui focus-within:border-slate-400 focus-within:bg-white">
             <span className="pl-3.5 text-purple-400">
               <Lock className="h-4 w-4" />
             </span>
@@ -322,7 +322,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
         <button
           type="submit"
           disabled={submitting || googleLoading}
-          className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 py-3 text-xs font-semibold text-white shadow-md shadow-brand-600/20 transition-all hover:bg-brand-700 hover:shadow-brand-600/30 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 py-3 text-xs font-semibold text-white shadow-md shadow-brand-600/20 transition-ui hover:bg-brand-700 hover:shadow-brand-600/30 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {submitting ? (
             <>

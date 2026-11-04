@@ -106,7 +106,7 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
           <Link href="/" className="flex min-h-11 shrink-0 items-center gap-2 rounded-xl border border-admin-border px-3 text-xs font-medium text-admin-body hover:bg-admin-canvas">Xem website<ArrowUpRight size={16} /></Link>
           </div>
         </header>
-        <main className="admin-content min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain p-4 md:p-6 xl:p-8"><div className="mx-auto flex min-h-full w-full max-w-[1440px] flex-col">{children}</div></main>
+        <main className="admin-content min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain p-4 md:p-6 xl:p-8"><div key={pathname} className="admin-page mx-auto flex min-h-full w-full max-w-[1440px] flex-col animate-in fade-in slide-in-from-bottom-2">{children}</div></main>
       </div>
     </div>
   );
