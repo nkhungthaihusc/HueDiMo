@@ -7,7 +7,9 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Mobile</string>
+	<string>HueDiMo</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>HueDiMo dùng vị trí khi bạn yêu cầu tìm vị trí của mình trên bản đồ.</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

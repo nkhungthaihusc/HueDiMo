@@ -1,30 +1,43 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:mobile/features/map_places/place.dart';
+import 'package:mobile/features/map_places/place_repository.dart';
 import 'package:mobile/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
-
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
-  });
+  testWidgets(
+    'finds a featured place and preserves its preview after details',
+    (tester) async {
+      final place = Place.fromJson({
+        'id': 'dai-noi',
+        'name': 'Đại Nội Huế',
+        'category': 'ancient',
+        'lat': '16.47023',
+        'lng': '107.57725',
+        'opening_hours': '07:00 - 17:30',
+      });
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            placesProvider.overrideWith((ref) async => [place]),
+          ],
+          child: const HueDiMoApp(showTiles: false),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Nổi bật ở Huế'), findsOneWidget);
+      await tester.enterText(find.byType(EditableText), 'Dai Noi');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Đại Nội Huế'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Xem thêm'));
+      await tester.pumpAndSettle();
+      expect(find.text('Giờ mở cửa: 07:00 - 17:30'), findsOneWidget);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.text('Xem thêm'), findsOneWidget);
+      expect(find.text('Dai Noi'), findsOneWidget);
+    },
+  );
 }
