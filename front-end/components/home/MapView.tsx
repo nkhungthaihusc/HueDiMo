@@ -8,7 +8,7 @@ import { HUE_CENTER } from "@/lib/data/places";
 import { getCategory } from "@/lib/data/categories";
 import { getReverseGeocode } from "@/lib/api/reverse-geocode";
 
-const GOONG_STYLE = "https://tiles.goong.io/assets/goong_map_web.json";
+const GOONG_STYLE = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api/map/assets/goong_map_web.json`;
 
 
 interface UserLocationCoord {
@@ -30,13 +30,6 @@ interface MapViewProps {
   focusRouteToken?: number;
   onUserLocationChange?: (location: { lat: number; lng: number; accuracy?: number; address?: string } | null) => void;
   hideControls?: boolean;
-}
-
-function withApiKey(url: string, apiKey?: string): string {
-  if (!apiKey) return url;
-  const resource = new URL(url);
-  if (!resource.searchParams.has("api_key")) resource.searchParams.set("api_key", apiKey);
-  return resource.toString();
 }
 
 function calculateDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -361,20 +354,13 @@ export default function MapView({
     if (!containerRef.current || mapRef.current) return;
 
     setWorkerUrl("/maplibre-gl-worker.mjs");
-    const apiKey = process.env.NEXT_PUBLIC_GOONG_API_KEY;
 
     const map = new MapLibreMap({
       container: containerRef.current,
       center: [HUE_CENTER.lng, HUE_CENTER.lat],
       zoom: 12,
       attributionControl: false,
-      style: withApiKey(GOONG_STYLE, apiKey),
-      transformRequest: (url) => {
-        if (new URL(url, window.location.origin).origin === "https://tiles.goong.io") {
-          return { url: withApiKey(url, apiKey) };
-        }
-        return { url };
-      },
+      style: GOONG_STYLE,
     });
 
     const hideDefaultGoongIcons = () => {

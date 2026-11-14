@@ -37,9 +37,6 @@ export const test = base.extend<{ mockApi: void }>({
       const request = route.request();
       const url = new URL(request.url());
       if (url.origin === appOrigin) return route.continue();
-      if (url.hostname === "tiles.goong.io" && url.pathname === "/assets/goong_map_web.json") {
-        return route.fulfill({ json: { version: 8, sources: {}, layers: [] } });
-      }
       if (url.origin !== "http://127.0.0.1:3101") return route.abort();
 
       const headers = {
@@ -51,6 +48,8 @@ export const test = base.extend<{ mockApi: void }>({
       const reply = (data: unknown) => route.fulfill({ headers, json: { data } });
 
       switch (url.pathname) {
+        case "/api/map/assets/goong_map_web.json":
+          return route.fulfill({ headers, json: { version: 8, sources: {}, layers: [] } });
         case "/api/auth/login":
         case "/api/auth/register": {
           const body = request.postDataJSON();
@@ -110,6 +109,21 @@ export const test = base.extend<{ mockApi: void }>({
           });
         }
         case "/api/admin/stats": return reply(stats);
+        case "/api/admin/places/import-csv/preview": {
+          const { items } = request.postDataJSON();
+          const rows = items.map((item: { name: string; lat: number | null; lng: number | null }, index: number) => {
+            const valid = Boolean(item.name && item.lat !== null && item.lng !== null);
+            return { ...item, rowNum: index + 1, isValid: valid, isDuplicate: false,
+              errors: valid ? [] : ["Tọa độ lat/lng không hợp lệ hoặc để trống"] };
+          });
+          const validCount = rows.filter((row: { isValid: boolean }) => row.isValid).length;
+          return reply({ total: rows.length, items: rows, validCount, duplicateCount: 0, errorCount: rows.length - validCount });
+        }
+        case "/api/admin/places/import-csv": {
+          const { items } = request.postDataJSON();
+          return reply({ totalProcessed: items.length, insertedCount: items.length, updatedCount: 0,
+            skippedCount: 0, errors: [], message: "Nhập hoàn tất" });
+        }
         case "/api/admin/places": {
           const search = url.searchParams.get("q");
           const items = !search || place.name.toLowerCase().includes(search.toLowerCase()) ? [place] : [];

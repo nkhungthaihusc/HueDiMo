@@ -1,3 +1,66 @@
+const generateItineraryOperation = {
+        tags: ["AI Itinerary Planner"],
+        security: [{ BearerAuth: [] }],
+        summary: "Lập lịch trình du lịch thông minh bằng AI",
+        description: "Tạo lịch trình du lịch Huế tối ưu theo ngày, ngân sách, sở thích, phương tiện di chuyển và danh mục địa điểm thực tế. Tối đa 14 ngày, tính cả ngày bắt đầu và ngày kết thúc.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["startDate", "endDate", "budget", "preferences", "currentLocation", "places"],
+                properties: {
+                  startDate: { type: "string", example: "2026-09-12" },
+                  endDate: { type: "string", example: "2026-09-13" },
+                  budget: { type: "number", example: 1000000 },
+                  preferences: { type: "array", items: { type: "string" }, example: ["di-tich", "am-thuc"] },
+                  groupSize: { type: "integer", minimum: 1, example: 2 },
+                  transportMode: { type: "string", enum: ["motorbike", "car", "bicycle", "walking"], example: "motorbike" },
+                  currentLocation: { type: "string", example: "Khách sạn Century Riverside Huế" },
+                  startPlaceId: { type: "string", nullable: true, example: null },
+                  endPlaceId: { type: "string", nullable: true, example: null },
+                  places: { type: "array", items: { type: "object" } },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Lịch trình du lịch được khởi tạo thành công",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: {
+                      type: "object",
+                      properties: {
+                        summary: { type: "string" },
+                        totalEstimatedCost: { type: "number" },
+                        budget: { type: "number" },
+                        transportMode: { type: "string" },
+                        days: { type: "array", items: { type: "object" } },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          "401": { description: "Yêu cầu đăng nhập" },
+          "422": {
+            description: "Dữ liệu chuyến đi không hợp lệ",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } },
+          },
+          "502": {
+            description: "Lỗi phản hồi từ AI bên thứ ba",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } },
+          },
+        },
+      };
+
 export const swaggerDocument = {
   openapi: "3.0.0",
   info: {
@@ -395,6 +458,20 @@ export const swaggerDocument = {
     },
   },
   paths: {
+    "/api/map/assets/goong_map_web.json": {
+      get: {
+        tags: ["Bản đồ"],
+        security: [],
+        summary: "Lấy style bản đồ Goong qua máy chủ",
+        description: "Các URL trong style trỏ tới proxy GET /api/map/<đường-dẫn-tài-nguyên> cho TileJSON, tile, sprite và font. Dùng các URL trong phản hồi để tải tiếp tài nguyên mà không cần gửi khóa Goong.",
+        responses: {
+          "200": { description: "Style MapLibre dạng JSON", content: { "application/json": { schema: { type: "object" } } } },
+          "404": { description: "Không tìm thấy tài nguyên" },
+          "502": { description: "Không thể tải tài nguyên từ Goong" },
+          "503": { description: "Chưa cấu hình khóa hoặc proxy đang bận" },
+        },
+      },
+    },
     "/api/auth/register": {
       post: {
         tags: ["Authentication"],
@@ -604,21 +681,15 @@ export const swaggerDocument = {
       post: {
         tags: ["Authentication"],
         summary: "Đăng nhập hoặc đăng ký bằng tài khoản mạng xã hội (Google, Facebook)",
-        description: "Tiếp nhận thông tin tài khoản OAuth đã được xác thực từ client, tự động tạo mới người dùng nếu chưa có và cấp cặp Access Token (15p) + Refresh Token (30 ngày).",
+        description: "Xác minh phiên OAuth qua Supabase Auth rồi cấp token HueDiMo.",
         requestBody: {
           required: true,
           content: {
             "application/json": {
               schema: {
                 type: "object",
-                required: ["email", "name", "provider"],
-                properties: {
-                  email: { type: "string", format: "email", example: "user@gmail.com" },
-                  name: { type: "string", example: "Lữ Khách Phương Xa" },
-                  avatarUrl: { type: "string", example: "https://lh3.googleusercontent.com/a/sample" },
-                  provider: { type: "string", enum: ["google", "facebook"], example: "google" },
-                  providerId: { type: "string", example: "109823487123984" },
-                },
+                required: ["accessToken"],
+                properties: { accessToken: { type: "string", description: "Access token của phiên Supabase Auth" } },
               },
             },
           },
@@ -632,7 +703,32 @@ export const swaggerDocument = {
               },
             },
           },
-          "422": { $ref: "#/components/schemas/ErrorResponse" },
+          "401": { $ref: "#/components/schemas/ErrorResponse" },
+        },
+      },
+    },
+    "/api/auth/password": {
+      patch: {
+        tags: ["Authentication"],
+        summary: "Đổi mật khẩu tài khoản HueDiMo",
+        security: [{ BearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: {
+            type: "object",
+            required: ["currentPassword", "newPassword", "confirmPassword", "captchaToken"],
+            properties: {
+              currentPassword: { type: "string", format: "password" },
+              newPassword: { type: "string", format: "password", minLength: 8 },
+              confirmPassword: { type: "string", format: "password" },
+              captchaToken: { type: "string" },
+            },
+          } } },
+        },
+        responses: {
+          "200": { description: "Đã đổi mật khẩu" },
+          "401": { description: "Yêu cầu đăng nhập" },
+          "422": { description: "Thông tin xác thực không hợp lệ" },
         },
       },
     },
@@ -1004,6 +1100,38 @@ export const swaggerDocument = {
         },
       },
     },
+    "/api/admin/users/{id}": {
+      get: {
+        tags: ["Admin"],
+        summary: "Xem chi tiết tài khoản người dùng",
+        security: [{ BearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        responses: {
+          "200": {
+            description: "Hồ sơ người dùng",
+            content: { "application/json": { schema: {
+              type: "object",
+              properties: { data: { type: "object", properties: {
+                id: { type: "string", format: "uuid" },
+                name: { type: "string" },
+                email: { type: "string", format: "email" },
+                avatar_url: { type: "string", nullable: true },
+                role: { type: "string" },
+                status: { type: "string" },
+                provider: { type: "string", nullable: true },
+                points: { type: "integer", nullable: true },
+                checkin_count: { type: "integer", nullable: true },
+                created_at: { type: "string", format: "date-time" },
+                updated_at: { type: "string", format: "date-time" },
+              } } },
+            } } },
+          },
+          "401": { description: "Yêu cầu đăng nhập" },
+          "403": { description: "Yêu cầu quyền quản trị viên" },
+          "404": { description: "Không tìm thấy người dùng" },
+        },
+      },
+    },
     "/api/admin/users/{id}/role": {
       patch: {
         tags: ["Admin"],
@@ -1367,6 +1495,7 @@ export const swaggerDocument = {
       },
       post: {
         tags: ["Places & Reviews"],
+        security: [{ BearerAuth: [] }],
         summary: "Đăng đánh giá kèm ảnh cho địa điểm",
         description: "Người dùng gửi đánh giá cảm nhận, số sao và danh sách link ảnh đính kèm.",
         parameters: [
@@ -1386,7 +1515,6 @@ export const swaggerDocument = {
                 type: "object",
                 required: ["comment", "rating"],
                 properties: {
-                  authorName: { type: "string", example: "Trần Minh", description: "Tên người đánh giá (hoặc ẩn danh)" },
                   rating: { type: "number", minimum: 1, maximum: 5, example: 5 },
                   comment: { type: "string", example: "Cảnh hoàng hôn ở đây đẹp tuyệt vời, góc chụp ảnh rất đẹp!" },
                   images: {
@@ -1401,6 +1529,7 @@ export const swaggerDocument = {
           },
         },
         responses: {
+          "401": { description: "Yêu cầu đăng nhập" },
           "201": {
             description: "Đăng đánh giá thành công",
             content: {
@@ -1547,67 +1676,8 @@ export const swaggerDocument = {
         },
       },
     },
-    "/api/itinerary": {
-      post: {
-        tags: ["AI Itinerary Planner"],
-        summary: "Lập lịch trình du lịch thông minh bằng AI",
-        description: "Tạo lịch trình du lịch Huế tối ưu theo ngày, ngân sách, sở thích, phương tiện di chuyển và danh mục địa điểm thực tế.",
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: {
-                type: "object",
-                required: ["startDate", "endDate", "budget", "preferences", "currentLocation", "places"],
-                properties: {
-                  startDate: { type: "string", example: "2026-09-12" },
-                  endDate: { type: "string", example: "2026-09-13" },
-                  budget: { type: "number", example: 1000000 },
-                  preferences: { type: "array", items: { type: "string" }, example: ["di-tich", "am-thuc"] },
-                  transportMode: { type: "string", enum: ["motorbike", "car", "bicycle", "walking"], example: "motorbike" },
-                  currentLocation: { type: "string", example: "Khách sạn Century Riverside Huế" },
-                  startPlaceId: { type: "string", nullable: true, example: null },
-                  endPlaceId: { type: "string", nullable: true, example: null },
-                  places: { type: "array", items: { type: "object" } },
-                },
-              },
-            },
-          },
-        },
-        responses: {
-          "200": {
-            description: "Lịch trình du lịch được khởi tạo thành công",
-            content: {
-              "application/json": {
-                schema: {
-                  type: "object",
-                  properties: {
-                    data: {
-                      type: "object",
-                      properties: {
-                        summary: { type: "string" },
-                        totalEstimatedCost: { type: "number" },
-                        budget: { type: "number" },
-                        transportMode: { type: "string" },
-                        days: { type: "array", items: { type: "object" } },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-          "422": {
-            description: "Dữ liệu chuyến đi không hợp lệ",
-            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } },
-          },
-          "502": {
-            description: "Lỗi phản hồi từ AI bên thứ ba",
-            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } },
-          },
-        },
-      },
-    },
+    "/api/itinerary": { post: generateItineraryOperation },
+    "/api/itineraries/generate": { post: generateItineraryOperation },
     "/api/leaderboard": {
       get: {
         tags: ["Leaderboard & Gamification"],
@@ -1783,7 +1853,7 @@ export const swaggerDocument = {
       post: {
         tags: ["Admin - Places Management"],
         summary: "Kiểm tra trước và phát hiện trùng khớp dữ liệu CSV (Admin Preview / Dry-run)",
-        description: "Yêu cầu quyền Quản trị viên (Admin). Nhận mảng các dòng parse được từ file CSV, kiểm tra hợp lệ tọa độ Thừa Thiên Huế (15.0 - 18.0, 106.0 - 109.0), và đối chiếu với cơ sở dữ liệu để gắn cờ trùng lặp (trùng ID, trùng tên, trùng tọa độ lân cận < 35m, hoặc trùng nội bộ trong file).",
+        description: "Yêu cầu quyền Quản trị viên (Admin). Nhận các dòng địa điểm đã chuyển đổi từ CSV, JSON hoặc GeoJSON, kiểm tra hợp lệ tọa độ Thừa Thiên Huế (15.0 - 18.0, 106.0 - 109.0), và đối chiếu với cơ sở dữ liệu để gắn cờ trùng lặp (trùng ID, trùng tên, trùng tọa độ lân cận < 35m, hoặc trùng nội bộ trong file).",
         security: [{ BearerAuth: [] }],
         requestBody: {
           required: true,

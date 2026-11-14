@@ -1,5 +1,7 @@
 "use client";
 
+import MoneyInput from "@/components/ui/MoneyInput";
+
 import { isItineraryDateRangeValid, latestItineraryEndDate } from "@/lib/itinerary/types";
 
 import { useState } from "react";
@@ -30,6 +32,7 @@ const NOTE_SUGGESTIONS = [
 ];
 
 interface ItineraryFormPanelProps {
+  userLocation: { lat: number; lng: number; address?: string } | null;
   places: Place[];
   onCancel: () => void;
   onGenerated: (itinerary: Itinerary) => Promise<void>;
@@ -37,6 +40,7 @@ interface ItineraryFormPanelProps {
 }
 
 export default function ItineraryFormPanel({
+  userLocation,
   places,
   onCancel,
   onGenerated,
@@ -48,12 +52,15 @@ export default function ItineraryFormPanel({
   const [transportMode, setTransportMode] = useState<TransportMode>("motorbike");
   const [prefs, setPrefs] = useState<Set<CategoryId>>(new Set(["ancient", "food"]));
   const [budget, setBudget] = useState("1500000");
-  const [currentLocation, setCurrentLocation] = useState("Khách sạn gần trung tâm TP. Huế");
+  const currentLocation = userLocation
+    ? userLocation.address?.trim() || `${userLocation.lat.toFixed(5)}, ${userLocation.lng.toFixed(5)}`
+    : "";
   const [notes, setNotes] = useState("");
   const [startPlaceId, setStartPlaceId] = useState("");
   const [endPlaceId, setEndPlaceId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [apiDateError, setApiDateError] = useState("");
 
   const togglePref = (id: CategoryId) => {
     setPrefs((cur) => {
@@ -74,11 +81,18 @@ export default function ItineraryFormPanel({
   };
 
   const budgetNum = Number(budget);
-  const validDates = isItineraryDateRangeValid(startDate, endDate);
+  const dateError = !startDate || !endDate
+    ? "Vui lòng chọn ngày bắt đầu và ngày kết thúc."
+    : endDate < startDate
+      ? "Ngày kết thúc phải từ ngày bắt đầu trở đi."
+      : !isItineraryDateRangeValid(startDate, endDate)
+        ? "Lộ trình tối đa 14 ngày."
+        : apiDateError;
   const valid =
-    validDates &&
+    !dateError &&
+    places.length > 0 &&
     prefs.size > 0 &&
-    groupSize >= 1 &&
+    Number.isInteger(groupSize) && groupSize >= 1 &&
     Number.isFinite(budgetNum) &&
     budgetNum > 0;
 
@@ -93,7 +107,7 @@ export default function ItineraryFormPanel({
         transportMode,
         preferences: [...prefs],
         budget: budgetNum,
-        currentLocation: currentLocation.trim() || "Thành phố Huế",
+        currentLocation: currentLocation || "Chưa xác định được vị trí hiện tại",
         startPlaceId: startPlaceId || null,
         endPlaceId: endPlaceId || null,
         groupSize,
@@ -110,13 +124,16 @@ export default function ItineraryFormPanel({
         createdAt: new Date().toISOString(),
       };
 
-      toast.success("✨ AI đã thiết kế lịch trình du lịch Huế thành công!");
       await onGenerated(enhancedItinerary);
     } catch (e) {
       const errMsg =
         e instanceof ApiError ? e.message : "Không kết nối được với máy chủ AI. Thử lại sau.";
-      setError(errMsg);
-      toast.error(`Lỗi AI tư vấn: ${errMsg}`);
+      if (e instanceof ApiError && /14 ngày|khoảng ngày/i.test(errMsg)) {
+        setApiDateError(errMsg);
+      } else {
+        setError(errMsg);
+        toast.error(`Lỗi AI tư vấn: ${errMsg}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -171,7 +188,12 @@ export default function ItineraryFormPanel({
             <input
               type="date"
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              aria-invalid={Boolean(dateError)}
+              aria-describedby={dateError ? "itinerary-date-error" : undefined}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setApiDateError("");
+              }}
               className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition"
             />
           </div>
@@ -184,13 +206,22 @@ export default function ItineraryFormPanel({
               value={endDate}
               min={startDate}
               max={latestItineraryEndDate(startDate) || undefined}
-              onChange={(e) => setEndDate(e.target.value)}
+              aria-invalid={Boolean(dateError)}
+              aria-describedby={dateError ? "itinerary-date-error" : undefined}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setApiDateError("");
+              }}
               className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition"
             />
           </div>
         </div>
 
-        {!validDates && <p className="text-rose-700" role="alert">Chọn khoảng thời gian từ 1 đến 14 ngày.</p>}
+        {dateError && (
+          <p id="itinerary-date-error" role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-800">
+            {dateError}
+          </p>
+        )}
 
         {/* Số lượng người tham gia */}
         <div>
@@ -319,33 +350,26 @@ export default function ItineraryFormPanel({
           <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
             Ngân sách dự kiến (VND)
           </label>
-          <div className="relative">
-            <input
-              type="number"
-              value={budget}
-              step={100000}
-              placeholder="VD: 2000000"
-              onChange={(e) => setBudget(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs font-bold text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition"
-            />
-            {budgetNum > 0 && (
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-indigo-600 pointer-events-none">
-                {budgetNum.toLocaleString("vi-VN")} đ
-              </span>
-            )}
-          </div>
+          <MoneyInput
+            aria-label="Ngân sách dự kiến (VND)"
+            value={budget}
+
+            placeholder="VD: 2000000"
+            onValueChange={setBudget}
+            className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs font-bold text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition"
+          />
         </div>
 
         {/* Điểm lưu trú / Nơi ở */}
         <div>
-          <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-            Khu vực lưu trú / Điểm xuất phát
+          <label htmlFor="itinerary-current-location" className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            Vị trí hiện tại
           </label>
           <input
             type="text"
-            value={currentLocation}
-            placeholder="VD: Gần Cầu Trường Tiền hoặc Khách sạn Imperial"
-            onChange={(e) => setCurrentLocation(e.target.value)}
+            id="itinerary-current-location"
+            readOnly
+            value={currentLocation || "Chưa xác định được vị trí"}
             className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs font-medium text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition"
           />
         </div>
@@ -398,7 +422,7 @@ export default function ItineraryFormPanel({
           type="button"
           onClick={handleSubmit}
           disabled={!valid || loading}
-          className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-indigo-700 py-3 px-4 text-xs font-bold text-white shadow-md hover:from-indigo-700 hover:to-indigo-800 disabled:opacity-50 disabled:pointer-events-none active:scale-95 transition cursor-pointer"
+          className="w-full flex items-center justify-center gap-2 rounded-2xl py-3 px-4 text-xs font-bold transition enabled:cursor-pointer enabled:bg-gradient-to-r enabled:from-indigo-600 enabled:to-indigo-700 enabled:text-white enabled:shadow-md enabled:hover:from-indigo-700 enabled:hover:to-indigo-800 enabled:active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
         >
           {loading ? (
             <>

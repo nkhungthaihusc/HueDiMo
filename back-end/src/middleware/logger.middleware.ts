@@ -47,14 +47,14 @@ function sanitizeData(data: any): any {
   }
 
   const clone: Record<string, any> = {};
-  const sensitiveKeys = ["password", "password_hash", "token", "refreshToken", "accessToken", "authorization", "secret"];
+  const sensitiveKeys = ["password", "currentPassword", "newPassword", "confirmPassword", "captchaToken", "password_hash", "token", "refreshToken", "accessToken", "authorization", "secret"];
 
   for (const key of Object.keys(data)) {
     const val = data[key];
     const isSensitive = sensitiveKeys.some((s) => key.toLowerCase().includes(s.toLowerCase()));
 
     if (isSensitive) {
-      clone[key] = typeof val === "string" && val.length > 8 ? `${val.substring(0, 4)}...****` : "********";
+      clone[key] = "********";
     } else if (val && typeof val === "object") {
       clone[key] = sanitizeData(val);
     } else {

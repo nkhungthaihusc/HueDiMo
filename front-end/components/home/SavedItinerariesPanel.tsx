@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import type { SavedItinerary } from "@/lib/itinerary/logic";
-import { deleteItinerary, getItineraries, renameItinerary, updateItineraryId, getItinerarySignature } from "@/lib/itinerary/logic";
+import { deleteItinerary, renameItinerary, updateItineraryId } from "@/lib/itinerary/logic";
 import { formatDateVN, formatVND } from "@/lib/format";
 import { ItineraryAPI } from "@/lib/api/itineraries";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import { toast } from "@/components/ui/Toast";
+import { useSavedItineraries } from "@/hooks/useSavedItineraries";
 import { useAuth } from "@/components/auth/AuthProvider";
 
 interface SavedItinerariesPanelProps {
@@ -24,102 +26,37 @@ export default function SavedItinerariesPanel({
   onExploreCommunity,
 }: SavedItinerariesPanelProps) {
   const { user } = useAuth();
-  const [list, setList] = useState<SavedItinerary[]>(() => getItineraries());
+  const { list, setList, loading, error, retry } = useSavedItineraries(user?.id);
   const [activeFilter, setActiveFilter] = useState<"all" | "ai" | "public">("all");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [publishingId, setPublishingId] = useState<string | null>(null);
 
-  // Khi user thay đổi hoặc đăng xuất, load lại danh sách theo user hiện tại
-  useEffect(() => {
-    setList(getItineraries());
-  }, [user?.id]);
-
-  // Đồng bộ thêm danh sách lịch trình từ Cloud nếu user đã đăng nhập
-  useEffect(() => {
-    if (!user) {
-      setList(getItineraries());
-      return;
-    }
-    let isMounted = true;
-    ItineraryAPI.getMyItineraries()
-      .then((serverList) => {
-        if (!isMounted) return;
-        setList((localList) => {
-          const merged = [...localList];
-          for (const s of serverList) {
-            const serverSig = getItinerarySignature(s);
-            // Tìm mục trùng ID hoặc trùng Signature nội dung
-            const idx = merged.findIndex((m) => m.id === s.id || getItinerarySignature(m) === serverSig);
-            if (idx >= 0) {
-              merged[idx] = {
-                ...merged[idx],
-                id: s.id || merged[idx].id,
-                title: s.title || merged[idx].title,
-                isPublic: s.isPublic,
-                likesCount: s.likesCount,
-                commentsCount: s.commentsCount,
-                viewsCount: s.viewsCount,
-                userId: s.userId || user.id,
-              };
-            } else {
-              merged.push({
-                ...s,
-                id: s.id || `cloud-${Date.now()}`,
-                title: s.title || `Lộ trình ${s.days.length} ngày`,
-                createdAt: s.createdAt || new Date().toISOString(),
-                updatedAt: s.updatedAt || new Date().toISOString(),
-                userId: s.userId || user.id,
-              });
-            }
-          }
-
-          // Lọc triệt để trùng lặp cả về ID lẫn Signature
-          const seenIds = new Set<string>();
-          const seenSigs = new Set<string>();
-          const deduplicated = merged.filter((item) => {
-            const sig = getItinerarySignature(item);
-            if (seenIds.has(item.id) || seenSigs.has(sig)) return false;
-            seenIds.add(item.id);
-            seenSigs.add(sig);
-            return true;
-          });
-
-          return deduplicated;
-        });
-      })
-      .catch(() => {});
-
-    return () => {
-      isMounted = false;
-    };
-  }, [user]);
-
   const handleRename = (id: string) => {
     if (!renameValue.trim()) return;
-    setList(renameItinerary(id, renameValue.trim()));
+    const renamed = renameItinerary(id, renameValue.trim());
+    setList((current) => current.map((item) => item.id === id
+      ? renamed.find((entry) => entry.id === id) ?? { ...item, title: renameValue.trim() }
+      : item));
     setRenamingId(null);
     setRenameValue("");
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirmDeleteId !== id) {
-      setConfirmDeleteId(id);
-      return;
-    }
-    // Xóa khỏi local storage
-    setList(deleteItinerary(id));
-    setConfirmDeleteId(null);
-
-    // Nếu là ID từ server (UUID > 20 ký tự), đồng bộ xóa trên server
-    if (user && id.length > 20) {
-      try {
-        await ItineraryAPI.deleteItinerary(id);
-        toast.success("Đã xóa lịch trình thành công.");
-      } catch (err) {
-        console.error("Lỗi khi xóa lịch trình trên server:", err);
-      }
+  const [deleting, setDeleting] = useState(false);
+  const confirmDelete = async () => {
+    if (!confirmDeleteId || deleting) return;
+    setDeleting(true);
+    try {
+      if (user && confirmDeleteId.length > 20) await ItineraryAPI.deleteItinerary(confirmDeleteId);
+      deleteItinerary(confirmDeleteId);
+      setList((current) => current.filter((item) => item.id !== confirmDeleteId));
+      setConfirmDeleteId(null);
+      toast.success("Đã xóa lịch trình.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Không thể xóa lịch trình.");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -147,7 +84,7 @@ export default function SavedItinerariesPanel({
       };
 
       const updatedList = updateItineraryId(it.id, updatedSaved);
-      setList(updatedList);
+      setList((current) => [updatedList[0], ...current.filter((item) => item.id !== it.id && item.id !== updatedSaved.id)]);
 
       if (nextPublic) {
         toast.success("Đã công khai lịch trình lên Cộng đồng HueDiMo!");
@@ -192,7 +129,7 @@ export default function SavedItinerariesPanel({
             <div className="min-w-0 flex-1">
               <h2 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight truncate">Lịch sử Lộ trình</h2>
               <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate">
-                {list.length} kế hoạch du lịch cá nhân
+                {!loading && !error && `${list.length} kế hoạch du lịch cá nhân`}
               </p>
             </div>
           </div>
@@ -254,7 +191,11 @@ export default function SavedItinerariesPanel({
 
       {/* Danh sách lịch trình */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300">
-        {displayedList.length === 0 && (
+        {loading ? (
+          <p role="status" className="p-4 text-sm text-slate-600">Đang tải lịch trình…</p>
+        ) : error ? (
+          <div role="alert" className="p-4 text-sm text-slate-700">Không thể tải lịch trình. <button type="button" onClick={retry} className="font-semibold text-indigo-700">Thử lại</button></div>
+        ) : displayedList.length === 0 && (
           <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-2xl text-indigo-600 mb-3">
               ✨
@@ -297,7 +238,7 @@ export default function SavedItinerariesPanel({
         {displayedList.map((it) => {
           const totalPlaces = it.days.reduce((acc, d) => acc + d.places.length, 0);
           const isRenaming = renamingId === it.id;
-          const isDeleting = confirmDeleteId === it.id;
+
           const isPublishing = publishingId === it.id;
 
           return (
@@ -414,15 +355,11 @@ export default function SavedItinerariesPanel({
 
                 <button
                   type="button"
-                  onClick={() => handleDelete(it.id)}
-                  className={`rounded-lg p-1.5 transition text-xs cursor-pointer ${
-                    isDeleting
-                      ? "bg-rose-600 text-white font-bold"
-                      : "text-slate-400 hover:text-rose-600 hover:bg-rose-50"
-                  }`}
-                  title={isDeleting ? "Bấm lại để xác nhận xóa" : "Xóa lộ trình"}
+                  onClick={() => setConfirmDeleteId(it.id)}
+                  className="rounded-lg p-1.5 text-xs text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                  title="Xóa lộ trình" aria-label="Xóa lộ trình"
                 >
-                  {isDeleting ? "Xóa?" : "🗑️"}
+                  🗑️
                 </button>
               </div>
 
@@ -489,6 +426,9 @@ export default function SavedItinerariesPanel({
           <span>Tạo thủ công</span>
         </button>
       </div>
+      <ConfirmModal isOpen={confirmDeleteId !== null} title="Xóa lịch trình?"
+        message="Lịch trình đã xóa không thể khôi phục." confirmText="Xóa lịch trình"
+        isLoading={deleting} onConfirm={confirmDelete} onClose={() => { if (!deleting) setConfirmDeleteId(null); }} />
     </div>
   );
 }

@@ -1,5 +1,6 @@
-import { getAccessToken, refreshTokens, clearSession } from "@/lib/auth/logic";
+import { getSession } from "@/lib/auth/logic";
 import type { Place, User } from "@/lib/types";
+import { authFetch, readApiResponse } from "./client";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
 
@@ -97,45 +98,21 @@ export interface AdminReviewsResponse {
 /**
  * Fetch wrapper tự động đính kèm Bearer token và cơ chế Refresh Token Rotation khi gặp 401
  */
-async function adminFetch(endpoint: string, options: RequestInit = {}): Promise<any> {
-  let token = getAccessToken();
-  if (!token) {
-    throw new Error("UNAUTHORIZED");
+export const ADMIN_ACCESS_DENIED_EVENT = "huedimo-admin-access-denied";
+
+async function requestAdmin(endpoint: string, options?: RequestInit): Promise<Response> {
+  const accountId = getSession()?.id;
+  const response = await authFetch(`${BACKEND_URL}${endpoint}`, options);
+  const currentAccountId = getSession()?.id;
+  if ((response.status === 401 || response.status === 403) &&
+      (currentAccountId === accountId || (response.status === 401 && !currentAccountId))) {
+    window.dispatchEvent(new CustomEvent(ADMIN_ACCESS_DENIED_EVENT, { detail: response.status }));
   }
+  return response;
+}
 
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-    ...(options.headers as Record<string, string> || {}),
-  };
-
-  let res = await fetch(`${BACKEND_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
-
-  // Nếu token hết hạn (401), xoay vòng refresh token rồi thử lại
-  if (res.status === 401) {
-    const refreshRes = await refreshTokens();
-    if (!refreshRes.ok || !refreshRes.accessToken) {
-      clearSession();
-      throw new Error("UNAUTHORIZED");
-    }
-
-    headers.Authorization = `Bearer ${refreshRes.accessToken}`;
-    res = await fetch(`${BACKEND_URL}${endpoint}`, {
-      ...options,
-      headers,
-    });
-  }
-
-  const json = await res.json();
-
-  if (!res.ok) {
-    throw new Error(json.error?.message || "Đã xảy ra lỗi khi thực hiện thao tác quản trị.");
-  }
-
-  return json.data;
+async function adminFetch(endpoint: string, options?: RequestInit): Promise<any> {
+  return readApiResponse(await requestAdmin(endpoint, options));
 }
 
 export const AdminAPI = {
@@ -185,20 +162,13 @@ export const AdminAPI = {
   },
 
   async exportPlacesCSV(params?: { q?: string; category?: string; status?: string }): Promise<Blob> {
-    let token = getAccessToken();
-    if (!token) throw new Error("UNAUTHORIZED");
-
     const query = new URLSearchParams();
     if (params?.q) query.append("q", params.q);
     if (params?.category) query.append("category", params.category);
     if (params?.status && params.status !== "all") query.append("status", params.status);
 
     const qs = query.toString() ? `?${query.toString()}` : "";
-    const res = await fetch(`${BACKEND_URL}/api/admin/places/export-csv${qs}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const res = await requestAdmin(`/api/admin/places/export-csv${qs}`);
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
@@ -250,6 +220,10 @@ export const AdminAPI = {
   },
 
   // Users
+  async getUser(id: string): Promise<User & { created_at?: string; updated_at?: string }> {
+    return adminFetch(`/api/admin/users/${encodeURIComponent(id)}`);
+  },
+
   async getUsers(params?: { page?: number; limit?: number; q?: string; role?: string }): Promise<AdminUsersResponse> {
     const query = new URLSearchParams();
     if (params?.page) query.append("page", String(params.page));

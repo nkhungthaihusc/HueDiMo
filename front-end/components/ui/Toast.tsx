@@ -179,7 +179,7 @@ function ToastCard({
     <div
       role="alert"
       data-state={isExiting ? "closing" : "open"}
-      className={`motion-toast group relative pointer-events-auto flex w-full max-w-sm overflow-hidden rounded-2xl border ${config.accentBorder} bg-white/95 p-4 shadow-xl`}
+      className={`motion-toast group relative pointer-events-auto flex w-full max-w-sm overflow-hidden rounded-2xl border ${config.accentBorder} bg-white/95 p-3 shadow-xl`}
     >
       <div className="flex w-full items-start gap-3">
         {/* Icon */}
@@ -188,13 +188,13 @@ function ToastCard({
         </div>
 
         {/* Content */}
-        <div className="flex-1 pr-6">
+        <div className="min-w-0 flex-1 pr-5 break-words">
           <div className="flex items-center gap-2">
             <h4 className="text-sm font-bold text-ink-900 leading-tight">
               {item.title || config.badgeText}
             </h4>
           </div>
-          <p className="mt-1 text-xs text-ink-700 leading-relaxed break-words font-medium">
+          <p className="mt-1 max-h-24 overflow-y-auto text-xs text-ink-700 leading-relaxed [overflow-wrap:anywhere] font-medium">
             {item.message}
           </p>
         </div>
@@ -229,7 +229,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const showToast = useCallback((item: Omit<ToastItem, "id">) => {
     const id = `toast_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    setToasts((prev) => [...prev.slice(-4), { ...item, id }]); // Giữ tối đa 5 toast cùng lúc
+    setToasts((prev) => [...prev.filter((toast) => toast.message !== item.message || toast.type !== item.type).slice(-1), { ...item, id }]);
   }, []);
 
   const error = useCallback(
@@ -291,7 +291,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {/* Vị trí cố định ở góc trên bên phải màn hình */}
       <aside
         aria-live="assertive"
-        className="pointer-events-none fixed top-[max(1rem,env(safe-area-inset-top))] right-3 left-3 sm:left-auto sm:right-4 z-[99999] flex sm:w-full sm:max-w-sm flex-col gap-2.5 p-2 sm:p-0"
+        className="pointer-events-none fixed top-[max(1rem,env(safe-area-inset-top))] right-3 left-3 sm:left-auto sm:right-4 z-[99999] flex sm:w-full sm:max-w-xs flex-col gap-2 p-2 sm:p-0"
       >
         {toasts.map((item) => (
           <ToastCard key={item.id} item={item} onClose={removeToast} />

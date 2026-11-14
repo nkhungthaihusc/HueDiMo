@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AdminAPI } from "@/lib/api/admin";
 import { formatVND } from "@/lib/format";
 import { toast } from "@/components/ui/Toast";
+import DeleteAllButton from "@/components/admin/DeleteAllButton";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 
 export default function AdminItinerariesPage() {
@@ -123,7 +124,7 @@ export default function AdminItinerariesPage() {
   const totalCommentPages = Math.ceil(totalComments / 15) || 1;
 
   return (
-    <div className="flex flex-1 flex-col space-y-6 min-h-0">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 md:gap-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between shrink-0">
         <div>
@@ -132,6 +133,17 @@ export default function AdminItinerariesPage() {
             Kiểm duyệt lộ trình du lịch cộng đồng, quản lý chế độ công khai và đánh giá sao ({totalItineraries} lộ trình, {totalComments} đánh giá).
           </p>
         </div>
+
+        {activeTab === "itineraries" && (
+          <DeleteAllButton
+            resource="lịch trình"
+            message="Thao tác này xóa vĩnh viễn mọi lịch trình trên máy chủ, gồm lịch trình công khai và riêng tư ở tất cả các trang."
+            disabled={isLoadingItineraries || isDeleting}
+            list={AdminAPI.getItineraries}
+            remove={AdminAPI.deleteItinerary}
+            reload={() => page === 1 ? loadItineraries() : setPage(1)}
+          />
+        )}
 
         {/* Tab Switcher */}
         <div className="flex rounded-xl bg-admin-surface p-1 border border-admin-border text-xs font-semibold">
@@ -221,7 +233,7 @@ export default function AdminItinerariesPage() {
           </div>
 
           {/* Grid Lộ trình */}
-          <div className="flex-1 overflow-y-auto [scrollbar-width:thin]">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:thin]">
             {isLoadingItineraries ? (
               <div className="flex h-64 items-center justify-center">
                 <div className="flex flex-col items-center gap-2 text-admin-subtle">
@@ -367,7 +379,7 @@ export default function AdminItinerariesPage() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto [scrollbar-width:thin]">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:thin]">
             {isLoadingComments ? (
               <div className="flex h-64 items-center justify-center">
                 <div className="flex flex-col items-center gap-2 text-admin-subtle">

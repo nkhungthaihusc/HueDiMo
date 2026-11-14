@@ -182,3 +182,23 @@ Tài liệu Swagger liệt kê chi tiết:
 ## 📄 Bản quyền (License)
 
 Dự án phát triển cho cộng đồng yêu Huế và du khách thập phương. Phân phối dưới giấy phép [MIT](LICENSE).
+
+
+### CAPTCHA cho đổi mật khẩu trên web
+
+Tạo widget Cloudflare Turnstile cho các tên miền frontend cần sử dụng. Cấu hình
+`NEXT_PUBLIC_TURNSTILE_SITE_KEY` khi build frontend và `TURNSTILE_SECRET_KEY` trên
+backend Express. Tài khoản đăng nhập bằng mật khẩu mở **Hồ sơ → Đổi mật khẩu**.
+
+### Khóa Goong cho bản đồ web
+
+Đặt khóa Maptiles mới trong `GOONG_MAP_KEY` của backend Express. Đặt
+`GOONG_MAP_PROXY_ORIGIN` thành địa chỉ công khai của backend, ví dụ
+`https://api.example.com` hoặc `http://localhost:3002` khi phát triển.
+Frontend cần `NEXT_PUBLIC_BACKEND_URL` trỏ đến backend đó. Xóa
+`NEXT_PUBLIC_GOONG_API_KEY` khỏi cấu hình build frontend, triển khai lại hai
+dịch vụ và thu hồi khóa đã xuất hiện trong bản build cũ.
+
+Proxy chỉ chuyển tiếp tài nguyên bản đồ đến Goong và vẫn phục vụ khách chưa
+đăng nhập. Giới hạn lưu lượng theo IP tại hạ tầng triển khai nếu cần bảo vệ
+hạn mức của khóa.

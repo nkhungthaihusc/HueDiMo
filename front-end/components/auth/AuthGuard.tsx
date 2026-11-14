@@ -25,6 +25,7 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user } = useAuth();
+  const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -32,7 +33,7 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || isAdminRoute) return;
 
     // Bỏ qua các route tĩnh / asset hoặc API
     if (pathname.startsWith("/api") || pathname.includes(".")) {
@@ -50,14 +51,14 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
       // Đã đăng nhập nhưng vẫn vào /login hoặc /register -> Đưa về trang chủ
       router.replace("/");
     }
-  }, [pathname, user, mounted, router]);
+  }, [pathname, user, mounted, router, isAdminRoute]);
 
   // Kiểm tra trạng thái hiện tại
   const isPublic = checkIsPublic(pathname);
 
   // Trước khi mounted trên client, server và client render giống nhau (children)
   // để tránh Hydration Mismatch
-  if (!mounted) {
+  if (!mounted || isAdminRoute) {
     return <>{children}</>;
   }
 

@@ -6,6 +6,51 @@ import type { AuthenticatedRequest } from "../middleware/auth.middleware";
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const AuthController = {
+  async changePassword(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    const { currentPassword, newPassword, confirmPassword, captchaToken } = req.body ?? {};
+    if (typeof currentPassword !== "string" || !currentPassword || Buffer.byteLength(currentPassword) > 256 ||
+        typeof newPassword !== "string" || newPassword.length < 8 || Buffer.byteLength(newPassword) > 72 ||
+        newPassword !== confirmPassword || newPassword === currentPassword) {
+      sendError(res, "VALIDATION_ERROR", "Mật khẩu mới phải khác mật khẩu hiện tại, từ 8 ký tự và tối đa 72 byte. Hai lần nhập phải khớp.", 422);
+      return;
+    }
+    if (typeof captchaToken !== "string" || !captchaToken || captchaToken.length > 2048) {
+      sendError(res, "VALIDATION_ERROR", "Vui lòng hoàn thành CAPTCHA.", 422);
+      return;
+    }
+
+    const secret = process.env.TURNSTILE_SECRET_KEY;
+    if (!secret) {
+      sendError(res, "UPSTREAM_ERROR", "Máy chủ chưa cấu hình CAPTCHA.", 503);
+      return;
+    }
+
+    try {
+      const verification = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+        method: "POST",
+        body: new URLSearchParams({ secret, response: captchaToken }),
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!verification.ok) {
+        sendError(res, "UPSTREAM_ERROR", "Không thể xác minh CAPTCHA lúc này.", 503);
+        return;
+      }
+      const result = await verification.json() as { success?: boolean; action?: string };
+      if (!result.success || result.action !== "change_password") {
+        sendError(res, "VALIDATION_ERROR", "CAPTCHA không hợp lệ hoặc đã hết hạn.", 422);
+        return;
+      }
+
+      if (!await AuthService.changePassword(req.user!.id, currentPassword, newPassword)) {
+        sendError(res, "VALIDATION_ERROR", "Mật khẩu hiện tại không đúng hoặc tài khoản không dùng mật khẩu HueDiMo.", 422);
+        return;
+      }
+      sendSuccess(res, { changed: true });
+    } catch (error) {
+      next(error);
+    }
+  },
+
 
   /**
    * POST /api/auth/oauth-login
@@ -13,14 +58,25 @@ export const AuthController = {
    */
   async oauthLogin(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { email, name, avatarUrl, provider } = req.body || {};
-
-      if (!email || typeof email !== "string" || !EMAIL_REGEX.test(email.trim())) {
-        sendError(res, "VALIDATION_ERROR", "Email không hợp lệ.", 422, { field: "email" });
+      const { accessToken } = req.body ?? {};
+      if (typeof accessToken !== "string" || !accessToken || accessToken.length > 8192) {
+        sendError(res, "UNAUTHORIZED", "Vui lòng xác thực với nhà cung cấp đăng nhập.", 401);
         return;
       }
 
-      const result = await AuthService.oauthLogin(email.trim(), name, avatarUrl, provider);
+      const { supabase } = await import("../config/supabase.js");
+      const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+      const provider = user?.app_metadata?.provider;
+      if (error || !user?.email || !user.email_confirmed_at ||
+          (provider !== "google" && provider !== "facebook")) {
+        sendError(res, "UNAUTHORIZED", "Phiên đăng nhập mạng xã hội không hợp lệ.", 401);
+        return;
+      }
+
+      const metadata = user.user_metadata;
+      const name = typeof metadata.full_name === "string" ? metadata.full_name : undefined;
+      const avatar = typeof metadata.avatar_url === "string" ? metadata.avatar_url : undefined;
+      const result = await AuthService.oauthLogin(user.email, name, avatar, provider);
       sendSuccess(res, result, 200);
     } catch (error: any) {
       if (error.code === "FORBIDDEN") {

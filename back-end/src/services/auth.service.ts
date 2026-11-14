@@ -1,4 +1,5 @@
 import jwt, { type JwtPayload } from "jsonwebtoken";
+import { pool } from "../config/db";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { UserModel, type SafeUser } from "../models/user.model";
@@ -43,6 +44,28 @@ export interface RefreshTokenPayload extends JwtPayload {
 }
 
 export const AuthService = {
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<boolean> {
+    const { rows: [user] } = await pool.query(
+      "SELECT password_hash FROM public.users WHERE id = $1 AND provider = 'local' AND status IS DISTINCT FROM 'banned'",
+      [userId],
+    );
+    if (!user?.password_hash || !await bcrypt.compare(currentPassword, user.password_hash)) return false;
+
+    const nextHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+    const result = await pool.query(
+      `WITH changed AS (
+         UPDATE public.users SET password_hash = $1, updated_at = NOW()
+         WHERE id = $2 AND password_hash = $3 AND status IS DISTINCT FROM 'banned' RETURNING id
+       ), revoked AS (
+         UPDATE public.refresh_tokens SET revoked = TRUE, updated_at = NOW()
+         WHERE user_id IN (SELECT id FROM changed)
+       )
+       SELECT id FROM changed`,
+      [nextHash, userId, user.password_hash],
+    );
+    return result.rowCount === 1;
+  },
+
   /**
    * Tạo cặp Access Token (15 phút) và Refresh Token (30 ngày)
    * Kèm ngày giờ hết hạn chi tiết (ISO 8601 string)

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase/client";
 import { oauthLoginUser } from "@/lib/auth/logic";
 import { toast } from "@/components/ui/Toast";
@@ -23,20 +24,21 @@ export default function AuthCallbackPage() {
           throw new Error(error.message || "Xác thực qua Supabase thất bại.");
         }
 
-        let targetUser = session?.user;
+        let targetSession = session;
 
         // Nếu chưa có session ngay, lắng nghe qua onAuthStateChange
-        if (!targetUser) {
+        if (!targetSession) {
           const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
             if (currentSession?.user && active) {
               authListener.subscription.unsubscribe();
-              await syncWithBackend(currentSession.user);
+              targetSession = currentSession;
+              await syncWithBackend(currentSession);
             }
           });
 
           // Timeout 6 giây nếu không nhận được session
           setTimeout(() => {
-            if (active && !targetUser) {
+            if (active && !targetSession) {
               authListener.subscription.unsubscribe();
               setErrorMsg("Không tìm thấy phiên đăng nhập. Đang quay lại trang đăng nhập...");
               setTimeout(() => router.replace("/login?error=oauth_timeout"), 1500);
@@ -46,7 +48,7 @@ export default function AuthCallbackPage() {
         }
 
         if (active) {
-          await syncWithBackend(targetUser);
+          await syncWithBackend(targetSession);
         }
       } catch (err: any) {
         if (active) {
@@ -56,7 +58,8 @@ export default function AuthCallbackPage() {
       }
     };
 
-    const syncWithBackend = async (oauthUser: any) => {
+    const syncWithBackend = async (session: Session) => {
+      const oauthUser = session.user;
       const provider = oauthUser.app_metadata?.provider || "oauth";
       const providerName =
         provider === "google"
@@ -75,20 +78,7 @@ export default function AuthCallbackPage() {
         oauthUser.email?.split("@")[0] ||
         "Người dùng";
 
-      // Xử lý avatar an toàn cho cả Google và Facebook (Facebook đôi khi trả về object picture.data.url)
-      let avatarUrl = metadata.avatar_url;
-      if (!avatarUrl && metadata.picture) {
-        if (typeof metadata.picture === "string") {
-          avatarUrl = metadata.picture;
-        } else if (typeof metadata.picture === "object" && metadata.picture.data?.url) {
-          avatarUrl = metadata.picture.data.url;
-        }
-      }
-      avatarUrl = typeof avatarUrl === "string" ? avatarUrl : "";
-
-      const email = oauthUser.email || `${oauthUser.id}@${provider}.huedimo.vn`;
-
-      const res = await oauthLoginUser(email, name, avatarUrl, provider);
+      const res = await oauthLoginUser(session.access_token);
       if (res.ok) {
         toast.success(`Xin chào ${name}!`, `Đăng nhập ${providerName} thành công`);
         // Kích hoạt sự kiện để AuthProvider cập nhật session

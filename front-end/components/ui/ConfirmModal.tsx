@@ -1,5 +1,6 @@
 "use client";
 
+import ViewportDialog from "@/components/ui/ViewportDialog";
 import { usePresence } from "@/hooks/usePresence";
 
 import { useEffect } from "react";
@@ -69,7 +70,8 @@ export default function ConfirmModal({
   const modalTitle = title || config.defaultTitle;
 
   return (
-    <div data-state={phase} inert={!isOpen} className="motion-overlay fixed inset-0 z-[99999] flex items-center justify-center p-4">
+    <ViewportDialog>
+      <div data-state={phase} inert={!isOpen} className="motion-overlay fixed inset-0 z-[99999] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
         className="motion-backdrop fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
@@ -82,7 +84,7 @@ export default function ConfirmModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="confirm-modal-title"
-        className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white p-6 shadow-2xl border border-slate-100 backdrop-blur-xl transition-ui duration-200 animate-in fade-in zoom-in-95 sm:p-7 z-10 select-none"
+        className="relative w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl border border-slate-100 backdrop-blur-xl transition-ui duration-200 animate-in fade-in zoom-in-95 sm:p-7 z-10 select-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Nút đóng góc phải */}
@@ -136,5 +138,6 @@ export default function ConfirmModal({
         </div>
       </div>
     </div>
+    </ViewportDialog>
   );
 }

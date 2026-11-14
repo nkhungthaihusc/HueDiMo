@@ -95,6 +95,10 @@ public class ItineraryService {
         if (request.getBudget() == null || !Double.isFinite(request.getBudget()) || request.getBudget() <= 0) {
             throw new BadRequestException("Ngân sách phải là số dương.");
         }
+        if (request.getGroupSize() != null && (request.getGroupSize() < 1
+                || request.getGroupSize() > Integer.MAX_VALUE || request.getGroupSize() % 1 != 0)) {
+            throw new BadRequestException("Số lượng người phải là số nguyên dương.");
+        }
         log.info("Generating itinerary with AI for request: {} -> {}", request.getStartDate(), request.getEndDate());
 
         if (geminiApiKey == null || geminiApiKey.isBlank()) {
@@ -289,7 +293,7 @@ public class ItineraryService {
             Trả về DUY NHẤT một chuỗi JSON chuẩn.
             """,
             req.getStartDate(), req.getEndDate(),
-            req.getGroupSize() != null ? req.getGroupSize() : 1,
+            req.getGroupSize() != null ? req.getGroupSize().intValue() : 1,
             transport,
             prefs,
             req.getBudget() != null ? req.getBudget() : 0.0,

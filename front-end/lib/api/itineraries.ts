@@ -35,6 +35,10 @@ export interface CommunityItinerariesResponse {
 }
 
 
+function normalizeDate(value: unknown): string | undefined {
+  return typeof value === "string" ? /^(\d{4}-\d{2}-\d{2})(?:T|$)/.exec(value)?.[1] : undefined;
+}
+
 function normalizeItineraryFromDB(raw: any): Itinerary {
   let parsedDays = [];
   if (typeof raw.days === "string") {
@@ -50,6 +54,10 @@ function normalizeItineraryFromDB(raw: any): Itinerary {
   return {
     id: raw.id,
     title: raw.title,
+    startDate: normalizeDate(raw.start_date ?? raw.startDate),
+    endDate: normalizeDate(raw.end_date ?? raw.endDate),
+    currentLocation: raw.current_location ?? raw.currentLocation,
+    preferences: raw.preferences,
     summary: raw.summary || "",
     totalEstimatedCost: Number(raw.total_estimated_cost ?? raw.totalEstimatedCost ?? 0),
     budget: raw.budget !== null && raw.budget !== undefined ? Number(raw.budget) : undefined,
@@ -106,11 +114,11 @@ export const ItineraryAPI = {
    */
   async getMyItineraries(): Promise<Itinerary[]> {
     const res = await authFetch(`${BACKEND_URL}/api/itineraries/my`);
-    if (!res.ok) {
-      return [];
-    }
     const json = await res.json();
-    return (Array.isArray(json.data) ? json.data : []).map(normalizeItineraryFromDB);
+    if (!res.ok || !Array.isArray(json.data)) {
+      throw new Error(json.error?.message || "Không thể tải lịch trình.");
+    }
+    return json.data.map(normalizeItineraryFromDB);
   },
 
   /**
@@ -128,10 +136,13 @@ export const ItineraryAPI = {
   /**
    * Lưu hoặc cập nhật lịch trình lên server
    */
-  async saveToServer(itinerary: Itinerary, title?: string, isPublic?: boolean): Promise<Itinerary> {
+  async saveToServer(
+    itinerary: Itinerary, title?: string, isPublic?: boolean,
+    dateRange?: { startDate?: string; endDate?: string },
+  ): Promise<Itinerary> {
     const dates = itinerary.days.map((d) => d.date).filter(Boolean).sort();
-    const startDate = dates[0] || new Date().toISOString().slice(0, 10);
-    const endDate = dates[dates.length - 1] || startDate;
+    const startDate = dateRange?.startDate || dates[0] || new Date().toISOString().slice(0, 10);
+    const endDate = dateRange?.endDate || dates[dates.length - 1] || startDate;
 
     const body = {
       id: itinerary.id && /^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(itinerary.id)
@@ -146,6 +157,8 @@ export const ItineraryAPI = {
       totalEstimatedCost: itinerary.totalEstimatedCost,
       transportMode: itinerary.transportMode || "motorbike",
       groupSize: itinerary.groupSize || 1,
+      currentLocation: itinerary.currentLocation,
+      preferences: itinerary.preferences,
       summary: itinerary.summary,
       days: itinerary.days,
       isPublic: isPublic !== undefined ? isPublic : (itinerary.isPublic ?? false),

@@ -1,5 +1,7 @@
 "use client";
 
+import AdminImagePreview from "@/components/admin/AdminImagePreview";
+
 import { useEffect, useState } from "react";
 import { AdminAPI, type AdminStats } from "@/lib/api/admin";
 import Link from "next/link";
@@ -272,11 +274,7 @@ export default function AdminDashboardPage() {
                     <td className="py-3 font-medium text-admin-strong">
                       <div className="flex items-center gap-2.5">
                         {place.imageUrl ? (
-                          <img
-                            src={place.imageUrl}
-                            alt=""
-                            className="h-8 w-8 rounded-lg object-cover"
-                          />
+                          <AdminImagePreview src={place.imageUrl} label={place.name} className="h-8 w-8 rounded-lg" />
                         ) : (
                           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-admin-muted text-admin-subtle">
                             🏛️

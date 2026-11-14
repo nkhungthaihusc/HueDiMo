@@ -5,6 +5,7 @@ import java.util.List;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Pattern;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -33,10 +34,11 @@ public class GenerateItineraryRequest {
 
     String currentLocation;
 
+    @Pattern(regexp = "motorbike|car|bicycle|walking", message = "Phương tiện di chuyển không hợp lệ")
     String transportMode;
 
     @Positive(message = "Số lượng người phải là số nguyên dương")
-    Integer groupSize;
+    Double groupSize;
 
     String startPlaceId;
 

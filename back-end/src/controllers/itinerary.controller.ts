@@ -44,7 +44,7 @@ function validateRequest(body: unknown): string | null {
     return "Phương tiện di chuyển không hợp lệ.";
   }
 
-  if (b.groupSize !== undefined && (typeof b.groupSize !== "number" || !Number.isInteger(b.groupSize) || b.groupSize <= 0)) {
+  if (b.groupSize !== undefined && (typeof b.groupSize !== "number" || !Number.isSafeInteger(b.groupSize) || b.groupSize <= 0)) {
     return "Số lượng người phải là số nguyên dương.";
   }
 
@@ -84,6 +84,14 @@ function getOptionalUserId(req: Request): string | null {
   } catch {
     return null;
   }
+}
+
+async function canAccessItinerary(req: Request): Promise<boolean> {
+  const result = await pool.query(
+    "SELECT 1 FROM public.itineraries WHERE id = $1 AND (is_public = true OR user_id = $2)",
+    [req.params.id, getOptionalUserId(req)],
+  );
+  return Boolean(result.rowCount);
 }
 
 export class ItineraryController {
@@ -184,7 +192,7 @@ export class ItineraryController {
                  transport_mode = $6, group_size = $7, current_location = $8, preferences = $9,
                  summary = $10, days = $11::jsonb, is_public = $12, updated_at = NOW()
              WHERE id = $13 AND user_id = $14
-             RETURNING *`,
+             RETURNING *, start_date::text AS start_date, end_date::text AS end_date`,
             [
               title.trim(),
               startDate,
@@ -224,7 +232,7 @@ export class ItineraryController {
                current_location = $5, preferences = $6, summary = $7, days = $8::jsonb,
                is_public = $9, updated_at = NOW()
            WHERE id = $10 AND user_id = $11
-           RETURNING *`,
+           RETURNING *, start_date::text AS start_date, end_date::text AS end_date`,
           [
             numBudget,
             numTotal,
@@ -252,7 +260,7 @@ export class ItineraryController {
            days, is_public, created_at, updated_at
          ) VALUES (
            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb, $13, NOW(), NOW()
-         ) RETURNING *`,
+         ) RETURNING *, start_date::text AS start_date, end_date::text AS end_date`,
         [
           userId,
           title.trim(),
@@ -353,6 +361,8 @@ export class ItineraryController {
       const querySql = `
         SELECT 
           i.*,
+          i.start_date::text AS start_date,
+          i.end_date::text AS end_date,
           u.name as author_name,
           u.avatar_url as author_avatar,
           u.role as author_role,
@@ -398,6 +408,8 @@ export class ItineraryController {
       const querySql = `
         SELECT 
           i.*,
+          i.start_date::text AS start_date,
+          i.end_date::text AS end_date,
           (i.end_date - i.start_date + 1) as days_count,
           (SELECT COUNT(*)::int FROM public.itinerary_comments c WHERE c.itinerary_id = i.id) as comments_count
         FROM public.itineraries i
@@ -421,12 +433,11 @@ export class ItineraryController {
       const { id } = req.params;
       const currentUserId = getOptionalUserId(req);
 
-      // Tăng lượt xem views_count
-      await pool.query("UPDATE public.itineraries SET views_count = COALESCE(views_count, 0) + 1 WHERE id = $1", [id]);
-
       const sql = `
         SELECT 
           i.*,
+          i.start_date::text AS start_date,
+          i.end_date::text AS end_date,
           u.name as author_name,
           u.avatar_url as author_avatar,
           u.role as author_role,
@@ -452,6 +463,8 @@ export class ItineraryController {
         return;
       }
 
+      await pool.query("UPDATE public.itineraries SET views_count = COALESCE(views_count, 0) + 1 WHERE id = $1", [id]);
+      row.views_count = Number(row.views_count ?? 0) + 1;
       sendSuccess(res, row);
     } catch (error) {
       next(error);
@@ -484,7 +497,7 @@ export class ItineraryController {
       }
 
       const updated = await pool.query(
-        "UPDATE public.itineraries SET is_public = $1, updated_at = NOW() WHERE id = $2 RETURNING *",
+        "UPDATE public.itineraries SET is_public = $1, updated_at = NOW() WHERE id = $2 RETURNING *, start_date::text AS start_date, end_date::text AS end_date",
         [isPublic, id]
       );
 
@@ -531,6 +544,11 @@ export class ItineraryController {
    */
   public static async toggleReaction(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
+      if (!await canAccessItinerary(req)) {
+        sendError(res, "NOT_FOUND", "Không tìm thấy lịch trình có thể truy cập.", 404);
+        return;
+      }
+
       const userId = req.user?.id;
       const { id } = req.params;
 
@@ -575,6 +593,11 @@ export class ItineraryController {
    */
   public static async toggleBookmark(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
+      if (!await canAccessItinerary(req)) {
+        sendError(res, "NOT_FOUND", "Không tìm thấy lịch trình có thể truy cập.", 404);
+        return;
+      }
+
       const userId = req.user?.id;
       const { id } = req.params;
 
@@ -617,6 +640,11 @@ export class ItineraryController {
    */
   public static async forkItinerary(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
+      if (!await canAccessItinerary(req)) {
+        sendError(res, "NOT_FOUND", "Không tìm thấy lịch trình có thể truy cập.", 404);
+        return;
+      }
+
       const userId = req.user?.id;
       const { id } = req.params;
 
@@ -654,7 +682,7 @@ export class ItineraryController {
            days, is_public, created_at, updated_at
          ) VALUES (
            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb, false, NOW(), NOW()
-         ) RETURNING *`,
+         ) RETURNING *, start_date::text AS start_date, end_date::text AS end_date`,
         [
           userId,
           newTitle,
@@ -686,6 +714,11 @@ export class ItineraryController {
    */
   public static async getComments(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      if (!await canAccessItinerary(req)) {
+        sendError(res, "NOT_FOUND", "Không tìm thấy lịch trình có thể truy cập.", 404);
+        return;
+      }
+
       const { id } = req.params;
 
       const commentsSql = `
@@ -717,6 +750,11 @@ export class ItineraryController {
    */
   public static async addComment(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
+      if (!await canAccessItinerary(req)) {
+        sendError(res, "NOT_FOUND", "Không tìm thấy lịch trình có thể truy cập.", 404);
+        return;
+      }
+
       const userId = req.user?.id;
       const { id } = req.params;
       const { content, rating } = req.body;
@@ -789,7 +827,7 @@ export class ItineraryController {
       const userId = req.user?.id;
       const { commentId } = req.params;
 
-      const check = await pool.query("SELECT id, user_id FROM public.itinerary_comments WHERE id = $1", [commentId]);
+      const check = await pool.query("SELECT id, user_id FROM public.itinerary_comments WHERE id = $1 AND itinerary_id = $2", [commentId, req.params.id]);
       if (check.rows.length === 0) {
         sendError(res, "NOT_FOUND", "Không tìm thấy bình luận.", 404);
         return;

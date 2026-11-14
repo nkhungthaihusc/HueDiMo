@@ -1,4 +1,4 @@
-import { getAccessToken, refreshTokens, clearSession } from "@/lib/auth/logic";
+import { getAccessToken, refreshTokens, getSession } from "@/lib/auth/logic";
 import type { ApiErrorBody } from "@/lib/api/response";
 
 export class ApiError extends Error {
@@ -46,6 +46,7 @@ async function readJson(res: Response): Promise<unknown> {
   }
 }
 export async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const accountId = getSession()?.id;
   let token = getAccessToken();
 
   if (!token) {
@@ -69,17 +70,18 @@ export async function authFetch(url: string, options: RequestInit = {}): Promise
     headers,
   });
 
-  if (res.status === 401) {
-    const refreshRes = await refreshTokens();
-    if (refreshRes.ok && refreshRes.accessToken) {
+  if (res.status === 401 && getSession()?.id === accountId) {
+    const latestToken = getAccessToken();
+    const refreshRes = latestToken && latestToken !== token
+      ? { ok: true, accessToken: latestToken }
+      : await refreshTokens();
+    if (refreshRes.ok && refreshRes.accessToken && getSession()?.id === accountId) {
       token = refreshRes.accessToken;
       headers.Authorization = `Bearer ${token}`;
       res = await fetch(url, {
         ...options,
         headers,
       });
-    } else {
-      clearSession();
     }
   }
 

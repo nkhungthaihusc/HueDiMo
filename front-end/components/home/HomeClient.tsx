@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Compass, Route, Sparkles, Globe } from "lucide-react";
 import MobilePanel from "@/components/home/MobilePanel";
 import { CATEGORIES } from "@/lib/data/categories";
@@ -20,13 +20,7 @@ import WeatherWidget from "@/components/home/WeatherWidget";
 import ProfileModal from "@/components/home/ProfileModal";
 import LeaderboardModal from "@/components/home/LeaderboardModal";
 import CommunityItinerariesModal from "@/components/home/CommunityItinerariesModal";
-import {
-  getPlacesSnapshot,
-  getPlacesServerSnapshot,
-  subscribePlaces,
-  getAllUserContributedPlaces,
-  syncUserContributedPlaces,
-} from "@/lib/addplace/logic";
+import HomeLoading from "./HomeLoading";
 import { getMyContributedPlaces, getPublicPlaces } from "@/lib/api/places";
 import { itineraryPlaceIds, saveItinerary, updateItineraryId } from "@/lib/itinerary/logic";
 import { ItineraryAPI } from "@/lib/api/itineraries";
@@ -36,6 +30,8 @@ import type { Itinerary } from "@/lib/itinerary/types";
 import type { CategoryId, Place } from "@/lib/types";
 import { useAuth } from "@/components/auth/AuthProvider";
 import AuthPromptModal from "@/components/auth/AuthPromptModal";
+
+const EMPTY_PLACES: Place[] = [];
 
 export default function HomeClient() {
   const [panelExpanded, setPanelExpanded] = useState(false);
@@ -58,7 +54,7 @@ export default function HomeClient() {
   const [leaderboardModalOpen, setLeaderboardModalOpen] = useState(false);
   const [communityModalOpen, setCommunityModalOpen] = useState(false);
 
-  const { user } = useAuth();
+  const { user, isInitializing } = useAuth();
   const [authPrompt, setAuthPrompt] = useState<{
     isOpen: boolean;
     title: string;
@@ -79,12 +75,6 @@ export default function HomeClient() {
     });
   };
 
-  const places = useSyncExternalStore(
-    subscribePlaces,
-    getPlacesSnapshot,
-    getPlacesServerSnapshot,
-  );
-
   // Tự động dọn sạch lộ trình đang hiển thị trên bản đồ khi người dùng đăng xuất hoặc chuyển đổi tài khoản
   useEffect(() => {
     setItinerary(null);
@@ -95,53 +85,45 @@ export default function HomeClient() {
     setShowItineraryForm(false);
   }, [user?.id]);
 
-  // Đồng bộ địa điểm do user đóng góp từ máy chủ khi user đăng nhập
-  useEffect(() => {
-    if (!user) return;
-    let isMounted = true;
-    getMyContributedPlaces()
-      .then((userPlaces) => {
-        if (isMounted && userPlaces.length > 0) {
-          syncUserContributedPlaces(userPlaces);
-        }
-      })
-      .catch((err) => {
-        console.error("Lỗi đồng bộ địa điểm đã đóng góp:", err);
-      });
-    return () => {
-      isMounted = false;
-    };
-  }, [user]);
+  const [contributions, setContributions] = useState<{ userId: string; places: Place[] } | null>(null);
+  const [serverPlaces, setServerPlaces] = useState<Place[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const userId = user?.id;
 
-  const userContributedPlaces = useMemo(
-    () => user
-      ? getAllUserContributedPlaces().filter((place) =>
-          (place.created_by ?? place.userId) === user.id)
-      : [],
-    [places, user],
-  );
-
-  const [serverPlaces, setServerPlaces] = useState<Place[]>([]);
   useEffect(() => {
     const controller = new AbortController();
     getPublicPlaces(controller.signal)
       .then((data) => {
         if (!controller.signal.aborted) setServerPlaces(data);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!controller.signal.aborted) setLoadError(true);
+      });
     return () => controller.abort();
-  }, [user?.id]);
+  }, [loadAttempt]);
 
-  const publicPlaces = useMemo(() => {
-    const byId = new Map(getPlacesServerSnapshot().map((place) => [place.id, place]));
-    for (const place of serverPlaces) byId.set(place.id, place);
-    return [...byId.values()];
-  }, [serverPlaces]);
+  useEffect(() => {
+    if (isInitializing || !userId) return;
+    let active = true;
+    getMyContributedPlaces()
+      .then((places) => {
+        if (active) setContributions({ userId, places });
+      })
+      .catch(() => {
+        if (active) setContributions({ userId, places: [] });
+      });
+    return () => { active = false; };
+  }, [isInitializing, userId]);
+
+  const contributionsLoading = Boolean(userId && contributions?.userId !== userId);
+  const userContributedPlaces = userId && contributions?.userId === userId ? contributions.places : EMPTY_PLACES;
+  const publicPlaces = serverPlaces ?? EMPTY_PLACES;
 
   const accessiblePlaces = useMemo(() => {
     const byId = new Map(publicPlaces.map((place) => [place.id, place]));
     for (const place of userContributedPlaces) {
-      if (!byId.has(place.id)) byId.set(place.id, place);
+      if (place.status === "pending" && !byId.has(place.id)) byId.set(place.id, place);
     }
     return [...byId.values()];
   }, [publicPlaces, userContributedPlaces]);
@@ -152,8 +134,9 @@ export default function HomeClient() {
   );
 
   const selectedPlace = useMemo(
-    () => accessiblePlaces.find((p) => p.id === selectedId) ?? null,
-    [accessiblePlaces, selectedId],
+    () => accessiblePlaces.find((p) => p.id === selectedId)
+      ?? userContributedPlaces.find((p) => p.id === selectedId) ?? null,
+    [accessiblePlaces, userContributedPlaces, selectedId],
   );
 
   const routePlaces = useMemo(() => {
@@ -294,6 +277,12 @@ export default function HomeClient() {
     setAddPosition(null);
     // Chuyển sang xem chi tiết địa điểm vừa tạo, khi xem xong bấm Quay lại sẽ trở về giao diện bình thường
     setSelectedId(place.id);
+    if (userId) {
+      setContributions((current) => ({
+        userId,
+        places: [place, ...(current?.userId === userId ? current.places.filter((item) => item.id !== place.id) : [])],
+      }));
+    }
   };
 
   const persistItinerary = async (draft: Itinerary) => {
@@ -316,6 +305,7 @@ export default function HomeClient() {
       updatedAt: server.updatedAt ?? local.updatedAt,
     };
     updateItineraryId(local.id, saved);
+    toast.success("Đã lưu lịch trình.");
     return saved;
   };
 
@@ -384,6 +374,7 @@ export default function HomeClient() {
     />
   ) : showItineraryForm ? (
     <ItineraryFormPanel
+      userLocation={userLocation}
       places={publicPlaces}
       onCancel={() => setShowItineraryForm(false)}
       onGenerated={handleGenerated}
@@ -407,6 +398,13 @@ export default function HomeClient() {
       }}
     />
   ) : null;
+
+  if (isInitializing || serverPlaces === null) {
+    return <HomeLoading retry={loadError ? () => {
+      setLoadError(false);
+      setLoadAttempt((attempt) => attempt + 1);
+    } : undefined} />;
+  }
 
   return (
     <main className="home-shell relative w-full overflow-hidden" data-panel-expanded={panelExpanded} data-add-mode={addMode}>
@@ -549,6 +547,7 @@ export default function HomeClient() {
         onClose={() => setProfileModalOpen(false)}
         onOpenLeaderboard={() => setLeaderboardModalOpen(true)}
         userContributedPlaces={userContributedPlaces}
+        contributionsLoading={contributionsLoading}
         onSelectPlace={handleSelect}
       />
 

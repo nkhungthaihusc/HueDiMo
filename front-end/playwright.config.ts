@@ -1,6 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const baseURL = "http://127.0.0.1:3100";
+const port = Number(process.env.PLAYWRIGHT_PORT ?? 3100);
+if (!Number.isInteger(port) || port < 1 || port > 65535) {
+  throw new Error("PLAYWRIGHT_PORT must be an integer between 1 and 65535.");
+}
+const baseURL = `http://127.0.0.1:${port}`;
 
 export default defineConfig({
   testDir: "./e2e",
@@ -19,12 +23,11 @@ export default defineConfig({
     { name: "mobile", use: { ...devices["Pixel 7"] } },
   ],
   webServer: {
-    command: "node node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3100",
+    command: `node node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port ${port}`,
     url: baseURL,
     timeout: 120_000,
     env: {
       NEXT_PUBLIC_BACKEND_URL: "http://127.0.0.1:3101",
-      NEXT_PUBLIC_GOONG_API_KEY: "playwright",
       NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:3102",
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "playwright",
     },

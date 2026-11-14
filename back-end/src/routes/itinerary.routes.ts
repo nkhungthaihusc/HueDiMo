@@ -5,14 +5,14 @@ import { authenticate } from "../middleware/auth.middleware";
 const router = Router();
 
 // Sinh lộ trình du lịch thông minh bằng AI
-router.post("/generate", ItineraryController.generate);
+router.post("/generate", authenticate, ItineraryController.generate);
 // Tương thích ngược với POST /api/itinerary
-router.post("/", (req, res, next) => {
+router.post("/", authenticate, (req, res, next) => {
   // Nếu có trường places trong body thì là generate, nếu có days thì là save
   if (Array.isArray(req.body?.places)) {
     return ItineraryController.generate(req, res, next);
   }
-  return authenticate(req, res, () => ItineraryController.saveItinerary(req, res, next));
+  return ItineraryController.saveItinerary(req, res, next);
 });
 
 // Lưu / Cập nhật lịch trình của cá nhân

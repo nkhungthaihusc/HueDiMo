@@ -153,17 +153,12 @@ export async function loginUser(
 /**
  * Đăng nhập / Đăng ký qua OAuth (Google, Facebook)
  */
-export async function oauthLoginUser(
-  email: string,
-  name?: string,
-  avatarUrl?: string,
-  provider: string = "oauth"
-): Promise<{ ok: boolean; user?: User; error?: string }> {
+export async function oauthLoginUser(providerAccessToken: string): Promise<{ ok: boolean; user?: User; error?: string }> {
   try {
     const res = await fetch(`${BACKEND_URL}/api/auth/oauth-login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, name, avatarUrl, provider }),
+      body: JSON.stringify({ accessToken: providerAccessToken }),
     });
 
     const json = await res.json();
@@ -189,27 +184,41 @@ export async function oauthLoginUser(
 /**
  * Gọi API xoay vòng Refresh Token (30 ngày) để lấy Access Token (15 phút) mới
  */
-export async function refreshTokens(): Promise<{ ok: boolean; accessToken?: string }> {
-  const currentRefreshToken = getRefreshToken();
-  if (!currentRefreshToken) {
-    clearSession();
-    return { ok: false };
-  }
+let pendingRefresh: { token: string; request: Promise<{ ok: boolean; accessToken?: string }> } | undefined;
 
+export function refreshTokens(): Promise<{ ok: boolean; accessToken?: string }> {
+  const token = getRefreshToken();
+  if (!token) {
+    clearSession();
+    return Promise.resolve({ ok: false });
+  }
+  if (pendingRefresh?.token === token) return pendingRefresh.request;
+
+  const request = rotateRefreshToken(token).finally(() => {
+    if (pendingRefresh?.request === request) pendingRefresh = undefined;
+  });
+  pendingRefresh = { token, request };
+  return request;
+}
+
+async function rotateRefreshToken(currentRefreshToken: string): Promise<{ ok: boolean; accessToken?: string }> {
   try {
     const res = await fetch(`${BACKEND_URL}/api/auth/refresh`, {
       method: "POST",
+      signal: AbortSignal.timeout(15000),
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refreshToken: currentRefreshToken }),
     });
 
+    if (getRefreshToken() !== currentRefreshToken) return { ok: false };
     if (!res.ok) {
-      clearSession();
+      if (res.status === 401 || res.status === 403) clearSession();
       return { ok: false };
     }
 
     const json = await res.json();
     const { user, accessToken, refreshToken, accessTokenExpiresAt, refreshTokenExpiresAt } = json.data;
+    if (getRefreshToken() !== currentRefreshToken) return { ok: false };
     saveSession(user, accessToken, refreshToken, accessTokenExpiresAt, refreshTokenExpiresAt);
     return { ok: true, accessToken };
   } catch {
@@ -224,36 +233,39 @@ export async function refreshTokens(): Promise<{ ok: boolean; accessToken?: stri
 export async function fetchCurrentUser(): Promise<User | null> {
   let token = getAccessToken();
   if (!token) {
-    clearSession();
-    return null;
+    token = (await refreshTokens()).accessToken ?? null;
+    if (!token) return getSession();
   }
 
   try {
     let res = await fetch(`${BACKEND_URL}/api/auth/me`, {
+      signal: AbortSignal.timeout(15000),
       headers: { Authorization: `Bearer ${token}` },
     });
 
     // Nếu access token hết hạn (401), tự động xoay vòng refresh token
     if (res.status === 401) {
-      const refreshRes = await refreshTokens();
+      const latestToken = getAccessToken();
+      const refreshRes = latestToken && latestToken !== token
+        ? { ok: true, accessToken: latestToken }
+        : await refreshTokens();
       if (!refreshRes.ok || !refreshRes.accessToken) {
-        clearSession();
-        return null;
+        return getSession();
       }
 
       // Thử lại request với accessToken mới
       token = refreshRes.accessToken;
       res = await fetch(`${BACKEND_URL}/api/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(15000),
+      headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!res.ok) {
-        clearSession();
-        return null;
-      }
+      if (res.status === 401 && getAccessToken() === token) clearSession();
     }
 
+    if (!res.ok || getAccessToken() !== token) return getSession();
     const json = await res.json();
+    if (getAccessToken() !== token) return getSession();
     const rawUser = json.data?.user;
     if (rawUser) {
       const user = normalizeUser(rawUser);

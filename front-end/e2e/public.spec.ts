@@ -214,6 +214,12 @@ test("điều hướng chính sách và hiển thị mã yêu cầu xóa dữ li
 
 test("địa điểm chờ duyệt chỉ xuất hiện với người đã đóng góp", async ({ page }) => {
   const pendingName = "Địa điểm chờ duyệt Playwright";
+  let contributions: unknown[] = [];
+  await page.route("**/api/places/my", async (route) => {
+    const headers = { "access-control-allow-origin": "*", "access-control-allow-headers": "authorization" };
+    if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers });
+    return route.fulfill({ headers, json: { data: contributions } });
+  });
   await page.goto("/login");
   await page.evaluate(({ owner, pendingName }) => {
     const pending = { id: "pending-e2e", name: pendingName, category: "cafe", lat: 16.46,
@@ -223,6 +229,9 @@ test("địa điểm chờ duyệt chỉ xuất hiện với người đã đón
       { ...pending, id: "pending-legacy", name: "Địa điểm cũ thiếu chủ sở hữu" },
     ]));
   }, { owner: visitor.id, pendingName });
+
+  contributions = [{ id: "pending-e2e", name: pendingName, category: "cafe", lat: 16.46,
+    lng: 107.59, description: "", status: "pending", created_by: visitor.id }];
 
   const login = async (email: string, name: string) => {
     await page.goto("/login");
@@ -246,6 +255,7 @@ test("địa điểm chờ duyệt chỉ xuất hiện với người đã đón
   await expect(page.getByRole("link", { name: "Đăng nhập", exact: true })).toBeVisible();
   await expect(page.getByText(pendingName, { exact: true })).toHaveCount(0);
 
+  contributions = [];
   await login("another@example.test", visitor.name);
   await openContributions(visitor.name);
   await expect(page.getByText("Chưa có địa điểm nào được thêm")).toBeVisible();

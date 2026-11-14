@@ -104,6 +104,7 @@ export interface User {
 }
 
 export interface AuthContextValue {
+  isInitializing: boolean;
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ ok: boolean; user?: User; error?: string }>;

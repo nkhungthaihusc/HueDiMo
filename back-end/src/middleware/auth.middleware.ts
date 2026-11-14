@@ -37,17 +37,22 @@ export function authenticate(req: AuthenticatedRequest, res: Response, next: Nex
  * Middleware kiểm tra quyền quản trị viên (Admin Role Guard)
  * Bắt buộc người dùng phải qua middleware `authenticate` trước đó.
  */
-export function requireAdmin(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
+export async function requireAdmin(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
   if (!req.user) {
     sendError(res, "UNAUTHORIZED", "Vui lòng đăng nhập để thực hiện hành động này.", 401);
     return;
   }
 
-  if (req.user.role !== "admin") {
-    sendError(res, "FORBIDDEN", "Bạn không có quyền thực hiện hành động này. Yêu cầu quyền quản trị viên.", 403);
-    return;
+  try {
+    const profile = await AuthService.getProfile(req.user.id);
+    if (!profile || profile.status === "banned" || profile.role !== "admin") {
+      sendError(res, "FORBIDDEN", "Bạn không có quyền thực hiện hành động này. Yêu cầu quyền quản trị viên.", 403);
+      return;
+    }
+
+    req.user = { ...req.user, role: profile.role };
+    next();
+  } catch (error) {
+    next(error);
   }
-
-  next();
 }
-

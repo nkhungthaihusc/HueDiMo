@@ -1,8 +1,11 @@
 "use client";
 
+import ViewportDialog from "@/components/ui/ViewportDialog";
 import { usePresence } from "@/hooks/usePresence";
 
 import { useState, useRef } from "react";
+import { parsePlaceJson } from "@/lib/addplace/import-json";
+import { CATEGORIES } from "@/lib/data/categories";
 import { AdminAPI } from "@/lib/api/admin";
 import { toast } from "@/components/ui/Toast";
 
@@ -107,7 +110,7 @@ function parseCSV(text: string): Record<string, string>[] {
 export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: ImportPlacesModalProps) {
   const { present, phase } = usePresence(isOpen);
   const [file, setFile] = useState<File | null>(null);
-  const [parsedData, setParsedData] = useState<any[]>([]);
+  const [defaultCategory, setDefaultCategory] = useState("cultural");
   const [previewStats, setPreviewStats] = useState<{
     total: number;
     validCount: number;
@@ -189,26 +192,32 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
     const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
 
-    if (!selectedFile.name.endsWith(".csv")) {
-      toast.error("Vui lòng chọn tệp định dạng .csv");
+    e.target.value = "";
+    const extension = selectedFile.name.split(".").pop()?.toLowerCase();
+    if (extension !== "csv" && extension !== "json" && extension !== "geojson") {
+      toast.error("Vui lòng chọn tệp CSV, JSON hoặc GeoJSON.");
+      return;
+    }
+
+    if (selectedFile.size > 10 * 1024 * 1024) {
+      toast.error("Tệp địa điểm vượt quá 10 MB.");
       return;
     }
 
     setFile(selectedFile);
+    setPreviewStats(null);
+    setPreviewItems([]);
+    setFilterTab("all");
     setImportResult(null);
     setIsLoadingPreview(true);
 
     try {
       const text = await selectedFile.text();
-      const rows = parseCSV(text);
+      const rows = extension === "csv" ? parseCSV(text) : parsePlaceJson(text, defaultCategory);
 
       if (rows.length === 0) {
-        toast.error("Tệp CSV không có dữ liệu hợp lệ.");
-        setIsLoadingPreview(false);
-        return;
+        throw new Error("Tệp không có địa điểm để nhập.");
       }
-
-      setParsedData(rows);
 
       // Gửi lên Backend để kiểm tra trùng lặp và xác thực
       const previewRes = await AdminAPI.previewImportCSV(rows);
@@ -220,7 +229,8 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
       });
       setPreviewItems(previewRes.items);
     } catch (err: any) {
-      toast.error(err.message || "Lỗi khi đọc và kiểm tra tệp CSV.");
+      setFile(null);
+      toast.error(err.message || "Lỗi khi đọc và kiểm tra tệp địa điểm.");
     } finally {
       setIsLoadingPreview(false);
     }
@@ -238,7 +248,9 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
 
     setIsImporting(true);
     try {
-      const res = await AdminAPI.importPlacesCSV(validRows, duplicateStrategy);
+      const rows = file?.name.toLowerCase().endsWith(".csv") ? validRows
+        : validRows.map((row) => row.isDuplicate ? row : { ...row, rating: row.rating ?? 0 });
+      const res = await AdminAPI.importPlacesCSV(rows, duplicateStrategy);
       setImportResult(res);
       toast.success(res.message || "Nhập danh sách địa điểm hoàn tất!");
       onSuccess();
@@ -251,7 +263,6 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
 
   const handleReset = () => {
     setFile(null);
-    setParsedData([]);
     setPreviewStats(null);
     setPreviewItems([]);
     setImportResult(null);
@@ -267,7 +278,8 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
   });
 
   return (
-    <div data-state={phase} inert={!isOpen} className="motion-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
+    <ViewportDialog>
+      <div data-state={phase} inert={!isOpen} className="motion-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div className="motion-backdrop fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onClick={onClose} />
 
@@ -282,7 +294,7 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
               </svg>
             </div>
             <div>
-              <h2 className="text-lg font-bold text-admin-strong">Thêm danh sách địa điểm bằng CSV</h2>
+              <h2 className="text-lg font-bold text-admin-strong">Nhập danh sách địa điểm</h2>
               <p className="text-xs text-admin-subtle">
                 Tự động kiểm tra trùng lặp tên, ID, tọa độ trước khi lưu vào cơ sở dữ liệu
               </p>
@@ -301,7 +313,7 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
             </button>
             <button
               onClick={onClose}
-              aria-label="Đóng nhập CSV"
+              aria-label="Đóng nhập địa điểm"
               className="rounded-lg p-1.5 text-admin-subtle hover:bg-admin-muted hover:text-admin-strong transition"
             >
               <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -315,29 +327,34 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {/* Vùng chọn file nếu chưa chọn hoặc muốn chọn lại */}
           {!file && (
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="flex flex-col items-center justify-center border-2 border-dashed border-admin-border hover:border-purple-500 rounded-2xl p-10 cursor-pointer bg-admin-canvas hover:bg-purple-50 dark:hover:bg-purple-950/50 transition group"
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-              <div className="h-14 w-14 rounded-2xl bg-purple-500/10 text-purple-700 dark:text-purple-300 flex items-center justify-center group-hover:scale-110 transition duration-300 border border-purple-500/20 mb-3">
-                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <p className="text-sm font-semibold text-admin-strong group-hover:text-purple-700 dark:group-hover:text-purple-300">
-                Nhấp hoặc kéo thả tệp CSV vào đây
-              </p>
-              <p className="text-xs text-admin-subtle mt-1">
-                Chỉ hỗ trợ file *.csv có bảng mã UTF-8. Nhấn &quot;Tải file CSV mẫu&quot; ở trên nếu chưa có file chuẩn.
-              </p>
-            </div>
+            <>
+              <label className="flex flex-wrap items-center gap-2 text-sm text-admin-body">
+                Danh mục mặc định cho JSON và GeoJSON
+                <select value={defaultCategory} onChange={(event) => setDefaultCategory(event.target.value)}
+                  className="rounded-lg border border-admin-border bg-admin-surface px-3 py-2 text-admin-strong">
+                  {CATEGORIES.map(({ id, label }) => <option key={id} value={id}>{label}</option>)}
+                </select>
+              </label>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex w-full flex-col items-center justify-center border-2 border-dashed border-admin-border hover:border-purple-500 rounded-2xl p-10 cursor-pointer bg-admin-canvas hover:bg-purple-50 dark:hover:bg-purple-950/50 transition group"
+              >
+                <div className="h-14 w-14 rounded-2xl bg-purple-500/10 text-purple-700 dark:text-purple-300 flex items-center justify-center group-hover:scale-110 transition duration-300 border border-purple-500/20 mb-3">
+                  <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <p className="text-sm font-semibold text-admin-strong group-hover:text-purple-700 dark:group-hover:text-purple-300">
+                  Chọn tệp CSV, JSON hoặc GeoJSON
+                </p>
+                <p className="text-xs text-admin-subtle mt-1">
+                  Tệp Google Maps cần chứa tên và tọa độ của từng địa điểm.
+                </p>
+              </button>
+              <input ref={fileInputRef} type="file" accept=".csv,.json,.geojson"
+                className="hidden" onChange={handleFileChange} />
+            </>
           )}
 
           {/* Khi đang kiểm tra dữ liệu */}
@@ -354,8 +371,8 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
               {/* File Info Bar & Stats */}
               <div className="flex flex-wrap items-center justify-between gap-3 bg-admin-canvas border border-admin-border rounded-xl p-4">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold text-xs border border-emerald-500/20">
-                    CSV
+                  <span className="flex h-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold text-xs border border-emerald-500/20 px-2">
+                    {file.name.split(".").pop()?.toUpperCase()}
                   </span>
                   <div>
                     <p className="text-sm font-semibold text-admin-strong">{file.name}</p>
@@ -416,7 +433,7 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
                       className="text-purple-600 dark:text-purple-300 focus:ring-purple-500"
                     />
                     <span>
-                      <strong className="text-admin-strong">Ghi đè/Cập nhật (Overwrite):</strong> Cập nhật thông tin mới nhất từ CSV lên địa điểm trùng khớp
+                      <strong className="text-admin-strong">Ghi đè/Cập nhật (Overwrite):</strong> Cập nhật thông tin mới nhất từ tệp lên địa điểm trùng khớp
                     </span>
                   </label>
                 </div>
@@ -549,7 +566,7 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
           {file && !importResult && (
             <button
               type="button"
-              disabled={isImporting || isLoadingPreview || previewStats?.validCount === 0 && duplicateStrategy === "skip" && previewStats?.duplicateCount === 0}
+              disabled={isImporting || isLoadingPreview || !previewItems.some((item) => item.isValid)}
               onClick={handleExecuteImport}
               className="flex items-center gap-2 rounded-xl bg-purple-600 px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-purple-900/40 hover:bg-purple-500 transition disabled:opacity-50"
             >
@@ -581,5 +598,6 @@ export default function ImportPlacesModal({ isOpen, onClose, onSuccess }: Import
         </div>
       </div>
     </div>
+    </ViewportDialog>
   );
 }

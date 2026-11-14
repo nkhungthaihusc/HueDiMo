@@ -1,12 +1,15 @@
 "use client";
 
+import { ADMIN_ACCESS_DENIED_EVENT } from "@/lib/api/admin";
+import AdminImagePreview from "@/components/admin/AdminImagePreview";
+
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import UserAvatar from "@/components/ui/UserAvatar";
 import { AdminThemeProvider, AdminThemeToggle } from "@/components/admin/AdminThemeProvider";
-import { useEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
-import { LayoutDashboard, MapPin, Users, Route, MessageSquare, Sparkles, ScrollText, ArrowUpRight, Menu, X, LogOut, ArrowLeft } from "lucide-react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { LayoutDashboard, MapPin, Users, Route, MessageSquare, Sparkles, ScrollText, ArrowUpRight, Menu, X, LogOut, ArrowLeft, ShieldAlert } from "lucide-react";
 
 const subscribeToMount = () => () => { };
 
@@ -15,9 +18,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 }
 
 function AdminLayoutContent({ children }: { children: ReactNode }) {
-  const { user, isLoading, logout } = useAuth();
+  const { user, isLoading, isInitializing, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [accessDenied, setAccessDenied] = useState<401 | 403 | null>(null);
   const sidebarRef = useRef<HTMLDialogElement>(null);
   const mounted = useSyncExternalStore(subscribeToMount, () => true, () => false);
 
@@ -25,16 +29,19 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
   const isLoginPage = pathname === "/admin/login";
 
   useEffect(() => {
-    if (!mounted || isLoading) return;
-    if (isLoginPage) return;
-
-    if (!user) {
-      router.replace("/admin/login");
-    } else if (user.role !== "admin") {
-      alert("Bạn không có quyền truy cập trang quản trị!");
-      router.replace("/");
+    if (isLoginPage) {
+      setAccessDenied(null);
+      return;
     }
-  }, [user, isLoading, isLoginPage, mounted, router]);
+    const blockAccess = (event: Event) => setAccessDenied((event as CustomEvent<401 | 403>).detail);
+    window.addEventListener(ADMIN_ACCESS_DENIED_EVENT, blockAccess);
+    return () => window.removeEventListener(ADMIN_ACCESS_DENIED_EVENT, blockAccess);
+  }, [isLoginPage]);
+
+  useEffect(() => {
+    if (!mounted || isLoading || isInitializing || isLoginPage || accessDenied) return;
+    if (!user) router.replace("/admin/login");
+  }, [user, isLoading, isInitializing, isLoginPage, accessDenied, mounted, router]);
 
   if (isLoginPage) {
     return <>{children}</>;
@@ -44,8 +51,28 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
   // The server never knows auth state, so we must render nothing until client mounts.
   if (!mounted) return null;
 
+  if (accessDenied || (!isInitializing && !isLoading && user && user.role !== "admin")) {
+    return (
+      <main className="grid min-h-dvh place-items-center bg-admin-canvas p-4 text-admin-strong">
+        <section className="w-full max-w-lg rounded-2xl border border-rose-500/40 bg-admin-surface p-6 text-center shadow-lg sm:p-8">
+          <ShieldAlert aria-hidden="true" className="mx-auto mb-4 h-12 w-12 text-rose-600 dark:text-rose-300" />
+          <div role="alert">
+            <h1 className="text-2xl font-bold sm:text-3xl">
+              {accessDenied === 401 ? "Phiên đăng nhập đã hết hạn" : "Không có quyền quản trị"}
+            </h1>
+            <p className="mt-3 text-sm text-admin-body">Hãy đăng xuất và đăng nhập lại bằng tài khoản có quyền quản trị.</p>
+          </div>
+          <button type="button" onClick={() => { logout(); router.replace("/admin/login"); }}
+            className="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-rose-700 px-6 text-sm font-semibold text-white hover:bg-rose-800">
+            <LogOut size={18} aria-hidden="true" /> Đăng xuất
+          </button>
+        </section>
+      </main>
+    );
+  }
+
   // After client mount: show loading or redirect guard
-  if (isLoading || !user || user.role !== "admin") {
+  if (isInitializing || isLoading || !user || user.role !== "admin") {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-admin-canvas text-admin-strong">
         <div className="flex flex-col items-center gap-3">
@@ -81,7 +108,9 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
       <a href="http://huedimobe.hungthaisoft.id.vn/api/docs" target="_blank" rel="noreferrer" className="flex min-h-11 items-center justify-between rounded-xl px-3 text-sm text-admin-subtle hover:bg-admin-canvas">Tài liệu API<ArrowUpRight size={16} /></a>
       <Link href="/" className="flex min-h-11 items-center gap-2 rounded-xl bg-admin-canvas px-3 text-sm font-medium text-admin-body"><ArrowLeft size={17} />Về bản đồ du lịch</Link>
       <div className="flex items-center gap-3 rounded-xl border border-admin-border p-3">
-        <UserAvatar user={user} className="h-10 w-10" />
+        {user.avatarUrl || user.avatar_url ? (
+          <AdminImagePreview avatar src={user.avatarUrl || user.avatar_url || ""} label={user.name} className="h-10 w-10 rounded-full" />
+        ) : <UserAvatar user={user} className="h-10 w-10" />}
         <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-admin-strong">{user.name}</p><p className="text-xs text-admin-subtle">Quản trị viên</p></div>
         <button type="button" aria-label="Đăng xuất" onClick={() => { logout(); router.push("/admin/login"); }} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-admin-subtle hover:bg-rose-50 dark:hover:bg-rose-950/50 hover:text-rose-600 dark:hover:text-rose-300"><LogOut size={18} /></button>
       </div>
@@ -106,7 +135,13 @@ function AdminLayoutContent({ children }: { children: ReactNode }) {
           <Link href="/" className="flex min-h-11 shrink-0 items-center gap-2 rounded-xl border border-admin-border px-3 text-xs font-medium text-admin-body hover:bg-admin-canvas">Xem website<ArrowUpRight size={16} /></Link>
           </div>
         </header>
-        <main className="admin-content min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain p-4 md:p-6 xl:p-8"><div key={pathname} className="admin-page mx-auto flex min-h-full w-full max-w-[1440px] flex-col animate-in fade-in slide-in-from-bottom-2">{children}</div></main>
+        <main className="admin-content min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain p-4 md:p-6 xl:p-8">
+          <div key={pathname} className={`admin-page mx-auto flex w-full max-w-[1440px] flex-col animate-in fade-in slide-in-from-bottom-2 ${[
+            "/admin/places", "/admin/users", "/admin/reviews", "/admin/itineraries", "/admin/logs", "/admin/ai-settings",
+          ].includes(pathname) ? "h-full min-h-0" : "min-h-full"}`}>
+            {children}
+          </div>
+        </main>
       </div>
     </div>
   );

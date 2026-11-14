@@ -480,6 +480,24 @@ export const AdminController = {
    * GET /api/admin/users
    * Quản lý danh sách người dùng trong hệ thống
    */
+  async getUser(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { rows: [user] } = await pool.query(
+        `SELECT id, name, email, avatar_url, role, COALESCE(status, 'active') AS status,
+                provider, points, checkin_count, created_at, updated_at
+         FROM public.users WHERE id::text = $1`,
+        [req.params.id],
+      );
+      if (!user) {
+        sendError(res, "NOT_FOUND", "Không tìm thấy người dùng.", 404);
+        return;
+      }
+      sendSuccess(res, user);
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async getUsers(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
@@ -1045,8 +1063,8 @@ export const AdminController = {
         const category = (item.category || "").trim();
         const rawLat = item.lat;
         const rawLng = item.lng;
-        const numLat = Number(rawLat);
-        const numLng = Number(rawLng);
+        const numLat = rawLat == null || rawLat === "" ? NaN : Number(rawLat);
+        const numLng = rawLng == null || rawLng === "" ? NaN : Number(rawLng);
 
         const errors: string[] = [];
         let isDuplicate = false;

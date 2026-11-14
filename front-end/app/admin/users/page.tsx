@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import AdminImagePreview from "@/components/admin/AdminImagePreview";
+
+import { useEffect, useRef, useState } from "react";
 import { AdminAPI } from "@/lib/api/admin";
 import type { User } from "@/lib/types";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -9,6 +11,24 @@ import ConfirmModal from "@/components/ui/ConfirmModal";
 
 export default function AdminUsersPage() {
   const { user: currentUser } = useAuth();
+  const detailDialog = useRef<HTMLDialogElement>(null);
+  const detailRequest = useRef(0);
+  const [detail, setDetail] = useState<Awaited<ReturnType<typeof AdminAPI.getUser>> | null>(null);
+  const [detailError, setDetailError] = useState("");
+
+  const openDetail = async (id: string) => {
+    const request = ++detailRequest.current;
+    setDetail(null);
+    setDetailError("");
+    detailDialog.current?.showModal();
+    try {
+      const user = await AdminAPI.getUser(id);
+      if (request === detailRequest.current) setDetail(user);
+    } catch (error) {
+      if (request === detailRequest.current) setDetailError(error instanceof Error ? error.message : "Không thể tải hồ sơ.");
+    }
+  };
+
   const [users, setUsers] = useState<User[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -121,7 +141,7 @@ export default function AdminUsersPage() {
   const totalPages = Math.ceil(total / limit) || 1;
 
   return (
-    <div className="flex flex-1 flex-col space-y-6 min-h-0">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 md:gap-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between shrink-0">
         <div>
@@ -190,127 +210,167 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Table Display */}
-      <div className="flex-1 min-h-[450px] overflow-hidden rounded-2xl border border-admin-border bg-admin-surface shadow-sm flex flex-col">
+      <div className="flex-1 min-h-0 overflow-hidden rounded-2xl border border-admin-border bg-admin-surface shadow-sm flex flex-col">
         {isLoading ? (
-          <div className="flex flex-1 items-center justify-center min-h-[300px]">
+          <div className="flex flex-1 items-center justify-center min-h-0">
             <div className="h-7 w-7 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
           </div>
         ) : (
-          <div className="flex-1 overflow-x-auto overflow-y-auto min-h-0">
-            <table className="w-full text-left text-xs">
-                <caption className="caption-top px-4 py-3 text-left text-xs font-medium text-admin-subtle md:hidden">Vuốt ngang để xem đầy đủ thông tin và thao tác →</caption>
-              <thead className="sticky top-0 z-10 border-b border-admin-border bg-admin-canvas backdrop-blur-md text-admin-subtle">
-                <tr>
-                  <th className="px-5 py-3 font-semibold">Người dùng</th>
-                  <th className="px-4 py-3 font-semibold">Email</th>
-                  <th className="px-4 py-3 font-semibold">Vai trò</th>
-                  <th className="px-4 py-3 font-semibold">Trạng thái</th>
-                  <th className="px-5 py-3 font-semibold text-right">Hành động</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-admin-border">
-                {users.map((u) => {
-                  const isCurrent = u.id === currentUser?.id;
-                  const isAdmin = u.role === "admin";
-                  const isBanned = u.status === "banned";
-                  const isUpdating = updatingUserId === u.id;
+          <>
+            <p className="shrink-0 px-4 py-2 text-xs font-medium text-admin-subtle md:hidden">Vuốt ngang để xem đầy đủ thông tin và thao tác →</p>
+            <div className="flex-1 min-h-0 overflow-auto overscroll-contain">
+              <table className="w-full text-left text-xs">
+                <thead className="sticky top-0 z-10 border-b border-admin-border bg-admin-canvas backdrop-blur-md text-admin-subtle">
+                  <tr>
+                    <th className="px-5 py-3 font-semibold">Người dùng</th>
+                    <th className="px-4 py-3 font-semibold">Email</th>
+                    <th className="px-4 py-3 font-semibold">Vai trò</th>
+                    <th className="px-4 py-3 font-semibold">Trạng thái</th>
+                    <th className="px-5 py-3 font-semibold text-right">Hành động</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-admin-border">
+                  {users.map((u) => {
+                    const isCurrent = u.id === currentUser?.id;
+                    const isAdmin = u.role === "admin";
+                    const isBanned = u.status === "banned";
+                    const isUpdating = updatingUserId === u.id;
 
-                  return (
-                    <tr
-                      key={u.id || u.email}
-                      className={`hover:bg-admin-muted transition ${isBanned ? "opacity-60" : ""}`}
-                    >
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-3">
-                          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${isBanned ? "bg-rose-50 dark:bg-rose-950/50 border border-rose-700/40 text-rose-700 dark:text-rose-300" : "bg-purple-50 dark:bg-purple-950/50 border border-purple-700/50 text-purple-700 dark:text-purple-300"}`}>
-                            {u.name ? u.name.charAt(0).toUpperCase() : "U"}
-                          </div>
-                          <div>
-                            <div className="font-semibold text-admin-strong flex items-center gap-2 flex-wrap">
-                              <span>{u.name}</span>
-                              {isCurrent && (
-                                <span className="rounded-md bg-purple-500/20 px-1.5 py-0.5 text-[10px] font-medium text-purple-700 dark:text-purple-300">
-                                  Bạn
-                                </span>
-                              )}
-                              {isBanned && (
-                                <span className="rounded-md bg-rose-50 dark:bg-rose-950/50 border border-rose-600/40 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-300">
-                                  🔒 Đã khóa
-                                </span>
-                              )}
+                    return (
+                      <tr
+                        key={u.id || u.email}
+                        className={`hover:bg-admin-muted transition ${isBanned ? "opacity-60" : ""}`}
+                      >
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-3">
+                            {u.avatarUrl || u.avatar_url ? (
+                              <AdminImagePreview avatar src={u.avatarUrl || u.avatar_url || ""} label={u.name} className="h-9 w-9 rounded-xl" />
+                            ) : (
+                              <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${isBanned ? "bg-rose-50 dark:bg-rose-950/50 border border-rose-700/40 text-rose-700 dark:text-rose-300" : "bg-purple-50 dark:bg-purple-950/50 border border-purple-700/50 text-purple-700 dark:text-purple-300"}`}>
+                                {u.name ? u.name.charAt(0).toUpperCase() : "U"}
+                              </div>
+                            )}
+                            <div>
+                              <div className="font-semibold text-admin-strong flex items-center gap-2 flex-wrap">
+                                <span>{u.name}</span>
+                                {isCurrent && (
+                                  <span className="rounded-md bg-purple-500/20 px-1.5 py-0.5 text-[10px] font-medium text-purple-700 dark:text-purple-300">
+                                    Bạn
+                                  </span>
+                                )}
+                                {isBanned && (
+                                  <span className="rounded-md bg-rose-50 dark:bg-rose-950/50 border border-rose-600/40 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-300">
+                                    🔒 Đã khóa
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[11px] text-admin-subtle font-mono">
+                                ID: {u.id?.slice(0, 8)}...
+                              </div>
                             </div>
-                            <div className="text-[11px] text-admin-subtle font-mono">
-                              ID: {u.id?.slice(0, 8)}...
-                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3.5 text-admin-body font-mono text-xs">{u.email}</td>
-                      <td className="px-4 py-3.5">
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                            isAdmin
-                              ? "bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/40"
-                              : "bg-admin-muted text-admin-subtle border border-admin-border"
-                          }`}
-                        >
-                          <span>{isAdmin ? "👑 Admin" : "👤 User"}</span>
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                            isBanned
-                              ? "bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-700/50"
-                              : "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-700/50"
-                          }`}
-                        >
-                          {isBanned ? "🔒 Bị khóa" : "✓ Hoạt động"}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {/* Đổi role */}
-                          <button
-                            disabled={isCurrent || Boolean(isUpdating)}
-                            onClick={() => handleToggleRole(u)}
-                            className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
+                        </td>
+                        <td className="px-4 py-3.5 text-admin-body font-mono text-xs">{u.email}</td>
+                        <td className="px-4 py-3.5">
+                          <span
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                               isAdmin
-                                ? "bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/50"
-                                : "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-700/40 hover:bg-purple-800/50"
-                            } disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer`}
+                                ? "bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/40"
+                                : "bg-admin-muted text-admin-subtle border border-admin-border"
+                            }`}
                           >
-                            {isUpdating
-                              ? "..."
-                              : isAdmin
-                              ? "Hạ User"
-                              : "Cấp Admin"}
-                          </button>
-
-                          {/* Khóa / Kích hoạt */}
-                          <button
-                            disabled={isCurrent || Boolean(isUpdating)}
-                            onClick={() => handleToggleStatus(u)}
-                            className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
+                            <span>{isAdmin ? "👑 Admin" : "👤 User"}</span>
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <span
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                               isBanned
-                                ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-950/50"
-                                : "bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/50"
-                            } disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer`}
+                                ? "bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-700/50"
+                                : "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-700/50"
+                            }`}
                           >
-                            {isUpdating ? "..." : isBanned ? "🔓 Kích hoạt" : "🔒 Khóa TK"}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                            {isBanned ? "🔒 Bị khóa" : "✓ Hoạt động"}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3.5 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button type="button" onClick={() => { if (u.id) void openDetail(u.id); }}
+                              className="rounded-lg border border-admin-border px-2.5 py-1 text-xs font-medium text-admin-strong hover:bg-admin-muted">
+                              Chi tiết
+                            </button>
+                            {/* Đổi role */}
+                            <button
+                              disabled={isCurrent || Boolean(isUpdating)}
+                              onClick={() => handleToggleRole(u)}
+                              className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
+                                isAdmin
+                                  ? "bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/50"
+                                  : "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-700/40 hover:bg-purple-800/50"
+                              } disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer`}
+                            >
+                              {isUpdating
+                                ? "..."
+                                : isAdmin
+                                ? "Hạ User"
+                                : "Cấp Admin"}
+                            </button>
+
+                            {/* Khóa / Kích hoạt */}
+                            <button
+                              disabled={isCurrent || Boolean(isUpdating)}
+                              onClick={() => handleToggleStatus(u)}
+                              className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
+                                isBanned
+                                  ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-950/50"
+                                  : "bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/50"
+                              } disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer`}
+                            >
+                              {isUpdating ? "..." : isBanned ? "🔓 Kích hoạt" : "🔒 Khóa TK"}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
       {/* Modal xác nhận đổi quyền */}
+      <dialog ref={detailDialog} aria-labelledby="user-detail-title"
+        onClose={() => { detailRequest.current++; }}
+        className="m-auto max-h-[85dvh] w-[calc(100%-2rem)] max-w-md overflow-auto rounded-2xl border border-admin-border bg-admin-surface p-5 text-admin-strong backdrop:bg-black/60">
+        <h2 id="user-detail-title" className="text-lg font-bold">Thông tin người dùng</h2>
+        {(detail?.avatarUrl || detail?.avatar_url) && (
+          <AdminImagePreview avatar src={detail.avatarUrl || detail.avatar_url || ""} label={detail.name} className="mt-3 h-16 w-16 rounded-full" />
+        )}
+        {detailError ? <p role="alert" className="mt-3 text-sm">{detailError}</p> : detail ? (
+          <dl className="mt-3 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 text-sm">
+            {[
+              ["Tên", detail.name], ["Email", detail.email], ["Mã tài khoản", detail.id],
+              ["Vai trò", detail.role === "admin" ? "Quản trị viên" : "Người dùng"],
+              ["Trạng thái", detail.status === "banned" ? "Bị khóa" : "Hoạt động"],
+              ["Nhà cung cấp", detail.provider], ["Điểm", detail.points ?? 0],
+              ["Lượt check-in", detail.checkin_count ?? 0],
+              ["Ngày tạo", detail.created_at && new Date(detail.created_at).toLocaleString("vi-VN")],
+              ["Cập nhật", detail.updated_at && new Date(detail.updated_at).toLocaleString("vi-VN")],
+            ].map(([label, value]) => (
+              <div key={label} className="contents">
+                <dt className="text-admin-subtle">{label}</dt>
+                <dd className="break-words">{value ?? "—"}</dd>
+              </div>
+            ))}
+          </dl>
+        ) : <p role="status" className="mt-3 text-sm">Đang tải hồ sơ…</p>}
+        <form method="dialog" className="mt-4 text-right">
+          <button className="rounded-lg border border-admin-border px-3 py-2 text-sm">Đóng</button>
+        </form>
+      </dialog>
+
       <ConfirmModal
         isOpen={roleChangeDialog.isOpen}
         onClose={() => !updatingUserId && setRoleChangeDialog({ isOpen: false, user: null, newRole: "user" })}

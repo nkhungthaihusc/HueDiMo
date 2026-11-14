@@ -100,28 +100,26 @@ export default function ItineraryResultPanel({
     }
   }, [itinerary]);
 
-  const travelStats = useMemo(() => {
-    let totalKm = 0;
-    let totalMins = 0;
-    for (const day of currentItinerary.days) {
-      for (let i = 0; i < day.places.length - 1; i++) {
-        const p1 = placeById.get(day.places[i].placeId);
-        const p2 = placeById.get(day.places[i + 1].placeId);
-        if (p1 && p2) {
-          const dist = calculateRouteDistanceKm(p1.lat, p1.lng, p2.lat, p2.lng);
-          const mins = calculateTravelTimeMinutes(dist, currentItinerary.transportMode);
-          totalKm += dist;
-          totalMins += mins;
-        }
-      }
-    }
-    return {
-      totalKm: Math.round(totalKm * 10) / 10,
-      totalMinutes: totalMins,
-    };
-  }, [currentItinerary, placeById]);
+  const dayTravel = useMemo(() => currentItinerary.days.map((day) =>
+    day.places.slice(1).map((entry, index) => {
+      const from = placeById.get(day.places[index].placeId);
+      const to = placeById.get(entry.placeId);
+      if (!from || !to) return null;
+      const km = calculateRouteDistanceKm(from.lat, from.lng, to.lat, to.lng);
+      return { km, minutes: calculateTravelTimeMinutes(km, currentItinerary.transportMode) };
+    }),
+  ), [currentItinerary, placeById]);
 
-  const activeDay = currentItinerary.days[selectedDayIndex] || currentItinerary.days[0];
+  const sumTravel = (legs: (typeof dayTravel)[number]) => legs.reduce(
+    (total, leg) => ({ totalKm: total.totalKm + (leg?.km ?? 0), totalMinutes: total.totalMinutes + (leg?.minutes ?? 0) }),
+    { totalKm: 0, totalMinutes: 0 },
+  );
+  const travelStats = sumTravel(dayTravel.flat());
+  const activeIndex = dayTravel[selectedDayIndex] ? selectedDayIndex : 0;
+  const activeDay = currentItinerary.days[activeIndex];
+  const activeLegs = dayTravel[activeIndex] ?? [];
+  const dayTotal = sumTravel(activeLegs);
+  const kmLabel = (km: number) => km.toLocaleString("vi-VN", { maximumFractionDigits: 2 });
 
   const ensureSavedToServer = async (publicFlag: boolean) => {
     return await ItineraryAPI.saveToServer(
@@ -389,7 +387,7 @@ export default function ItineraryResultPanel({
             <div className="mt-3 pt-3 border-t border-white/10 grid grid-cols-2 gap-2 text-[11px]">
               <div>
                 <span className="text-slate-400">Quãng đường: </span>
-                <span className="font-semibold text-slate-200">{travelStats.totalKm} km</span>
+                <span className="font-semibold text-slate-200">{kmLabel(travelStats.totalKm)} km</span>
               </div>
               <div>
                 <span className="text-slate-400">Thời gian chạy xe: </span>
@@ -607,6 +605,10 @@ export default function ItineraryResultPanel({
               <span>{activeDay?.places.length || 0} điểm dừng</span>
             </div>
 
+            <p className="text-xs text-slate-600">
+              Di chuyển ước tính {kmLabel(dayTotal.totalKm)} km · {formatTravelTime(dayTotal.totalMinutes)}
+              {activeLegs.some((leg) => !leg) && " · Một số chặng thiếu tọa độ"}
+            </p>
             <div className="space-y-2.5">
               {activeDay?.places.map((entry, pIdx) => {
                 const p = placeById.get(entry.placeId);
@@ -614,9 +616,14 @@ export default function ItineraryResultPanel({
                 const cat = p ? getCategory(p.category) : null;
                 const note = entry.note || entry.reason || p?.description;
 
+                const leg = activeLegs[pIdx - 1];
                 return (
+                  <div key={entry.placeId + pIdx}>
+                    {pIdx > 0 && <p className="px-3 pb-2 text-[11px] text-slate-600">
+                      {leg ? `Từ điểm trước · ${kmLabel(leg.km)} km · ${formatTravelTime(leg.minutes)}`
+                        : "Chặng từ điểm trước thiếu tọa độ"}
+                    </p>}
                   <div
-                    key={entry.placeId + pIdx}
                     onClick={() => onSelectPlace(entry.placeId)}
                     className="group flex gap-3 rounded-2xl border border-slate-200/80 bg-white p-3 shadow-xs hover:border-indigo-400 hover:shadow-md transition cursor-pointer"
                   >
@@ -651,6 +658,7 @@ export default function ItineraryResultPanel({
                         <span className="text-slate-400 group-hover:translate-x-0.5 transition">→</span>
                       </div>
                     </div>
+                  </div>
                   </div>
                 );
               })}

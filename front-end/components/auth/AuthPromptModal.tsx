@@ -1,5 +1,6 @@
 "use client";
 
+import ViewportDialog from "@/components/ui/ViewportDialog";
 import { usePresence } from "@/hooks/usePresence";
 
 import { useEffect } from "react";
@@ -45,7 +46,8 @@ export default function AuthPromptModal({
     : "/register";
 
   return (
-    <div data-state={phase} inert={!isOpen} className="motion-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
+    <ViewportDialog>
+      <div data-state={phase} inert={!isOpen} className="motion-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop kính mờ */}
       <div
         className="motion-backdrop fixed inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
@@ -109,5 +111,6 @@ export default function AuthPromptModal({
         </div>
       </div>
     </div>
+    </ViewportDialog>
   );
 }

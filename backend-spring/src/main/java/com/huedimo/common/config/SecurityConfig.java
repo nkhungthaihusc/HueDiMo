@@ -57,7 +57,7 @@ public class SecurityConfig {
                                 "/api/auth/logout"
                         ).permitAll()
                         .requestMatchers("/api/itineraries/my").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/itineraries/generate").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/itineraries/community").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/itineraries/{id}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/itineraries/{id}/comments").permitAll()

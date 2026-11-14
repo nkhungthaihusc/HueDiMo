@@ -9,6 +9,7 @@ router.post("/login", AuthController.login);
 router.post("/refresh", AuthController.refresh);
 router.get("/me", authenticate, AuthController.getMe);
 router.patch("/profile", authenticate, AuthController.updateProfile);
+router.patch("/password", authenticate, AuthController.changePassword);
 router.post("/logout", AuthController.logout);
 router.post("/oauth-login", AuthController.oauthLogin);
 

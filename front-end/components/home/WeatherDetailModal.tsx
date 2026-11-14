@@ -1,5 +1,6 @@
 "use client";
 
+import ViewportDialog from "@/components/ui/ViewportDialog";
 import { usePresence } from "@/hooks/usePresence";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
@@ -233,10 +234,11 @@ export default function WeatherDetailModal({
   const maxDepth = Math.max(...(vrainData?.stations.map((s) => s.sumDepth ?? 0) || [100]), 100);
 
   return (
-    <div
+    <ViewportDialog>
+      <div
       data-state={phase}
       inert={!isOpen}
-      className="motion-overlay home-modal fixed inset-0 z-50 flex items-center justify-center pt-24 sm:pt-28 pb-6 px-4 sm:px-6 md:px-8 bg-ink-900/50 backdrop-blur-md"
+      className="motion-overlay home-modal fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-8 bg-ink-900/50 backdrop-blur-md"
       role="dialog"
       aria-modal="true"
       aria-labelledby="weather-modal-title"
@@ -1451,5 +1453,6 @@ export default function WeatherDetailModal({
         </div>
       </div>
     </div>
+    </ViewportDialog>
   );
 }

@@ -1,11 +1,12 @@
 "use client";
 
+import ViewportDialog from "@/components/ui/ViewportDialog";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { MOTION_EXIT_MS } from "@/hooks/usePresence";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import type { Place, Review } from "@/lib/types";
 import { getCategory } from "@/lib/data/categories";
-import { getReviews, addReview, averageRating } from "@/lib/review/logic";
+import { addReview } from "@/lib/review/logic";
 import { calculateDistanceKm } from "@/lib/itinerary/types";
 import { getPlaceSpecifics } from "@/lib/data/placeSpecifics";
 import { ReviewAPI } from "@/lib/api/reviews";
@@ -104,11 +105,14 @@ export default function PlaceDetailPanel({
   onAddToItinerary,
   userLocation,
 }: PlaceDetailPanelProps) {
-  const [reviews, setReviews] = useState<Review[]>(() => getReviews(place.id));
-  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(true);
+  const [reviewLoadError, setReviewLoadError] = useState(false);
+  const [reviewLoadAttempt, setReviewLoadAttempt] = useState(0);
   const [activeTab, setActiveTab] = useState<"info" | "reviews">("info");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [imageZoom, setImageZoom] = useState(1);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -252,34 +256,14 @@ export default function PlaceDetailPanel({
   useEffect(() => {
     let isMounted = true;
 
-    // Khởi tạo từ local trước
-    const local = getReviews(place.id);
-    setReviews(local);
-
-    async function fetchBackendReviews() {
-      setIsLoadingReviews(true);
-      try {
-        const backendReviews = await ReviewAPI.getPlaceReviews(place.id);
-        if (isMounted) {
-          if (backendReviews && backendReviews.length > 0) {
-            // Hợp nhất backend reviews và local reviews, tránh trùng ID
-            const backendIds = new Set(backendReviews.map((r) => r.id));
-            const uniqueLocal = local.filter((r) => !backendIds.has(r.id));
-            setReviews([...backendReviews, ...uniqueLocal]);
-          }
-        }
-      } catch (err) {
-        console.error("Lỗi tải reviews từ server:", err);
-      } finally {
-        if (isMounted) setIsLoadingReviews(false);
-      }
-    }
-
-    fetchBackendReviews();
-    return () => {
-      isMounted = false;
-    };
-  }, [place.id]);
+    setIsLoadingReviews(true);
+    setReviewLoadError(false);
+    ReviewAPI.getPlaceReviews(place.id)
+      .then((items) => { if (isMounted) setReviews(items); })
+      .catch(() => { if (isMounted) setReviewLoadError(true); })
+      .finally(() => { if (isMounted) setIsLoadingReviews(false); });
+    return () => { isMounted = false; };
+  }, [place.id, reviewLoadAttempt]);
 
   const [heroImageError, setHeroImageError] = useState(false);
 
@@ -297,7 +281,7 @@ export default function PlaceDetailPanel({
   };
 
   const cat = getCategory(place.category);
-  const avg = averageRating(place.id) ?? (place.rating > 0 ? place.rating : 0);
+  const avg = place.rating > 0 ? place.rating : 0;
   const reviewCount = reviews.length;
 
   const distanceToUser = useMemo(() => {
@@ -333,17 +317,21 @@ export default function PlaceDetailPanel({
     setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
   };
 
+  useEffect(() => {
+    setImageZoom(1);
+  }, [isLightboxOpen, currentImageIndex, lightboxImage]);
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (!isLightboxOpen) return;
-      if (e.key === "ArrowLeft") handlePrevImage();
-      if (e.key === "ArrowRight") handleNextImage();
+      if (e.key === "ArrowLeft" && !lightboxImage) handlePrevImage();
+      if (e.key === "ArrowRight" && !lightboxImage) handleNextImage();
       if (e.key === "Escape") {
         setIsLightboxOpen(false);
         setLightboxImage(null);
       }
     },
-    [isLightboxOpen, images.length]
+    [isLightboxOpen, lightboxImage, images.length]
   );
 
   useEffect(() => {
@@ -1227,14 +1215,15 @@ export default function PlaceDetailPanel({
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-ink-500">
-                    Tất cả đánh giá ({reviews.length})
+                    Tất cả đánh giá{!isLoadingReviews && !reviewLoadError && ` (${reviews.length})`}
                   </h4>
-                  {isLoadingReviews && (
-                    <span className="text-[10px] text-ink-400 animate-pulse">Đang cập nhật...</span>
-                  )}
                 </div>
 
-                {reviews.length === 0 ? (
+                {isLoadingReviews ? (
+                  <p role="status" className="text-xs text-ink-500">Đang tải đánh giá…</p>
+                ) : reviewLoadError ? (
+                  <p role="alert" className="text-xs text-ink-500">Không thể tải đánh giá. <button type="button" className="font-semibold" onClick={() => setReviewLoadAttempt((attempt) => attempt + 1)}>Thử lại</button></p>
+                ) : reviews.length === 0 ? (
                   <div className="rounded-2xl bg-white/60 p-4 text-center text-xs text-ink-500">
                     Chưa có đánh giá nào cho địa điểm này. Hãy là người đầu tiên chia sẻ cảm nhận nhé!
                   </div>
@@ -1299,7 +1288,8 @@ export default function PlaceDetailPanel({
 
       {/* Lightbox / Phóng to Thư viện ảnh Toàn màn hình */}
       {isLightboxOpen && (images.length > 0 || lightboxImage) && (
-        <div
+        <ViewportDialog>
+          <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4"
           onClick={() => {
             setIsLightboxOpen(false);
@@ -1307,7 +1297,10 @@ export default function PlaceDetailPanel({
           }}
         >
           <div
-            className="relative flex max-h-[90vh] max-w-4xl flex-col items-center"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Xem ảnh địa điểm"
+            className="relative flex w-full max-w-4xl flex-col items-center gap-3"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Nút đóng */}
@@ -1317,19 +1310,35 @@ export default function PlaceDetailPanel({
                 setIsLightboxOpen(false);
                 setLightboxImage(null);
               }}
-              className="absolute -top-12 right-0 flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-xl font-bold text-white transition hover:bg-white/40"
+              autoFocus
+              className="ml-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-xl font-bold text-white transition hover:bg-white/40"
               aria-label="Đóng thư viện ảnh"
             >
               ✕
             </button>
 
-            {/* Ảnh lớn */}
-            <div className="relative overflow-hidden rounded-2xl shadow-2xl">
-              <img
-                src={lightboxImage || images[currentImageIndex]}
-                alt={`${place.name} - ảnh lớn`}
-                className="max-h-[70vh] w-auto object-contain"
-              />
+            <div className="flex items-center gap-2 text-sm text-white">
+              <button type="button" aria-label="Thu nhỏ ảnh" disabled={imageZoom <= 1}
+                onClick={() => setImageZoom((zoom) => Math.max(1, zoom - 0.5))}
+                className="h-10 w-10 rounded-full bg-white/20 disabled:opacity-40">−</button>
+              <button type="button" aria-label="Đặt lại kích thước ảnh" onClick={() => setImageZoom(1)}
+                className="h-10 min-w-16 rounded-lg px-2">{Math.round(imageZoom * 100)}%</button>
+              <button type="button" aria-label="Phóng to ảnh" disabled={imageZoom >= 3}
+                onClick={() => setImageZoom((zoom) => Math.min(3, zoom + 0.5))}
+                className="h-10 w-10 rounded-full bg-white/20 disabled:opacity-40">+</button>
+            </div>
+            <div className="relative w-full overflow-hidden rounded-2xl">
+              <div key={lightboxImage || currentImageIndex} tabIndex={0} aria-label="Vùng xem ảnh"
+                className="max-h-[62dvh] overflow-auto overscroll-contain">
+                <div style={{ width: `${imageZoom * 100}%` }}>
+                  <img
+                    src={lightboxImage || images[currentImageIndex]}
+                    alt={`${place.name} - ảnh lớn`}
+                    className="mx-auto w-full object-contain"
+                    style={{ maxHeight: `${imageZoom * 62}dvh` }}
+                  />
+                </div>
+              </div>
 
               {!lightboxImage && images.length > 1 && (
                 <>
@@ -1354,23 +1363,23 @@ export default function PlaceDetailPanel({
             </div>
 
             {/* Thông tin caption dưới ảnh */}
-            <div className="mt-4 flex w-full items-center justify-between text-white">
+            <div className="flex w-full min-w-0 flex-wrap items-center justify-between gap-2 text-white">
               <div>
                 <h3 className="text-base font-bold">{place.name}</h3>
                 <p className="text-xs text-white/70">
-                  {place.address || "Thành phố Huế"} · Ảnh {currentImageIndex + 1}/{images.length}
+                  {place.address || "Thành phố Huế"}{!lightboxImage && ` · Ảnh ${currentImageIndex + 1}/${images.length}`}
                 </p>
               </div>
 
               {/* Thumbnails strip */}
-              {images.length > 1 && (
-                <div className="flex gap-2">
+              {!lightboxImage && images.length > 1 && (
+                <div className="flex max-w-full gap-2 overflow-x-auto">
                   {images.map((img, idx) => (
                     <button
                       key={idx}
                       type="button"
                       onClick={() => setCurrentImageIndex(idx)}
-                      className={`h-12 w-16 overflow-hidden rounded-lg border-2 transition ${idx === currentImageIndex
+                      className={`h-12 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition ${idx === currentImageIndex
                         ? "border-brand-400 scale-105"
                         : "border-transparent opacity-60 hover:opacity-100"
                         }`}
@@ -1383,6 +1392,7 @@ export default function PlaceDetailPanel({
             </div>
           </div>
         </div>
+        </ViewportDialog>
       )}
 
       {/* Modal nhắc nhở đăng nhập */}

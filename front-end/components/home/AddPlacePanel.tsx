@@ -1,5 +1,7 @@
 "use client";
 
+import MoneyInput from "@/components/ui/MoneyInput";
+
 import { useState, useRef, useEffect } from "react";
 import type { CategoryId, Place } from "@/lib/types";
 import { CATEGORIES } from "@/lib/data/categories";
@@ -368,11 +370,11 @@ export default function AddPlacePanel({ position, onCancel, onSubmit }: AddPlace
           <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
             Giá vé / Chi phí tham quan (VND)
           </label>
-          <input
-            type="number"
+          <MoneyInput
+            aria-label="Giá vé hoặc chi phí tham quan (VND)"
             value={price}
             placeholder="0 = Miễn phí vé"
-            onChange={(e) => setPrice(e.target.value)}
+            onValueChange={setPrice}
             className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 font-medium text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition"
           />
         </div>

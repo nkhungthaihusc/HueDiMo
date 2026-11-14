@@ -145,10 +145,9 @@ export async function getMyContributedPlaces(): Promise<Place[]> {
 
 
 export async function getPublicPlaces(signal: AbortSignal): Promise<Place[]> {
-  const res = await fetch(`${BACKEND_URL}/api/places`, { signal, cache: "no-store" });
-  if (!res.ok) return [];
+  const res = await fetch(`${BACKEND_URL}/api/places`, { signal: AbortSignal.any([signal, AbortSignal.timeout(15000)]), cache: "no-store" });
+  if (!res.ok) throw new Error("Không thể tải địa điểm công khai.");
   const { data } = await res.json();
-  return Array.isArray(data)
-    ? data.filter((place) => place?.status === "approved").map(normalizePlace)
-    : [];
+  if (!Array.isArray(data)) throw new Error("Danh sách địa điểm không hợp lệ.");
+  return data.filter((place) => place?.status === "approved").map(normalizePlace);
 }

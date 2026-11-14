@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useSyncExternalStore, type ReactNode } from "react";
+import { DialogTheme } from "@/components/ui/ViewportDialog";
 import { Moon, Sun } from "lucide-react";
 
 type Theme = "light" | "dark";
@@ -48,7 +49,7 @@ export function AdminThemeProvider({ children }: { children: ReactNode }) {
   return (
     <ThemeContext.Provider value={theme}>
       <div data-admin-theme={theme} className="admin-theme h-full min-h-0 w-full" style={{ colorScheme: theme }}>
-        {children}
+        <DialogTheme.Provider value={theme}>{children}</DialogTheme.Provider>
       </div>
     </ThemeContext.Provider>
   );

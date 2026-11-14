@@ -46,10 +46,10 @@ export const reviewController = {
    * POST /api/places/:placeId/reviews
    * Tạo một bài đánh giá mới kèm danh sách URL hình ảnh
    */
-  async createPlaceReview(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async createPlaceReview(req: import("../middleware/auth.middleware").AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { placeId } = req.params;
-      const { authorName, rating, comment, images = [] } = req.body;
+      const { rating, comment, images = [] } = req.body;
 
       if (!placeId) {
         sendError(res, "VALIDATION_ERROR", "Thiếu mã địa điểm (placeId).", 400);
@@ -79,15 +79,11 @@ export const reviewController = {
         ? images.filter((img) => typeof img === "string" && img.trim().length > 0)
         : [];
 
-      const cleanAuthorName = typeof authorName === "string" && authorName.trim()
-        ? authorName.trim()
-        : "Du khách Huế";
-
       const insertRes = await pool.query(
-        `INSERT INTO public.reviews (place_id, author_name, rating, comment, images, created_at)
-         VALUES ($1, $2, $3, $4, $5, NOW())
+        `INSERT INTO public.reviews (place_id, user_id, author_name, rating, comment, images, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, NOW())
          RETURNING id, place_id, user_id, author_name, rating, comment, images, created_at`,
-        [placeId, cleanAuthorName, numRating, comment.trim(), sanitizedImages]
+        [placeId, req.user!.id, req.user!.name, numRating, comment.trim(), sanitizedImages]
       );
 
       const createdReview = insertRes.rows[0];

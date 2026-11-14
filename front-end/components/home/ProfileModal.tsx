@@ -1,8 +1,11 @@
 "use client";
 
+import ViewportDialog from "@/components/ui/ViewportDialog";
 import { usePresence } from "@/hooks/usePresence";
 
 import { useState, useRef, useEffect } from "react";
+import ChangePasswordForm from "@/components/auth/ChangePasswordForm";
+import { clearSession } from "@/lib/auth/logic";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { uploadMedia } from "@/lib/api/media";
 import { toast } from "@/components/ui/Toast";
@@ -28,6 +31,7 @@ interface ProfileModalProps {
   onClose: () => void;
   onOpenLeaderboard?: () => void;
   userContributedPlaces?: Place[];
+  contributionsLoading?: boolean;
   onSelectPlace?: (place: Place) => void;
 }
 
@@ -36,12 +40,13 @@ export default function ProfileModal({
   onClose,
   onOpenLeaderboard,
   userContributedPlaces = [],
+  contributionsLoading = false,
   onSelectPlace,
 }: ProfileModalProps) {
   const { present, phase } = usePresence(isOpen);
   const { user, updateProfile, refreshUser } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<"info" | "places">("info");
+  const [activeTab, setActiveTab] = useState<"info" | "places" | "password">("info");
   const [name, setName] = useState(user?.name || "");
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || user?.avatar_url || "");
   const [isUploading, setIsUploading] = useState(false);
@@ -161,7 +166,8 @@ export default function ProfileModal({
   const rankBadge = getBadgeTitle(currentPoints);
 
   return (
-    <div data-state={phase} inert={!isOpen} className="motion-overlay home-modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <ViewportDialog>
+      <div data-state={phase} inert={!isOpen} className="motion-overlay home-modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div
         className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
@@ -304,12 +310,24 @@ export default function ProfileModal({
             >
               <span>📍 Địa điểm đã thêm</span>
               <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-extrabold">
-                {userContributedPlaces.length}
+                {contributionsLoading ? "…" : userContributedPlaces.length}
               </span>
             </button>
           </div>
 
-          {activeTab === "info" ? (
+          {user?.provider === "local" && (
+            <button type="button" onClick={() => setActiveTab(activeTab === "password" ? "info" : "password")}
+              className="mb-3 rounded-lg px-3 py-2 text-sm font-semibold text-indigo-700 dark:text-indigo-300">
+              {activeTab === "password" ? "Về thông tin cá nhân" : "Đổi mật khẩu"}
+            </button>
+          )}
+          {activeTab === "password" ? (
+            <ChangePasswordForm onChanged={() => {
+              clearSession();
+              onClose();
+              window.location.assign("/login");
+            }} />
+          ) : activeTab === "info" ? (
             /* Form cập nhật thông tin */
             <form onSubmit={handleSave} className="space-y-4">
               {error && (
@@ -410,7 +428,9 @@ export default function ProfileModal({
           ) : (
             /* Tab: Danh sách địa điểm đã thêm */
             <div className="space-y-2.5 max-h-[360px] overflow-y-auto pr-1">
-              {userContributedPlaces.length === 0 ? (
+              {contributionsLoading ? (
+                <p role="status" className="py-6 text-center text-sm">Đang tải địa điểm đã thêm…</p>
+              ) : userContributedPlaces.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-10 text-center">
                   <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 flex items-center justify-center text-2xl mb-2">
                     📍
@@ -496,5 +516,6 @@ export default function ProfileModal({
         </div>
       </div>
     </div>
+    </ViewportDialog>
   );
 }

@@ -64,6 +64,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const user = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
     // Tự động kiểm tra tính hợp lệ của token khi khởi động app
@@ -72,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (currentRaw !== cachedRaw) {
         refreshSession();
       }
-    });
+    }).finally(() => setIsInitializing(false));
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -124,6 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
+        isInitializing,
         isLoading,
         login,
         register,

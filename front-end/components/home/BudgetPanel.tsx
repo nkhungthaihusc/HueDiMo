@@ -1,10 +1,16 @@
 "use client";
 
+import MoneyInput from "@/components/ui/MoneyInput";
+
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth/AuthProvider";
 import type { SavedItinerary } from "@/lib/itinerary/logic";
-import { getItineraries, setItineraryBudget } from "@/lib/itinerary/logic";
+import { getSession } from "@/lib/auth/logic";
+import { ItineraryAPI } from "@/lib/api/itineraries";
+import { toast } from "@/components/ui/Toast";
+import { updateItineraryId } from "@/lib/itinerary/logic";
+import { useSavedItineraries } from "@/hooks/useSavedItineraries";
 import { getAllPlaces } from "@/lib/addplace/logic";
 import { getCategory } from "@/lib/data/categories";
 import { formatVND } from "@/lib/format";
@@ -16,9 +22,10 @@ interface BudgetPanelProps {
 
 export default function BudgetPanel({ onClose, onOpen }: BudgetPanelProps) {
   const { user } = useAuth();
-  const [list, setList] = useState<SavedItinerary[]>(() => getItineraries());
+  const { list, setList, loading, error, retry } = useSavedItineraries(user?.id);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [budgetValue, setBudgetValue] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const placeCategories = useMemo(() => {
     const map = new Map<string, string>();
@@ -26,11 +33,45 @@ export default function BudgetPanel({ onClose, onOpen }: BudgetPanelProps) {
     return map;
   }, []);
 
-  const saveBudget = (it: SavedItinerary) => {
-    const n = Number(budgetValue);
-    setList(setItineraryBudget(it.id, Number.isFinite(n) && n > 0 ? Math.round(n) : 0));
-    setEditingId(null);
-    setBudgetValue("");
+  const saveBudget = async (it: SavedItinerary) => {
+    if (saving || !user) return;
+    const amount = Number(budgetValue);
+    if (!Number.isFinite(amount) || amount < 0) {
+      toast.error("Nhập ngân sách hợp lệ từ 0 trở lên.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const rounded = Math.round(amount);
+      const source = /^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(it.id)
+        ? await ItineraryAPI.getById(it.id)
+        : it;
+      if (getSession()?.id !== user.id) return;
+      const saved = await ItineraryAPI.saveToServer(
+        { ...source, budget: rounded || undefined },
+        source.title,
+        source.isPublic,
+        source,
+      );
+      if (getSession()?.id !== user.id) return;
+      if (!saved.id) throw new Error("Máy chủ chưa xác nhận lưu lịch trình.");
+      const updated = {
+        ...it,
+        id: saved.id,
+        budget: saved.budget,
+        updatedAt: saved.updatedAt ?? new Date().toISOString(),
+      };
+      updateItineraryId(it.id, updated);
+      setList((current) => current.map((entry) => entry.id === it.id ? updated : entry));
+      setEditingId(null);
+      setBudgetValue("");
+      toast.success("Đã lưu ngân sách.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Không thể lưu ngân sách.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const breakdown = (it: SavedItinerary) => {
@@ -75,7 +116,11 @@ export default function BudgetPanel({ onClose, onOpen }: BudgetPanelProps) {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {!user ? (
+        {loading ? (
+          <p role="status" className="p-4 text-sm text-slate-600">Đang tải lịch trình…</p>
+        ) : error ? (
+          <div role="alert" className="p-4 text-sm text-slate-700">Không thể tải lịch trình. <button type="button" onClick={retry} className="font-semibold text-indigo-700">Thử lại</button></div>
+        ) : !user ? (
           <div className="rounded-2xl bg-gradient-to-br from-indigo-50/90 via-amber-50/50 to-white p-6 border border-amber-200/70 text-center space-y-3 shadow-xs my-auto">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-xs border border-amber-200 text-2xl">
               💰
@@ -116,7 +161,7 @@ export default function BudgetPanel({ onClose, onOpen }: BudgetPanelProps) {
               </div>
             </div>
 
-            {list.length === 0 && (
+            {!loading && list.length === 0 && (
               <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-500 text-xs">
                 Chưa có lộ trình nào để dự toán. Hãy lưu một lộ trình trước.
               </div>
@@ -198,21 +243,22 @@ export default function BudgetPanel({ onClose, onOpen }: BudgetPanelProps) {
               <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
                 {editingId === it.id ? (
                   <div className="flex items-center gap-1.5 flex-1">
-                    <input
-                      type="number"
-                      step={50000}
+                    <MoneyInput
+                      aria-label="Ngân sách (đ)"
+
                       value={budgetValue}
                       placeholder="Ngân sách (đ)..."
-                      onChange={(e) => setBudgetValue(e.target.value)}
+                      onValueChange={setBudgetValue}
                       className="w-full rounded-lg border border-indigo-400 bg-white px-2 py-1 text-xs font-semibold text-slate-900 focus:outline-none"
                       autoFocus
                     />
                     <button
                       type="button"
+                      disabled={saving}
                       onClick={() => saveBudget(it)}
                       className="rounded-lg bg-indigo-600 px-2 py-1 text-[11px] font-bold text-white hover:bg-indigo-700 cursor-pointer"
                     >
-                      Lưu
+                      {saving ? "Đang lưu…" : "Lưu"}
                     </button>
                     <button
                       type="button"

@@ -151,6 +151,10 @@ export interface ItineraryDay {
 export interface Itinerary {
   id?: string;
   title?: string;
+  startDate?: string;
+  endDate?: string;
+  currentLocation?: string;
+  preferences?: string[];
   summary: string;
   totalEstimatedCost: number;
   budget?: number;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AdminAPI, type AdminAIConfig, type AdminAISettingsResponse } from "@/lib/api/admin";
 import { toast } from "@/components/ui/Toast";
 
@@ -184,6 +184,11 @@ export default function AdminAISettingsPage() {
     toast.info("Đã điền lại thông số mặc định. Nhấn 'Lưu thay đổi' để áp dụng.");
   };
 
+  const resultRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (testResult) resultRef.current?.scrollIntoView({ block: "nearest" });
+  }, [testResult]);
+
   if (isLoading) {
     return (
       <div className="flex h-96 items-center justify-center">
@@ -199,12 +204,12 @@ export default function AdminAISettingsPage() {
   const presets = data?.supportedPresets || [];
 
   return (
-    <div className="space-y-8 max-w-5xl">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       {/* Header */}
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-admin-border pb-3 md:pb-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-600/20 text-xl text-purple-700 dark:text-purple-300 border border-purple-500/30">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-600/20 text-xl text-purple-700 dark:text-purple-300 border border-purple-500/30">
               🤖
             </span>
             <div>
@@ -212,13 +217,13 @@ export default function AdminAISettingsPage() {
                 Cấu hình Model AI Tư Vấn
               </h1>
               <p className="text-xs text-admin-subtle">
-                Tùy biến model trí tuệ nhân tạo, thiết lập Google Gemini API key và chỉ thị hệ thống chuyên biệt cho du lịch Huế
+                Quản lý nhà cung cấp, khóa API và chỉ thị tạo lộ trình du lịch Huế.
               </p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 whitespace-nowrap">
           <button
             type="button"
             onClick={handleResetDefaults}
@@ -259,6 +264,7 @@ export default function AdminAISettingsPage() {
         </div>
       </div>
 
+      <div tabIndex={0} role="region" aria-label="Nội dung cấu hình AI" className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain py-4 md:space-y-6">
       {/* Provider & API Keys Status Banner */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Google Gemini Card */}
@@ -307,13 +313,13 @@ export default function AdminAISettingsPage() {
             Temp: <span className="text-amber-700 dark:text-amber-300 font-mono">{temperature}</span> | Tokens: <span className="text-cyan-700 dark:text-cyan-300 font-mono">{maxTokens}</span>
           </div>
           <p className="mt-1 text-[11px] text-admin-subtle">
-            Tối ưu cho lịch trình từ 1 đến 7 ngày tại Thừa Thiên Huế
+            Lộ trình hỗ trợ tối đa 14 ngày.
           </p>
         </div>
       </div>
 
       {/* Main Settings Form */}
-      <div className="rounded-3xl border border-admin-border bg-admin-surface p-6 md:p-8 backdrop-blur-xl space-y-6">
+      <div className="rounded-2xl border border-admin-border bg-admin-surface p-4 md:p-6 backdrop-blur-xl space-y-6">
         <h2 className="text-base font-bold text-admin-strong flex items-center gap-2 border-b border-admin-border pb-3">
           <span>⚙️</span> Thiết lập Nguồn Cung Cấp & API Key
         </h2>
@@ -632,7 +638,7 @@ export default function AdminAISettingsPage() {
 
       {/* Test Result Section */}
       {testResult && (
-        <div
+        <div ref={resultRef} role="status"
           className={`rounded-2xl border p-5 backdrop-blur-xl transition ${
             testResult.success
               ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300"
@@ -671,6 +677,7 @@ export default function AdminAISettingsPage() {
           )}
         </div>
       )}
+      </div>
     </div>
   );
 }

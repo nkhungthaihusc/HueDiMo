@@ -15,19 +15,12 @@ export const ReviewAPI = {
    * Lấy danh sách đánh giá của 1 địa điểm từ backend database
    */
   async getPlaceReviews(placeId: string): Promise<Review[]> {
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/places/${placeId}/reviews`, {
-        cache: "no-store",
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        throw new Error(json.error?.message || "Không thể tải danh sách đánh giá.");
-      }
-      return json.data || [];
-    } catch (error) {
-      console.error("Lỗi khi tải đánh giá từ server:", error);
-      return [];
+    const res = await fetch(`${BACKEND_URL}/api/places/${placeId}/reviews`, { cache: "no-store" });
+    const json = await res.json();
+    if (!res.ok || !Array.isArray(json.data)) {
+      throw new Error(json.error?.message || "Không thể tải danh sách đánh giá.");
     }
+    return json.data;
   },
 
   /**

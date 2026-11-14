@@ -22,6 +22,7 @@ router.delete("/places/:id", AdminController.deletePlace);
 
 // Users Management & RBAC
 router.get("/users", AdminController.getUsers);
+router.get("/users/:id", AdminController.getUser);
 router.patch("/users/:id/role", AdminController.updateUserRole);
 router.patch("/users/:id/status", AdminController.updateUserStatus);
 

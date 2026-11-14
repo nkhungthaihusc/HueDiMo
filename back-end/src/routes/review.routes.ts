@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { reviewController } from "../controllers/review.controller";
 
+import { authenticate } from "../middleware/auth.middleware";
+
 const router = Router({ mergeParams: true });
 
 /**
@@ -13,6 +15,6 @@ router.get("/", reviewController.getPlaceReviews);
  * POST /api/places/:placeId/reviews
  * Người dùng đăng bài đánh giá và đính kèm danh sách ảnh
  */
-router.post("/", reviewController.createPlaceReview);
+router.post("/", authenticate, reviewController.createPlaceReview);
 
 export default router;

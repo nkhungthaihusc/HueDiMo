@@ -1,5 +1,6 @@
 import express, { type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
+import mapRoutes from "./routes/map.routes";
 import swaggerUi from "swagger-ui-express";
 import { pool } from "./config/db";
 import authRoutes from "./routes/auth.routes";
@@ -20,6 +21,8 @@ const app = express();
 
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
+// Tile traffic does not belong in the application audit log.
+app.use("/api/map", mapRoutes);
 app.use(requestLogger);
 
 

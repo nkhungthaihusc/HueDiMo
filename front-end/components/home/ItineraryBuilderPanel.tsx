@@ -1,5 +1,8 @@
 "use client";
 
+import { toast } from "@/components/ui/Toast";
+import MoneyInput from "@/components/ui/MoneyInput";
+
 import { isItineraryDateRangeValid, latestItineraryEndDate } from "@/lib/itinerary/types";
 
 import { useMemo, useRef, useState } from "react";
@@ -125,7 +128,12 @@ export default function ItineraryBuilderPanel({
 
   const total = useMemo(() => itineraryTotal({ summary: "", totalEstimatedCost: 0, days }), [days]);
   const hasPlaces = days.some((d) => d.places.length > 0);
-  const validDates = isItineraryDateRangeValid(startDate, endDate);
+  const dateError = !isItineraryDateRangeValid(startDate, endDate)
+    ? "Chọn khoảng thời gian từ 1 đến 14 ngày."
+    : days.some((day) => day.places.length > 0 && (day.date < startDate || day.date > endDate))
+      ? "Khoảng ngày mới bỏ sót ngày có điểm dừng. Hãy chọn khoảng khác để giữ các điểm dừng."
+      : "";
+  const validDates = !dateError;
 
   const byId = useMemo(() => new Map(places.map((p) => [p.id, p])), [places]);
 
@@ -139,24 +147,20 @@ export default function ItineraryBuilderPanel({
   }, [places, usedIds, search, catFilter]);
 
   const changeDate = (which: "start" | "end", value: string) => {
-    if (!value) return;
-    let nextStart = startDate;
-    let nextEnd = endDate;
-    if (which === "start") {
-      nextStart = value;
-      if (nextEnd < value) nextEnd = value;
-
-    } else {
-      nextEnd = value;
-      if (value < nextStart) nextStart = value;
-
-    }
-    const maxEnd = latestItineraryEndDate(nextStart);
-    if (nextEnd > maxEnd) nextEnd = maxEnd;
+    const nextStart = which === "start" ? value : startDate;
+    const nextEnd = which === "end" ? value : endDate;
     setStartDate(nextStart);
     setEndDate(nextEnd);
-    setDays((prev) => syncDays(nextStart, nextEnd, prev));
-    setActiveDay(0);
+
+    if (!isItineraryDateRangeValid(nextStart, nextEnd) ||
+        days.some((day) => day.places.length > 0 && (day.date < nextStart || day.date > nextEnd))) {
+      return;
+    }
+
+    const selectedDate = days[activeDay]?.date;
+    const nextDays = syncDays(nextStart, nextEnd, days);
+    setDays(nextDays);
+    setActiveDay(Math.max(0, nextDays.findIndex((day) => day.date === selectedDate)));
   };
 
   const day = days[Math.min(activeDay, days.length - 1)];
@@ -166,6 +170,7 @@ export default function ItineraryBuilderPanel({
   };
 
   const addCatalogPlace = (place: Place) => {
+    if (!days[activeDay] || usedIds.has(place.id)) return;
     patchDay((d) => ({
       ...d,
       places: [
@@ -173,10 +178,12 @@ export default function ItineraryBuilderPanel({
         { placeId: place.id, reason: "", estimatedCost: place.price ?? 0, note: "" },
       ],
     }));
+    toast.success(`Đã thêm “${place.name}” vào ngày ${activeDay + 1}.`);
   };
 
   const addCustom = () => {
-    if (!customName.trim()) return;
+    const name = customName.trim();
+    if (!name || !days[activeDay]) return;
     customSeq.current += 1;
     const cost = Number(customCost);
     patchDay((d) => ({
@@ -187,11 +194,12 @@ export default function ItineraryBuilderPanel({
           placeId: `custom-${Date.now()}-${customSeq.current}`,
           reason: "",
           estimatedCost: Number.isFinite(cost) && cost > 0 ? Math.round(cost) : 0,
-          customName: customName.trim(),
+          customName: name,
           note: "",
         },
       ],
     }));
+    toast.success(`Đã thêm “${name}” vào ngày ${activeDay + 1}.`);
     setCustomName("");
     setCustomCost("");
     setCustomOpen(false);
@@ -420,11 +428,11 @@ export default function ItineraryBuilderPanel({
                   placeholder="Tên địa điểm riêng *"
                   className={inputCls}
                 />
-                <input
-                  type="number"
-                  min={0}
+                <MoneyInput
+                  aria-label="Chi phí địa điểm riêng (VND)"
+
                   value={customCost}
-                  onChange={(e) => setCustomCost(e.target.value)}
+                  onValueChange={setCustomCost}
                   placeholder="Dự kiến chi phí (VND)"
                   className={inputCls}
                 />
@@ -460,14 +468,14 @@ export default function ItineraryBuilderPanel({
                 <input type="date" value={endDate} min={startDate} max={latestItineraryEndDate(startDate) || undefined} onChange={(e) => changeDate("end", e.target.value)} className={inputCls} />
               </label>
             </div>
-            {!validDates && <p className="text-xs text-rose-700" role="alert">Chọn khoảng thời gian từ 1 đến 14 ngày.</p>}
+            {!validDates && <p className="text-xs text-rose-700" role="alert">{dateError}</p>}
             <label className="block">
               <span className="mb-1 block text-[11px] font-bold text-slate-600">Ngân sách dự kiến (VND)</span>
-              <input
-                type="number"
-                min={0}
+              <MoneyInput
+                aria-label="Ngân sách dự kiến (VND)"
+
                 value={budget}
-                onChange={(e) => setBudget(e.target.value)}
+                onValueChange={setBudget}
                 placeholder="VD: 2.000.000 - tùy chọn"
                 className={inputCls}
               />
@@ -610,11 +618,11 @@ export default function ItineraryBuilderPanel({
                           className="mt-0.5 w-full rounded-lg bg-transparent text-[11px] text-slate-600 outline-none placeholder:text-slate-400"
                         />
                       </span>
-                      <input
-                        type="number"
-                        min={0}
+                      <MoneyInput
+                        aria-label="Chi phí điểm dừng (VND)"
+
                         value={entry.estimatedCost}
-                        onChange={(e) => setCost(idx, e.target.value)}
+                        onValueChange={(digits) => setCost(idx, digits)}
                         className="w-20 shrink-0 rounded-xl border border-slate-200 bg-slate-50/50 px-2 py-1 text-right text-xs font-bold text-slate-800 outline-none focus:border-indigo-500 focus:bg-white"
                       />
                       <span className="flex shrink-0 flex-col gap-0.5">
