@@ -1270,70 +1270,49 @@ export const swaggerDocument = {
         },
       },
     },
-    "/api/upload": {
-
+    "/api/upload/presign": {
       post: {
         tags: ["Media & Storage"],
-        summary: "Upload hình ảnh lên Supabase Storage (huedimo-media)",
-        description: "Tiếp nhận file ảnh (đơn hoặc mảng tối đa 5 ảnh) qua multipart/form-data, tải trực tiếp lên bucket 'huedimo-media' và trả về Public CDN URL.",
+        security: [{ BearerAuth: [] }],
+        summary: "Cấp URL có chữ ký để tải ảnh trực tiếp lên Supabase",
         requestBody: {
           required: true,
-          content: {
-            "multipart/form-data": {
-              schema: {
-                type: "object",
-                properties: {
-                  file: {
-                    type: "string",
-                    format: "binary",
-                    description: "1 file hình ảnh tải lên (JPEG, PNG, WEBP, GIF, HEIC; tối đa 10MB)",
-                  },
-                  files: {
-                    type: "array",
-                    items: {
-                      type: "string",
-                      format: "binary",
-                    },
-                    description: "Nhiều file ảnh tải lên cùng lúc (Tối đa 5 file)",
-                  },
-                  folder: {
-                    type: "string",
-                    example: "reviews",
-                    description: "Thư mục lưu trữ: 'places', 'reviews', 'avatars', 'general'",
+          content: { "application/json": { schema: {
+            type: "object",
+            required: ["folder", "files"],
+            properties: {
+              folder: { type: "string", enum: ["places", "reviews", "avatars", "general"] },
+              files: {
+                type: "array", minItems: 1, maxItems: 5,
+                items: {
+                  type: "object", required: ["contentType", "size"],
+                  properties: {
+                    contentType: { type: "string", example: "image/jpeg" },
+                    size: { type: "integer", minimum: 1, maximum: 10485760 },
                   },
                 },
               },
             },
-          },
+          } } },
         },
         responses: {
           "200": {
-            description: "Tải ảnh thành công",
-            content: {
-              "application/json": {
-                schema: {
+            description: "Gửi PUT kèm nội dung ảnh tới uploadUrl, sau đó lưu publicUrl.",
+            content: { "application/json": { schema: {
+              type: "object",
+              properties: {
+                data: { type: "array", items: {
                   type: "object",
                   properties: {
-                    data: {
-                      type: "object",
-                      properties: {
-                        url: { type: "string", example: "https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/reviews/17891234-abc123.jpg" },
-                        urls: {
-                          type: "array",
-                          items: { type: "string" },
-                          example: ["https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/reviews/17891234-abc123.jpg"],
-                        },
-                      },
-                    },
+                    uploadUrl: { type: "string", format: "uri" },
+                    publicUrl: { type: "string", format: "uri" },
                   },
-                },
+                } },
               },
-            },
+            } } },
           },
-          "400": {
-            description: "Lỗi định dạng hoặc file quá lớn",
-            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } },
-          },
+          "400": { description: "Thông tin ảnh không hợp lệ" },
+          "401": { description: "Yêu cầu đăng nhập" },
         },
       },
     },
@@ -1414,7 +1393,7 @@ export const swaggerDocument = {
                     type: "array",
                     items: { type: "string" },
                     example: ["https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/reviews/sample.jpg"],
-                    description: "Danh sách URL ảnh đã tải lên qua /api/upload",
+                    description: "Danh sách URL ảnh đã tải lên bằng URL được cấp từ /api/upload/presign",
                   },
                 },
               },

@@ -1,0 +1,4 @@
+{
+  "dart.customFlutterDapPath": ".vscode/xcross_dap.dart",
+  "dart.promptToRunIfErrors": false
+}

@@ -1,0 +1,140 @@
+{
+  "request": {
+    "url": "https://huedimo.onrender.com/api/places/search?q=ancient&limit=20",
+    "header": [
+      {
+        "key": "User-Agent",
+        "value": "PostmanRuntime/7.56.1",
+        "system": true
+      },
+      {
+        "key": "Accept",
+        "value": "*/*",
+        "system": true
+      },
+      {
+        "key": "Cache-Control",
+        "value": "no-cache",
+        "system": true
+      },
+      {
+        "key": "Postman-Token",
+        "value": "53edf4cf-6281-4909-863d-30c30c465bb1",
+        "system": true
+      },
+      {
+        "key": "Host",
+        "value": "huedimo.onrender.com",
+        "system": true
+      },
+      {
+        "key": "Accept-Encoding",
+        "value": "gzip, deflate, br",
+        "system": true
+      },
+      {
+        "key": "Connection",
+        "value": "keep-alive",
+        "system": true
+      }
+    ],
+    "method": "GET",
+    "body": ""
+  },
+  "response": {
+    "id": "98a3dfa8-d1ac-42e5-a16d-9d0eeb901c30",
+    "status": "OK",
+    "code": 200,
+    "header": [
+      {
+        "key": "Date",
+        "value": "Sun, 08 Nov 2026 13:44:48 GMT"
+      },
+      {
+        "key": "Content-Type",
+        "value": "application/json; charset=utf-8"
+      },
+      {
+        "key": "Content-Length",
+        "value": "3317"
+      },
+      {
+        "key": "Connection",
+        "value": "keep-alive"
+      },
+      {
+        "key": "access-control-allow-origin",
+        "value": "*"
+      },
+      {
+        "key": "Content-Encoding",
+        "value": "br"
+      },
+      {
+        "key": "etag",
+        "value": "W/\"2cf6-bvlZu7C7rSm6qeTv47DkWrbh/U8\""
+      },
+      {
+        "key": "rndr-id",
+        "value": "43fe2aea-11d3-4cde"
+      },
+      {
+        "key": "Server",
+        "value": "cloudflare"
+      },
+      {
+        "key": "vary",
+        "value": "Accept-Encoding"
+      },
+      {
+        "key": "x-powered-by",
+        "value": "Express"
+      },
+      {
+        "key": "x-render-origin-server",
+        "value": "Render"
+      },
+      {
+        "key": "cf-cache-status",
+        "value": "DYNAMIC"
+      },
+      {
+        "key": "CF-RAY",
+        "value": "a57503b369ef04c7-HKG"
+      },
+      {
+        "key": "alt-svc",
+        "value": "h3=\":443\"; ma=86400"
+      }
+    ],
+    "cookie": [],
+    "responseTime": 900,
+    "responseSize": 11510,
+    "downloadedBytes": 3317,
+    "body": "{\"data\":[{\"id\":\"dai-noi\",\"name\":\"Đại Nội Huế (Hoàng Thành)\",\"category\":\"ancient\",\"lat\":16.47023,\"lng\":107.57725,\"rating\":\"5.00\",\"description\":\"Quần thể hoàng cung triều Nguyễn được UNESCO công nhận là Di sản Văn hóa Thế giới.\",\"price\":\"200000.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/dai-noi.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:29.801Z\",\"updated_at\":\"2026-09-17T08:40:52.644Z\",\"address\":\"Đường 23/8, P. Thuận Hòa, TP. Huế\",\"opening_hours\":\"07:00 - 17:30\",\"estimated_duration_minutes\":150,\"best_time_to_visit\":\"morning\",\"highlights\":[\"Ngọ Môn\",\"Điện Thái Hòa\",\"Tử Cấm Thành\",\"Cung Diên Thọ\"],\"notes\":\"Nên mang nón dù che nắng vì khuôn viên rất rộng; mặc đồ lịch sự.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/dai-noi.jpg\"],\"status\":\"approved\"},{\"id\":\"hai-van-quan\",\"name\":\"Hải Vân Quan\",\"category\":\"ancient\",\"lat\":16.1876,\"lng\":108.1311,\"rating\":\"4.80\",\"description\":\"Đệ nhất hùng quan - cửa ải quân sự lịch sử nằm trên đỉnh đèo Hải Vân hiểm trở, ranh giới tự nhiên giữa Huế và Đà Nẵng.\",\"price\":\"0.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/hai-van-quan.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:33.603Z\",\"updated_at\":\"2026-09-17T08:41:26.378Z\",\"address\":\"Đỉnh đèo Hải Vân, Thị trấn Lăng Cô, Huyện Phú Lộc, Thừa Thiên Huế\",\"opening_hours\":\"07:00 - 17:30\",\"estimated_duration_minutes\":90,\"best_time_to_visit\":\"morning\",\"highlights\":[\"Cổng thành đá rêu phong\",\"Toàn cảnh vịnh Lăng Cô và Đà Nẵng từ trên cao\",\"Vết tích hào chiến lũy\"],\"notes\":\"Vừa được trùng tu khang trang; gió trên đỉnh đèo rất mạnh, nên chuẩn bị áo khoác nhẹ.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/hai-van-quan.jpg\"],\"status\":\"approved\"},{\"id\":\"lang-co\",\"name\":\"Lăng Khải Định (Ứng Lăng)\",\"category\":\"ancient\",\"lat\":16.39893,\"lng\":107.59029,\"rating\":\"4.70\",\"description\":\"Đỉnh cao nghệ thuật ghép sành sứ và pha trộn kiến trúc Đông - Tây độc đáo.\",\"price\":\"150000.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-co.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:29.866Z\",\"updated_at\":\"2026-09-17T08:41:52.820Z\",\"address\":\"Xã Thủy Bằng, TP. Huế\",\"opening_hours\":\"07:00 - 17:30\",\"estimated_duration_minutes\":90,\"best_time_to_visit\":\"morning\",\"highlights\":[\"Cung Thiên Định\",\"Tượng đồng vua Khải Định\",\"Tranh Cửu Long Ẩn Vân\"],\"notes\":\"Cần leo nhiều bậc thang dốc; không gian lộng lẫy để chụp ảnh.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-co.jpg\"],\"status\":\"approved\"},{\"id\":\"lang-tu-duc\",\"name\":\"Lăng Tự Đức (Khiêm Lăng)\",\"category\":\"ancient\",\"lat\":16.43255,\"lng\":107.56608,\"rating\":\"4.60\",\"description\":\"Khu lăng tẩm mang phong cách hoa viên sơn thủy hữu tình, trầm mặc và thi vị bậc nhất cố đô.\",\"price\":\"150000.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-tu-duc.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:29.920Z\",\"updated_at\":\"2026-09-17T08:42:30.562Z\",\"address\":\"Thôn Thượng Ba, P. Thủy Xuân, TP. Huế\",\"opening_hours\":\"07:00 - 17:30\",\"estimated_duration_minutes\":100,\"best_time_to_visit\":\"afternoon\",\"highlights\":[\"Hồ Lưu Khiêm\",\"Xung Khiêm Tạ\",\"Nhà bia Khiêm Cung Ký\"],\"notes\":\"Khuôn viên nhiều bóng mát, thích hợp tản bộ thư thả.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-tu-duc.jpg\"],\"status\":\"approved\"},{\"id\":\"ky-dai-phu-van-lau-nghenh-luong-dinh\",\"name\":\"Kỳ Đài & Phu Văn Lâu - Nghênh Lương Đình\",\"category\":\"ancient\",\"lat\":16.46629,\"lng\":107.58029,\"rating\":\"4.60\",\"description\":\"Cụm di tích lịch sử và cột cờ triều Nguyễn sừng sững bên bờ bắc sông Hương, biểu tượng oai nghiêm của cố đô Huế.\",\"price\":\"0.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/ky-dai-phu-van-lau-nghenh-luong-dinh.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:34.274Z\",\"updated_at\":\"2026-09-17T08:41:45.519Z\",\"address\":\"Đường Lê Duẩn, P. Phú Hòa, TP. Huế\",\"opening_hours\":\"Cả ngày\",\"estimated_duration_minutes\":45,\"best_time_to_visit\":\"sunset\",\"highlights\":[\"Kỳ Đài Huế\",\"Phu Văn Lâu cổ kính\",\"Nghênh Lương Đình đón gió sông Hương\"],\"notes\":\"Không gian thoáng mát ven sông Hương; địa điểm ngắm cờ đỏ sao vàng và tản bộ chiều lý tưởng.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/ky-dai-phu-van-lau-nghenh-luong-dinh.jpg\"],\"status\":\"approved\"},{\"id\":\"lang-minh-mang-hieu-lang\",\"name\":\"Lăng Minh Mạng (Hiếu Lăng)\",\"category\":\"ancient\",\"lat\":16.387889,\"lng\":107.56825,\"rating\":\"4.60\",\"description\":\"Lăng tẩm quy chuẩn đối xứng bậc nhất triều Nguyễn, hài hòa tuyệt đối giữa thiên nhiên và kiến trúc uy nghiêm.\",\"price\":\"150000.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-minh-mang-hieu-lang.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:29.985Z\",\"updated_at\":\"2026-09-17T08:42:21.965Z\",\"address\":\"Xã Hương Thọ, TP. Huế\",\"opening_hours\":\"07:00 - 17:30\",\"estimated_duration_minutes\":100,\"best_time_to_visit\":\"morning\",\"highlights\":[\"Đại Hồng Môn\",\"Điện Sùng Ân\",\"Cầu Thông Minh Chính Trực\"],\"notes\":\"Cách trung tâm khoảng 12km; khuôn viên rợp bóng thông xanh.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-minh-mang-hieu-lang.jpg\"],\"status\":\"approved\"},{\"id\":\"cung-an-dinh\",\"name\":\"Cung An Định\",\"category\":\"ancient\",\"lat\":16.456581,\"lng\":107.598519,\"rating\":\"4.50\",\"description\":\"Biệt cung lộng lẫy mang kiến trúc La Mã kết hợp họa tiết cung đình, gắn liền với cựu hoàng Bảo Đại và Nam Phương Hoàng hậu.\",\"price\":\"50000.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/cung-an-dinh.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:30.298Z\",\"updated_at\":\"2026-09-17T08:40:50.908Z\",\"address\":\"179 Phan Đình Phùng, P. Phú Nhuận, TP. Huế\",\"opening_hours\":\"07:00 - 17:00\",\"estimated_duration_minutes\":75,\"best_time_to_visit\":\"afternoon\",\"highlights\":[\"Lầu Khải Tường\",\"Bạch Trà Viên\",\"Tranh phong cảnh lăng tẩm\"],\"notes\":\"Điểm chụp áo dài, cổ phục check-in kinh điển tại trung tâm Huế.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/cung-an-dinh.jpg\"],\"status\":\"approved\"},{\"id\":\"lang-gia-long-thien-tho-lang\",\"name\":\"Lăng Gia Long (Thiên Thọ Lăng)\",\"category\":\"ancient\",\"lat\":16.36186,\"lng\":107.59683,\"rating\":\"4.50\",\"description\":\"Nơi an nghỉ của vị vua lập quốc triều Nguyễn, khung cảnh khoáng đạt và hoang sơ giữa rừng thông.\",\"price\":\"150000.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-gia-long-thien-tho-lang.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:30.090Z\",\"updated_at\":\"2026-09-17T08:42:09.311Z\",\"address\":\"Xã Hương Thọ, TP. Huế\",\"opening_hours\":\"07:00 - 17:00\",\"estimated_duration_minutes\":90,\"best_time_to_visit\":\"morning\",\"highlights\":[\"Mộ song táng\",\"Điện Minh Thành\",\"Rừng thông đại ngàn\"],\"notes\":\"Khu vực yên tĩnh, thích hợp cho ai thích tìm hiểu lịch sử nguyên bản.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-gia-long-thien-tho-lang.jpg\"],\"status\":\"approved\"},{\"id\":\"bao-tang-co-vat-cung-dinh-hue\",\"name\":\"Bảo tàng Cổ vật Cung đình Huế\",\"category\":\"ancient\",\"lat\":16.47131,\"lng\":107.58194,\"rating\":\"4.50\",\"description\":\"Nơi lưu giữ hàng ngàn cổ vật quý báu triều Nguyễn, đặt trong điện Long An - tòa nhà gỗ cung đình lộng lẫy bậc nhất.\",\"price\":\"50000.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/bao-tang-co-vat-cung-dinh-hue.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:32.925Z\",\"updated_at\":\"2026-09-17T08:39:57.094Z\",\"address\":\"3 Lê Trực, P. Thuận Thành, TP. Huế\",\"opening_hours\":\"07:00 - 17:30\",\"estimated_duration_minutes\":60,\"best_time_to_visit\":\"morning\",\"highlights\":[\"Kiến trúc điện Long An\",\"Ngai vàng\",\"Trang phục hoàng gia\",\"Bộ sưu tập gốm sứ ký kiểu\"],\"notes\":\"Có thể mua vé gộp chung với Đại Nội để tiết kiệm chi phí tham quan.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/bao-tang-co-vat-cung-dinh-hue.jpg\"],\"status\":\"approved\"},{\"id\":\"lang-dong-khanh-tu-lang\",\"name\":\"Lăng Đồng Khánh (Tư Lăng)\",\"category\":\"ancient\",\"lat\":16.429444,\"lng\":107.568333,\"rating\":\"4.40\",\"description\":\"Công trình phản ánh giai đoạn giao thoa nghệ thuật truyền thống và nét kiến trúc Tây Âu buổi đầu.\",\"price\":\"100000.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-dong-khanh-tu-lang.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:30.243Z\",\"updated_at\":\"2026-09-17T08:42:03.052Z\",\"address\":\"Thôn Thượng Hai, P. Thủy Xuân, TP. Huế\",\"opening_hours\":\"07:00 - 17:00\",\"estimated_duration_minutes\":60,\"best_time_to_visit\":\"afternoon\",\"highlights\":[\"Điện Ngưng Hy\",\"Hệ thống kính màu Tây phương\",\"Hoa văn khảm sành sứ\"],\"notes\":\"Nằm gần lăng Tự Đức, tiện kết hợp trên cùng một tuyến đường.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-dong-khanh-tu-lang.jpg\"],\"status\":\"approved\"},{\"id\":\"lang-thieu-tri-xuong-lang\",\"name\":\"Lăng Thiệu Trị (Xương Lăng)\",\"category\":\"ancient\",\"lat\":16.41722,\"lng\":107.5725,\"rating\":\"4.40\",\"description\":\"Lăng tẩm không có la thành bao bọc riêng biệt, giao hòa với ruộng đồng và làng quê mộc mạc.\",\"price\":\"50000.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-thieu-tri-xuong-lang.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:30.173Z\",\"updated_at\":\"2026-09-17T08:42:25.770Z\",\"address\":\"Làng Cư Chánh, Xã Thủy Bằng, TP. Huế\",\"opening_hours\":\"07:00 - 17:00\",\"estimated_duration_minutes\":60,\"best_time_to_visit\":\"morning\",\"highlights\":[\"Điện Biểu Đức\",\"Hồ Nhuận Trạch\",\"Bức bình phong cổ\"],\"notes\":\"Lăng vắng khách hơn các lăng khác, rất thanh bình và cổ kính.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-thieu-tri-xuong-lang.jpg\"],\"status\":\"approved\"}]}"
+  },
+  "timestamp": "2026-11-08T13:45:34.852Z",
+  "tests": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "results": [
+      {
+        "name": "HTTP 200",
+        "passed": true,
+        "consoleLogs": []
+      },
+      {
+        "name": "Khong qua 20 ket qua",
+        "passed": true,
+        "consoleLogs": []
+      },
+      {
+        "name": "Chi dia diem approved",
+        "passed": true,
+        "consoleLogs": []
+      }
+    ]
+  },
+  "scriptLogs": []
+}

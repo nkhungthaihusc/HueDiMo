@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 import com.huedimo.common.utils.SecurityUtils;
+import com.huedimo.common.exceptions.status404.NotFoundException;
 import com.huedimo.modules.user.User;
 import com.huedimo.modules.place.dto.CreatePlaceRequest;
 
@@ -17,16 +18,22 @@ public class PlaceService {
     private final PlaceRepository placeRepository;
 
     public List<Place> getAllPlaces(String category, String status) {
-        String targetStatus = (status != null && !status.trim().isEmpty()) ? status.trim() : "approved";
-        if (category != null && !category.trim().isEmpty()) {
-            return placeRepository.findByStatusAndCategory(targetStatus, category.trim());
+        if (status != null && !status.isBlank() && !"approved".equals(status.trim())) {
+            return List.of();
         }
-        return placeRepository.findByStatusOrderByRatingDesc(targetStatus);
+        if (category != null && !category.trim().isEmpty()) {
+            return placeRepository.findByStatusAndCategory("approved", category.trim());
+        }
+        return placeRepository.findByStatusOrderByRatingDesc("approved");
     }
 
     public Place getPlaceById(String id) {
         return placeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy đại điểm với ID: " + id));
+                .filter(place -> "approved".equals(place.getStatus()) ||
+                        SecurityUtils.getCurrentUserOptional()
+                                .filter(user -> user.getId().equals(place.getCreatedBy()) || "admin".equals(user.getRole()))
+                                .isPresent())
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy địa điểm với ID: " + id));
     }
 
     public List<Place> searchPlaces(String keyword) {

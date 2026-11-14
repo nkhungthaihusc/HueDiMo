@@ -1,58 +1,39 @@
+import { authFetch, readApiResponse } from "./client";
+
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
+type MediaFolder = "places" | "reviews" | "avatars" | "general";
 
-export interface UploadResponse {
-  url: string;
-  urls: string[];
-  filename?: string;
-  size?: number;
-  mimetype?: string;
+interface SignedUpload {
+  uploadUrl: string;
+  publicUrl: string;
 }
 
-/**
- * Upload 1 ảnh lên Supabase Storage bucket 'huedimo-media' qua Backend API
- * @param file File ảnh được chọn từ input[type=file]
- * @param folder Thư mục lưu trữ: 'places', 'reviews', 'avatars'
- */
-export async function uploadMedia(file: File, folder: "places" | "reviews" | "avatars" | "general" = "reviews"): Promise<string> {
-  const formData = new FormData();
-  formData.append("file", file);
-
-  const res = await fetch(`${BACKEND_URL}/api/upload?folder=${folder}`, {
-    method: "POST",
-    body: formData,
-  });
-
-  const json = await res.json();
-  if (!res.ok) {
-    throw new Error(json.error?.message || "Tải ảnh lên máy chủ thất bại.");
-  }
-
-  return json.data?.url || "";
+export async function uploadMedia(file: File, folder: MediaFolder = "reviews"): Promise<string> {
+  const [url] = await uploadMultipleMedia([file], folder);
+  return url;
 }
 
-/**
- * Upload nhiều ảnh lên Supabase Storage bucket 'huedimo-media'
- * @param files Danh sách File ảnh (tối đa 5)
- * @param folder Thư mục lưu trữ
- */
-export async function uploadMultipleMedia(
-  files: File[],
-  folder: "places" | "reviews" | "avatars" | "general" = "reviews"
-): Promise<string[]> {
-  if (!files || files.length === 0) return [];
+export async function uploadMultipleMedia(files: File[], folder: MediaFolder = "reviews"): Promise<string[]> {
+  if (files.length === 0) return [];
 
-  const formData = new FormData();
-  files.forEach((f) => formData.append("files", f));
-
-  const res = await fetch(`${BACKEND_URL}/api/upload?folder=${folder}`, {
+  const response = await authFetch(`${BACKEND_URL}/api/upload/presign`, {
     method: "POST",
-    body: formData,
+    body: JSON.stringify({
+      folder,
+      files: files.map(({ type, size }) => ({ contentType: type, size })),
+    }),
   });
+  const uploads = await readApiResponse<SignedUpload[]>(response);
+  if (uploads.length !== files.length) throw new Error("Máy chủ trả về thiếu URL tải ảnh.");
 
-  const json = await res.json();
-  if (!res.ok) {
-    throw new Error(json.error?.message || "Tải danh sách ảnh thất bại.");
-  }
-
-  return json.data?.urls || [];
+  return Promise.all(uploads.map(async ({ uploadUrl, publicUrl }, index) => {
+    const file = files[index];
+    const response = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type },
+      body: file,
+    });
+    if (!response.ok) throw new Error("Tải ảnh lên Supabase thất bại.");
+    return publicUrl;
+  }));
 }

@@ -1,0 +1,281 @@
+import type { Page } from "@playwright/test";
+import { test, expect, itinerarySummary, password, place, savedItineraryId, visitor } from "./fixtures";
+
+async function openFeature(page: Page, name: string) {
+  await page.getByRole("button", { name: "Mở menu", exact: true }).click();
+  await page.getByRole("navigation", { name: "Tất cả chức năng" }).getByRole("button", { name, exact: true }).click();
+}
+
+test("tìm địa điểm, xem chi tiết và xử lý truy vấn rỗng kết quả", async ({ page }) => {
+  await page.goto("/");
+  const search = page.getByPlaceholder(/Tìm kiếm danh lam/);
+  await search.fill("Thiên Mụ");
+  await page.getByText(place.name, { exact: true }).filter({ visible: true }).click();
+  await expect(page.getByRole("heading", { name: place.name, exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Quay lại danh sách" }).click();
+  await search.fill("không tồn tại playwright");
+  await expect(page.getByText(/Không tìm thấy địa điểm nào phù hợp/)).toBeVisible();
+});
+
+test("menu mở các luồng công khai và yêu cầu đăng nhập cho tính năng cá nhân", async ({ page }) => {
+  await page.goto("/");
+  await openFeature(page, "Bảng xếp hạng");
+  await expect(page.getByText("Chưa có dữ liệu xếp hạng.")).toBeVisible();
+  await page.goto("/");
+  await openFeature(page, "Khám phá cộng đồng");
+  await expect(page.getByRole("heading", { name: "Chưa tìm thấy lịch trình phù hợp" })).toBeVisible();
+  for (const [feature, prompt] of [
+    ["Lịch trình của tôi", "Đăng nhập để xem lộ trình đã lưu"],
+    ["Dự toán chuyến đi", "Đăng nhập để xem dự toán ngân sách"],
+    ["Đóng góp địa điểm", "Đăng nhập để đóng góp địa điểm"],
+    ["Tạo lịch trình với AI", "Đăng nhập để tạo lộ trình AI"],
+  ]) {
+    await page.goto("/");
+    await openFeature(page, feature);
+    await expect(page.getByRole("heading", { name: prompt })).toBeVisible();
+  }
+});
+
+test("tạo lịch trình AI và xem lại trong lịch sử", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByPlaceholder("you@example.com").fill(visitor.email);
+  await page.getByPlaceholder("Tối thiểu 6 ký tự").fill(password);
+  await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
+  await expect(page.getByRole("button", { name: `Hồ sơ ${visitor.name}` })).toBeVisible();
+
+  await openFeature(page, "Tạo lịch trình với AI");
+  const budget = page.getByPlaceholder("VD: 2000000");
+  const submit = page.getByRole("button", { name: /Tạo lịch trình thông minh/ });
+  await budget.fill("");
+  await expect(submit).toBeDisabled();
+  await budget.fill("0");
+  await expect(submit).toBeDisabled();
+  await budget.fill("2000000");
+  const start = page.locator('input[type="date"]').nth(0);
+  const end = page.locator('input[type="date"]').nth(1);
+  await start.fill("2026-11-01");
+  await end.fill("2026-11-15");
+  await expect(submit).toBeDisabled();
+  await expect(end).toHaveAttribute("max", "2026-11-14");
+  await end.fill("2026-11-14");
+  await expect(submit).toBeEnabled();
+  const generation = page.waitForRequest((request) =>
+    new URL(request.url()).pathname === "/api/itineraries/generate" && request.method() === "POST");
+  const persistence = page.waitForRequest((request) =>
+    new URL(request.url()).pathname === "/api/itineraries/save" && request.method() === "POST", { timeout: 10_000 });
+  await submit.click();
+  expect((await generation).postDataJSON()).toMatchObject({ budget: 2_000_000, groupSize: 2 });
+  const saved = (await persistence).postDataJSON();
+  expect(saved).toMatchObject({ isPublic: false, summary: itinerarySummary });
+  expect(saved.id).toBeUndefined();
+  await expect(page.getByText(itinerarySummary, { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Private/ })).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole("button", { name: `Hồ sơ ${visitor.name}` })).toBeVisible();
+  await openFeature(page, "Lịch trình của tôi");
+  await expect(page.getByRole("heading", { name: "Lịch sử Lộ trình" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Lịch trình AI \(2 người\)/ })).toBeVisible();
+  await page.getByRole("button", { name: "Mở chi tiết →", exact: true }).click();
+  await expect(page.getByText(itinerarySummary, { exact: true })).toBeVisible();
+  const publication = page.waitForRequest((request) =>
+    new URL(request.url()).pathname === "/api/itineraries/save" && request.method() === "POST");
+  await page.getByRole("button", { name: /Private/ }).click();
+  expect((await publication).postDataJSON()).toMatchObject({ id: savedItineraryId, isPublic: true });
+  await expect(page.getByRole("button", { name: /Public/ })).toBeVisible();
+});
+
+test("lưu lộ trình thủ công ở chế độ riêng tư", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByPlaceholder("you@example.com").fill(visitor.email);
+  await page.getByPlaceholder("Tối thiểu 6 ký tự").fill(password);
+  await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
+  await expect(page.getByRole("button", { name: `Hồ sơ ${visitor.name}` })).toBeVisible();
+  await openFeature(page, "Lịch trình của tôi");
+  await page.getByRole("button", { name: /Tạo lịch trình thủ công/ }).click();
+  await page.getByPlaceholder("Tên lộ trình (tùy chọn)").fill("Lộ trình riêng");
+  await page.getByRole("button", { name: /Thêm địa điểm vào ngày 1/ }).click();
+  await page.getByRole("button", { name: /Thêm địa điểm riêng ngoài danh mục/ }).click();
+  await page.getByPlaceholder("Tên địa điểm riêng *").fill("Điểm dừng riêng");
+  await page.getByRole("button", { name: "Thêm vào ngày 1", exact: true }).click();
+  await page.getByRole("button", { name: "Quay lại", exact: true }).click();
+
+  const persistence = page.waitForRequest((request) =>
+    new URL(request.url()).pathname === "/api/itineraries/save" && request.method() === "POST");
+  await page.getByRole("button", { name: "Lưu lộ trình", exact: true }).click();
+  const saved = (await persistence).postDataJSON();
+  expect(saved).toMatchObject({ title: "Lộ trình riêng", isPublic: false });
+  expect(saved.id).toBeUndefined();
+  await expect(page.getByRole("button", { name: /Private/ })).toBeVisible();
+});
+
+test("xem lượng mưa và chuyển sang quan trắc mực nước", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Mở chi tiết thời tiết và lượng mưa Vrain" }).click();
+  await expect(page.getByRole("heading", { name: /Mạng lưới mưa/ })).toBeVisible();
+  await expect(page.getByText("Nguy cơ ngập thấp tại Huế")).toBeVisible();
+  await page.getByRole("button", { name: /Mực nước & Ngập/ }).click();
+  await expect(page.getByRole("heading", { name: "Mực nước sông & Cảnh báo ngập lụt Huế" })).toBeVisible();
+  await expect(page.getByText("1.23", { exact: true })).toBeVisible();
+});
+
+test("bảng thời tiết trên màn hình hẹp cuộn được và không cắt nút quay lại", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "Kiểm tra bố cục mobile");
+  await page.setViewportSize({ width: 360, height: 640 });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Mở chi tiết thời tiết và lượng mưa Vrain" }).click();
+  const dialog = page.getByRole("dialog", { name: /Mạng lưới mưa/ });
+  const search = dialog.getByPlaceholder(/Tìm trạm đo mưa/);
+  await search.scrollIntoViewIfNeeded();
+  await expect(search).toBeInViewport({ ratio: 1 });
+  await search.click({ trial: true });
+  await expect(dialog.getByText("data.vrain.vn", { exact: true })).toBeInViewport({ ratio: 1 });
+  const back = dialog.getByRole("button", { name: "Quay lại" });
+  await expect(back).toBeInViewport({ ratio: 1 });
+  await back.click();
+  await expect(dialog).toBeHidden();
+  await expect(page.getByRole("navigation", { name: "Điều hướng trên điện thoại" })).toBeVisible();
+});
+
+test("hướng dẫn đặt ghim không đè lên thời tiết và danh sách địa điểm", async ({ page, isMobile }) => {
+  test.skip(isMobile, "Kiểm tra bố cục desktop");
+  await page.setViewportSize({ width: 1920, height: 900 });
+  await page.goto("/login");
+  await page.getByPlaceholder("you@example.com").fill(visitor.email);
+  await page.getByPlaceholder("Tối thiểu 6 ký tự").fill(password);
+  await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
+  await expect(page.getByRole("button", { name: `Hồ sơ ${visitor.name}` })).toBeVisible();
+  await openFeature(page, "Đóng góp địa điểm");
+
+  const hint = page.getByText(/Hãy bấm vào bản đồ để đặt vị trí địa điểm mới/);
+  await expect(hint).toBeVisible();
+  const weather = page.getByRole("button", { name: "Mở chi tiết thời tiết và lượng mưa Vrain" });
+  const places = page.getByRole("region", { name: /Khám phá Huế/ });
+  const hintBox = (await hint.boundingBox())!;
+  for (const element of [weather, places]) {
+    await expect(element).toBeVisible();
+    const box = (await element.boundingBox())!;
+    const overlaps = hintBox.x < box.x + box.width && hintBox.x + hintBox.width > box.x &&
+      hintBox.y < box.y + box.height && hintBox.y + hintBox.height > box.y;
+    expect.soft(overlaps, `Hướng dẫn đặt ghim chồng lên ${await element.getAttribute("aria-label")}`).toBe(false);
+  }
+});
+
+test("đăng nhập báo lỗi, cho phép thử lại và giữ phiên sau khi tải lại", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByPlaceholder("you@example.com").fill(visitor.email);
+  const passwordField = page.getByPlaceholder("Tối thiểu 6 ký tự");
+  await passwordField.fill("incorrect-password");
+  await page.getByRole("button", { name: "Hiện mật khẩu" }).click();
+  await expect(passwordField).toHaveAttribute("type", "text");
+  await page.getByRole("button", { name: "Ẩn mật khẩu" }).click();
+  await expect(passwordField).toHaveAttribute("type", "password");
+  const submit = page.getByRole("button", { name: "Đăng nhập", exact: true });
+  await submit.click();
+  await expect(page.getByText("Email hoặc mật khẩu không đúng.").first()).toBeVisible();
+  await passwordField.fill(password);
+  await submit.click();
+  await expect(page).toHaveURL("/");
+  await page.reload();
+  await expect(page.getByRole("button", { name: `Hồ sơ ${visitor.name}` })).toBeVisible();
+});
+
+test("đăng ký tài khoản qua liên kết từ trang đăng nhập", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByRole("link", { name: "Đăng ký ngay" }).click();
+  await expect(page).toHaveURL("/register");
+  await page.getByPlaceholder("Nguyễn Văn A").fill("Khách mới Playwright");
+  await page.getByPlaceholder("you@example.com").fill("new@example.test");
+  await page.getByPlaceholder("Tối thiểu 6 ký tự").fill(password);
+  await page.getByRole("button", { name: "Tạo tài khoản", exact: true }).click();
+  await expect(page).toHaveURL("/");
+  await expect(page.getByRole("button", { name: "Hồ sơ Khách mới Playwright" })).toBeVisible();
+});
+
+test("callback OAuth hiển thị lỗi khi thiếu phiên", async ({ page }) => {
+  await page.goto("/auth/callback");
+  await expect(page.getByRole("heading", { name: "Đăng nhập thất bại" })).toBeVisible();
+});
+
+test("điều hướng chính sách và hiển thị mã yêu cầu xóa dữ liệu", async ({ page }) => {
+  await page.goto("/terms");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText(/Điều khoản/i);
+  await page.locator('a[href="/privacy"]').click();
+  await expect(page).toHaveURL("/privacy");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText(/riêng tư/i);
+  await page.getByRole("link", { name: "Xóa dữ liệu", exact: true }).click();
+  await expect(page).toHaveURL("/data-deletion");
+  await page.getByPlaceholder("example@gmail.com").fill(visitor.email);
+  await page.getByPlaceholder(/Cho chúng tôi biết lý do/).fill("Yêu cầu kiểm thử Playwright");
+  await page.getByRole("button", { name: "Xác nhận Yêu cầu Xóa Dữ liệu" }).click();
+  await expect(page.getByRole("heading", { name: "Yêu cầu đã được tiếp nhận thành công!" })).toBeVisible();
+  await expect(page.getByText(/HDM-DEL-\d{6}/)).toBeVisible();
+});
+
+test("địa điểm chờ duyệt chỉ xuất hiện với người đã đóng góp", async ({ page }) => {
+  const pendingName = "Địa điểm chờ duyệt Playwright";
+  await page.goto("/login");
+  await page.evaluate(({ owner, pendingName }) => {
+    const pending = { id: "pending-e2e", name: pendingName, category: "cafe", lat: 16.46,
+      lng: 107.59, description: "", rating: 0, isLocal: true, status: "pending" };
+    localStorage.setItem("huedimo_places", JSON.stringify([
+      { ...pending, created_by: owner },
+      { ...pending, id: "pending-legacy", name: "Địa điểm cũ thiếu chủ sở hữu" },
+    ]));
+  }, { owner: visitor.id, pendingName });
+
+  const login = async (email: string, name: string) => {
+    await page.goto("/login");
+    await page.getByPlaceholder("you@example.com").fill(email);
+    await page.getByPlaceholder("Tối thiểu 6 ký tự").fill(password);
+    await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
+    await expect(page.getByRole("button", { name: `Hồ sơ ${name}` })).toBeVisible();
+  };
+  const openContributions = async (name: string) => {
+    await page.getByRole("button", { name: `Hồ sơ ${name}` }).click();
+    await page.getByRole("button", { name: /Địa điểm đã thêm/ }).click();
+  };
+
+  await login(visitor.email, visitor.name);
+  await openContributions(visitor.name);
+  await expect(page.getByText(pendingName, { exact: true }).filter({ visible: true }).last()).toBeVisible();
+  await expect(page.getByText("Địa điểm cũ thiếu chủ sở hữu", { exact: true })).toHaveCount(0);
+  await page.reload();
+  await page.getByRole("button", { name: "Mở menu", exact: true }).click();
+  await page.getByRole("button", { name: "Đăng xuất", exact: true }).click();
+  await expect(page.getByRole("link", { name: "Đăng nhập", exact: true })).toBeVisible();
+  await expect(page.getByText(pendingName, { exact: true })).toHaveCount(0);
+
+  await login("another@example.test", visitor.name);
+  await openContributions(visitor.name);
+  await expect(page.getByText("Chưa có địa điểm nào được thêm")).toBeVisible();
+  await expect(page.getByText(pendingName, { exact: true })).toHaveCount(0);
+});
+
+test("tải ảnh đại diện trực tiếp qua URL có chữ ký", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByPlaceholder("you@example.com").fill(visitor.email);
+  await page.getByPlaceholder("Tối thiểu 6 ký tự").fill(password);
+  await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
+  await page.getByRole("button", { name: `Hồ sơ ${visitor.name}` }).click();
+
+  const presign = page.waitForRequest((request) =>
+    new URL(request.url()).pathname === "/api/upload/presign" && request.method() === "POST");
+  const upload = page.waitForRequest((request) =>
+    new URL(request.url()).pathname === "/test-storage/upload" && request.method() === "PUT");
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "avatar.png", mimeType: "image/png", buffer: Buffer.from("fixture"),
+  });
+
+  const metadata = await presign;
+  expect(metadata.headers().authorization).toBe("Bearer fixture-access");
+  expect(metadata.postDataJSON()).toEqual({
+    folder: "avatars", files: [{ contentType: "image/png", size: 7 }],
+  });
+  const fileRequest = await upload;
+  expect(fileRequest.headers().authorization).toBeUndefined();
+  expect(fileRequest.postDataBuffer()?.toString()).toBe("fixture");
+  await expect(page.getByPlaceholder("https://example.com/avatar.jpg")).toHaveValue(
+    "http://127.0.0.1:3101/test-storage/avatar.png",
+  );
+});

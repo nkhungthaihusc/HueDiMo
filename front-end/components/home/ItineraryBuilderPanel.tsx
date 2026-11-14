@@ -1,5 +1,7 @@
 "use client";
 
+import { isItineraryDateRangeValid, latestItineraryEndDate } from "@/lib/itinerary/types";
+
 import { useMemo, useRef, useState } from "react";
 import type { Itinerary, ItineraryDay, TransportMode } from "@/lib/itinerary/types";
 import {
@@ -11,7 +13,7 @@ import {
   formatTravelTime,
   TRANSPORT_OPTIONS,
 } from "@/lib/itinerary/types";
-import { defaultTitle, saveItinerary } from "@/lib/itinerary/logic";
+import { defaultTitle } from "@/lib/itinerary/logic";
 import type { SavedItinerary } from "@/lib/itinerary/logic";
 import { getCategory, CATEGORIES } from "@/lib/data/categories";
 import type { CategoryId, Place } from "@/lib/types";
@@ -23,7 +25,7 @@ interface ItineraryBuilderPanelProps {
   places: Place[];
   initial: Itinerary | null;
   onCancel: () => void;
-  onSaved: (itinerary: Itinerary) => void;
+  onSaved: (itinerary: Itinerary) => Promise<void>;
 }
 
 function toDateInput(d: Date): string {
@@ -64,6 +66,7 @@ export default function ItineraryBuilderPanel({
 }: ItineraryBuilderPanelProps) {
   const { user } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [startDate, setStartDate] = useState(() =>
     initial && initial.days.length > 0 ? initial.days[0].date : toDateInput(new Date()),
   );
@@ -122,6 +125,7 @@ export default function ItineraryBuilderPanel({
 
   const total = useMemo(() => itineraryTotal({ summary: "", totalEstimatedCost: 0, days }), [days]);
   const hasPlaces = days.some((d) => d.places.length > 0);
+  const validDates = isItineraryDateRangeValid(startDate, endDate);
 
   const byId = useMemo(() => new Map(places.map((p) => [p.id, p])), [places]);
 
@@ -135,19 +139,22 @@ export default function ItineraryBuilderPanel({
   }, [places, usedIds, search, catFilter]);
 
   const changeDate = (which: "start" | "end", value: string) => {
+    if (!value) return;
     let nextStart = startDate;
     let nextEnd = endDate;
     if (which === "start") {
       nextStart = value;
       if (nextEnd < value) nextEnd = value;
-      setStartDate(nextStart);
-      setEndDate(nextEnd);
+
     } else {
       nextEnd = value;
       if (value < nextStart) nextStart = value;
-      setStartDate(nextStart);
-      setEndDate(nextEnd);
+
     }
+    const maxEnd = latestItineraryEndDate(nextStart);
+    if (nextEnd > maxEnd) nextEnd = maxEnd;
+    setStartDate(nextStart);
+    setEndDate(nextEnd);
     setDays((prev) => syncDays(nextStart, nextEnd, prev));
     setActiveDay(0);
   };
@@ -221,15 +228,18 @@ export default function ItineraryBuilderPanel({
     patchDay((d) => ({ ...d, places: d.places.filter((_, i) => i !== idx) }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!user) {
       setAuthModalOpen(true);
       return;
     }
-    if (!hasPlaces) return;
+    if (!hasPlaces || !validDates || isSaving) return;
     const budgetNum = Number(budget);
     const itinerary: Itinerary = {
+      ...initial,
       id: itineraryId,
+      title: title.trim() || undefined,
+      isPublic: initial?.isPublic ?? false,
       summary: title.trim() || defaultTitle({ summary: "", totalEstimatedCost: 0, days }),
       totalEstimatedCost: total,
       budget:
@@ -237,8 +247,12 @@ export default function ItineraryBuilderPanel({
       transportMode,
       days,
     };
-    const saved = saveItinerary(itinerary, title.trim() || undefined);
-    onSaved(saved);
+    setIsSaving(true);
+    try {
+      await onSaved(itinerary);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const btn =
@@ -443,9 +457,10 @@ export default function ItineraryBuilderPanel({
               </label>
               <label className="block">
                 <span className="mb-1 block text-[11px] font-bold text-slate-600">Ngày về</span>
-                <input type="date" value={endDate} min={startDate} onChange={(e) => changeDate("end", e.target.value)} className={inputCls} />
+                <input type="date" value={endDate} min={startDate} max={latestItineraryEndDate(startDate) || undefined} onChange={(e) => changeDate("end", e.target.value)} className={inputCls} />
               </label>
             </div>
+            {!validDates && <p className="text-xs text-rose-700" role="alert">Chọn khoảng thời gian từ 1 đến 14 ngày.</p>}
             <label className="block">
               <span className="mb-1 block text-[11px] font-bold text-slate-600">Ngân sách dự kiến (VND)</span>
               <input
@@ -644,10 +659,10 @@ export default function ItineraryBuilderPanel({
             <button
               type="button"
               onClick={handleSave}
-              disabled={!hasPlaces}
+              disabled={!hasPlaces || !validDates || isSaving}
               className="w-full rounded-2xl bg-gradient-to-r from-indigo-600 to-indigo-700 py-3 text-sm font-bold text-white shadow-md shadow-indigo-200 transition-ui hover:from-indigo-700 hover:to-indigo-800 active:scale-98 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none cursor-pointer select-none"
             >
-              Lưu lộ trình
+              {isSaving ? "Đang lưu…" : "Lưu lộ trình"}
             </button>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { getAccessToken, refreshTokens, clearSession } from "@/lib/auth/logic";
+import { authFetch } from "./client";
 import type { Itinerary } from "@/lib/itinerary/types";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
@@ -34,46 +34,6 @@ export interface CommunityItinerariesResponse {
   };
 }
 
-async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
-  let token = getAccessToken();
-
-  if (!token) {
-    const refreshRes = await refreshTokens();
-    if (refreshRes.ok && refreshRes.accessToken) {
-      token = refreshRes.accessToken;
-    }
-  }
-
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(options.headers as Record<string, string>),
-  };
-
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  let res = await fetch(url, {
-    ...options,
-    headers,
-  });
-
-  if (res.status === 401) {
-    const refreshRes = await refreshTokens();
-    if (refreshRes.ok && refreshRes.accessToken) {
-      token = refreshRes.accessToken;
-      headers.Authorization = `Bearer ${token}`;
-      res = await fetch(url, {
-        ...options,
-        headers,
-      });
-    } else {
-      clearSession();
-    }
-  }
-
-  return res;
-}
 
 function normalizeItineraryFromDB(raw: any): Itinerary {
   let parsedDays = [];
@@ -94,7 +54,7 @@ function normalizeItineraryFromDB(raw: any): Itinerary {
     totalEstimatedCost: Number(raw.total_estimated_cost ?? raw.totalEstimatedCost ?? 0),
     budget: raw.budget !== null && raw.budget !== undefined ? Number(raw.budget) : undefined,
     transportMode: raw.transport_mode || raw.transportMode || "motorbike",
-    groupSize: raw.group_size ? Number(raw.group_size) : undefined,
+    groupSize: Number(raw.group_size ?? raw.groupSize) || undefined,
     notes: raw.notes || undefined,
     isPublic: Boolean(raw.is_public ?? raw.isPublic ?? false),
     userId: raw.user_id || raw.userId,
@@ -174,11 +134,15 @@ export const ItineraryAPI = {
     const endDate = dates[dates.length - 1] || startDate;
 
     const body = {
-      id: itinerary.id,
+      id: itinerary.id && /^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(itinerary.id)
+        ? itinerary.id
+        : undefined,
       title: title || itinerary.title || `Lộ trình Huế ${startDate}`,
       startDate,
       endDate,
-      budget: itinerary.budget || itinerary.totalEstimatedCost,
+      budget: typeof itinerary.budget === "number" && Number.isFinite(itinerary.budget) && itinerary.budget > 0
+        ? itinerary.budget
+        : null,
       totalEstimatedCost: itinerary.totalEstimatedCost,
       transportMode: itinerary.transportMode || "motorbike",
       groupSize: itinerary.groupSize || 1,

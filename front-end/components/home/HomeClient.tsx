@@ -27,8 +27,10 @@ import {
   getAllUserContributedPlaces,
   syncUserContributedPlaces,
 } from "@/lib/addplace/logic";
-import { getMyContributedPlaces } from "@/lib/api/places";
-import { itineraryPlaceIds, saveItinerary } from "@/lib/itinerary/logic";
+import { getMyContributedPlaces, getPublicPlaces } from "@/lib/api/places";
+import { itineraryPlaceIds, saveItinerary, updateItineraryId } from "@/lib/itinerary/logic";
+import { ItineraryAPI } from "@/lib/api/itineraries";
+import { toast } from "@/components/ui/Toast";
 import type { SavedItinerary } from "@/lib/itinerary/logic";
 import type { Itinerary } from "@/lib/itinerary/types";
 import type { CategoryId, Place } from "@/lib/types";
@@ -86,6 +88,8 @@ export default function HomeClient() {
   // Tự động dọn sạch lộ trình đang hiển thị trên bản đồ khi người dùng đăng xuất hoặc chuyển đổi tài khoản
   useEffect(() => {
     setItinerary(null);
+    setSelectedId(null);
+    setProfileModalOpen(false);
     setSavedListOpen(false);
     setBuilderOpen(false);
     setShowItineraryForm(false);
@@ -109,36 +113,38 @@ export default function HomeClient() {
     };
   }, [user]);
 
-  // Lấy danh sách địa điểm do chính user đã thêm (local + server sync)
-  const userContributedPlaces = useMemo(() => {
-    const stored = getAllUserContributedPlaces();
-    if (!user) return stored;
-    return stored.filter(
-      (p) =>
-        !p.created_by ||
-        p.created_by === user.id ||
-        p.userId === user.id
-    );
-  }, [places, user]);
-
-  const userContributedIds = useMemo(
-    () => new Set(userContributedPlaces.map((p) => p.id)),
-    [userContributedPlaces]
+  const userContributedPlaces = useMemo(
+    () => user
+      ? getAllUserContributedPlaces().filter((place) =>
+          (place.created_by ?? place.userId) === user.id)
+      : [],
+    [places, user],
   );
 
+  const [serverPlaces, setServerPlaces] = useState<Place[]>([]);
+  useEffect(() => {
+    const controller = new AbortController();
+    getPublicPlaces(controller.signal)
+      .then((data) => {
+        if (!controller.signal.aborted) setServerPlaces(data);
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [user?.id]);
+
+  const publicPlaces = useMemo(() => {
+    const byId = new Map(getPlacesServerSnapshot().map((place) => [place.id, place]));
+    for (const place of serverPlaces) byId.set(place.id, place);
+    return [...byId.values()];
+  }, [serverPlaces]);
+
   const accessiblePlaces = useMemo(() => {
-    return places.filter((p) => {
-      const isApproved = !p.status || p.status === "approved";
-      const isUserContributed =
-        userContributedIds.has(p.id) ||
-        Boolean(user && (p.created_by === user.id || p.userId === user.id));
-
-      // Địa điểm được hiển thị nếu đã duyệt HOẶC là địa điểm do chính user này gửi (ghim tạm lên map của user đó)
-      if (!isApproved && !isUserContributed) return false;
-
-      return true;
-    });
-  }, [places, user, userContributedIds]);
+    const byId = new Map(publicPlaces.map((place) => [place.id, place]));
+    for (const place of userContributedPlaces) {
+      if (!byId.has(place.id)) byId.set(place.id, place);
+    }
+    return [...byId.values()];
+  }, [publicPlaces, userContributedPlaces]);
 
   const visiblePlaces = useMemo(
     () => activeCategory ? accessiblePlaces.filter((place) => place.category === activeCategory) : accessiblePlaces,
@@ -146,17 +152,17 @@ export default function HomeClient() {
   );
 
   const selectedPlace = useMemo(
-    () => places.find((p) => p.id === selectedId) ?? null,
-    [places, selectedId],
+    () => accessiblePlaces.find((p) => p.id === selectedId) ?? null,
+    [accessiblePlaces, selectedId],
   );
 
   const routePlaces = useMemo(() => {
     if (!itinerary) return undefined;
     const ids = itineraryPlaceIds(itinerary);
     return ids
-      .map((id) => places.find((p) => p.id === id))
+      .map((id) => publicPlaces.find((p) => p.id === id))
       .filter((p): p is Place => p !== undefined);
-  }, [itinerary, places]);
+  }, [itinerary, publicPlaces]);
 
   const closeOverlays = () => {
     setAddMode(false);
@@ -290,19 +296,38 @@ export default function HomeClient() {
     setSelectedId(place.id);
   };
 
-  const handleGenerated = (result: Itinerary) => {
+  const persistItinerary = async (draft: Itinerary) => {
+    const local = saveItinerary(draft, draft.title);
+    if (!user) return local;
+
+    let server: Itinerary;
+    try {
+      server = await ItineraryAPI.saveToServer(local);
+    } catch {
+      toast.error("Chưa lưu được lên máy chủ. Lộ trình đã được lưu trên trình duyệt.");
+      return local;
+    }
+
+    const saved = {
+      ...local,
+      id: server.id ?? local.id,
+      isPublic: server.isPublic,
+      createdAt: server.createdAt ?? local.createdAt,
+      updatedAt: server.updatedAt ?? local.updatedAt,
+    };
+    updateItineraryId(local.id, saved);
+    return saved;
+  };
+
+  const handleGenerated = async (result: Itinerary) => {
+    const saved = await persistItinerary({ ...result, isPublic: false });
     setPanelExpanded(true);
-    // Tự động lưu lịch trình AI vào lịch sử
-    const saved = saveItinerary({
-      ...result,
-      isAiGenerated: true,
-      createdAt: result.createdAt || new Date().toISOString(),
-    });
     setItinerary(saved);
     setShowItineraryForm(false);
   };
 
-  const handleBuilderSaved = (saved: Itinerary) => {
+  const handleBuilderSaved = async (draft: Itinerary) => {
+    const saved = await persistItinerary(draft);
     setPanelExpanded(true);
     setItinerary(saved);
     setBuilderOpen(false);
@@ -350,7 +375,7 @@ export default function HomeClient() {
   ) : builderOpen ? (
     <ItineraryBuilderPanel
       initial={editingItinerary}
-      places={places}
+      places={publicPlaces}
       onSaved={handleBuilderSaved}
       onCancel={() => {
         setBuilderOpen(false);
@@ -359,7 +384,7 @@ export default function HomeClient() {
     />
   ) : showItineraryForm ? (
     <ItineraryFormPanel
-      places={places}
+      places={publicPlaces}
       onCancel={() => setShowItineraryForm(false)}
       onGenerated={handleGenerated}
       onViewHistory={() => {
@@ -370,7 +395,7 @@ export default function HomeClient() {
   ) : itinerary !== null ? (
     <ItineraryResultPanel
       itinerary={itinerary}
-      places={places}
+      places={publicPlaces}
       onBack={() => setItinerary(null)}
       onShowOnMap={handleShowOnMap}
       onSelectPlace={(id) => setSelectedId(id)}
@@ -384,7 +409,7 @@ export default function HomeClient() {
   ) : null;
 
   return (
-    <main className="home-shell relative w-full overflow-hidden" data-panel-expanded={panelExpanded}>
+    <main className="home-shell relative w-full overflow-hidden" data-panel-expanded={panelExpanded} data-add-mode={addMode}>
       {/* Bản đồ nền */}
       <div className="absolute inset-0 z-0 isolate">
         <MapView
@@ -439,12 +464,12 @@ export default function HomeClient() {
             </nav>
 
             {addMode && addPosition === null && (
-              <span className="glass-strong pointer-events-auto rounded-full px-4 py-1.5 text-xs font-medium text-ink-700 animate-pulse">
+              <span className="home-search w-full glass-strong pointer-events-auto rounded-full px-4 py-1.5 text-xs font-medium text-ink-700 animate-pulse">
                 👆 Hãy bấm vào bản đồ để đặt vị trí địa điểm mới
               </span>
             )}
             {addMode && addPosition !== null && (
-              <span className="glass-strong pointer-events-auto rounded-full px-4 py-1.5 text-xs font-semibold text-indigo-700 border border-indigo-200/70 shadow-sm flex items-center gap-1.5 bg-white/90 backdrop-blur-md">
+              <span className="home-search w-full glass-strong pointer-events-auto rounded-full px-4 py-1.5 text-xs font-semibold text-indigo-700 border border-indigo-200/70 shadow-sm flex items-center gap-1.5 bg-white/90 backdrop-blur-md">
                 <span className="inline-block w-2 h-2 rounded-full bg-indigo-600 motion-beacon"></span>
                 🎯 Bấm điểm khác trên bản đồ hoặc kéo thả ghim để đổi vị trí
               </span>
@@ -536,14 +561,17 @@ export default function HomeClient() {
       {/* Modal Lộ trình Cộng đồng */}
       <CommunityItinerariesModal
         isOpen={communityModalOpen}
-        places={places}
+        places={publicPlaces}
         onClose={() => setCommunityModalOpen(false)}
         onUseItinerary={(selectedCommunityItinerary) => {
           setPanelExpanded(true);
           setItinerary(selectedCommunityItinerary);
           setFocusRouteToken((t) => t + 1);
         }}
-        onSelectPlace={(id) => handleSelect(places.find((p) => p.id === id) || ({} as any))}
+        onSelectPlace={(id) => {
+          const place = publicPlaces.find((p) => p.id === id);
+          if (place) handleSelect(place);
+        }}
       />
 
       {/* Modal nhắc nhở đăng nhập */}

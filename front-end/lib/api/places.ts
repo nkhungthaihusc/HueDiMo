@@ -20,8 +20,9 @@ function normalizePlace(raw: any): Place {
     description: raw.description || "",
     isLocal: Boolean(raw.is_local ?? raw.isLocal ?? true),
     status: raw.status || "pending",
-    created_by: raw.created_by || raw.userId,
-    userId: raw.userId || raw.created_by,
+    imageUrl: raw.imageUrl ?? raw.image_url,
+    created_by: raw.created_by ?? raw.createdBy ?? raw.userId,
+    userId: raw.userId ?? raw.createdBy ?? raw.created_by,
     created_at: raw.created_at || raw.createdAt,
     createdAt: raw.createdAt || raw.created_at,
     price: raw.price !== null && raw.price !== undefined ? Number(raw.price) : undefined,
@@ -142,3 +143,12 @@ export async function getMyContributedPlaces(): Promise<Place[]> {
   return rawList.map(normalizePlace);
 }
 
+
+export async function getPublicPlaces(signal: AbortSignal): Promise<Place[]> {
+  const res = await fetch(`${BACKEND_URL}/api/places`, { signal, cache: "no-store" });
+  if (!res.ok) return [];
+  const { data } = await res.json();
+  return Array.isArray(data)
+    ? data.filter((place) => place?.status === "approved").map(normalizePlace)
+    : [];
+}

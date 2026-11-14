@@ -47,8 +47,8 @@ export default function BudgetPanel({ onClose, onOpen }: BudgetPanelProps) {
   const totals = list.reduce(
     (acc, it) => ({
       spent: acc.spent + it.totalEstimatedCost,
-      budget: acc.budget + (typeof it.budget === "number" && it.budget > 0 ? it.budget : 0),
-      budgeted: acc.budgeted + (typeof it.budget === "number" && it.budget > 0 ? 1 : 0),
+      budget: acc.budget + (typeof it.budget === "number" && Number.isFinite(it.budget) && it.budget > 0 ? it.budget : 0),
+      budgeted: acc.budgeted + (typeof it.budget === "number" && Number.isFinite(it.budget) && it.budget > 0 ? 1 : 0),
     }),
     { spent: 0, budget: 0, budgeted: 0 },
   );
@@ -127,10 +127,10 @@ export default function BudgetPanel({ onClose, onOpen }: BudgetPanelProps) {
         {/* Danh sách các lộ trình và tiến độ chi tiêu */}
         {user && list.map((it) => {
           const bd = breakdown(it);
-          const hasBudget = typeof it.budget === "number" && it.budget > 0;
+          const hasBudget = typeof it.budget === "number" && Number.isFinite(it.budget) && it.budget > 0;
           const isOver = hasBudget && it.totalEstimatedCost > (it.budget as number);
-          const percent = hasBudget
-            ? Math.min(100, Math.round((it.totalEstimatedCost / (it.budget as number)) * 100))
+          const percent = hasBudget && Number.isFinite(it.totalEstimatedCost)
+            ? Math.max(0, Math.min(100, Math.round((it.totalEstimatedCost / (it.budget as number)) * 100)))
             : 0;
 
           return (

@@ -18,6 +18,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import com.huedimo.common.exceptions.status404.NotFoundException;
 import com.huedimo.modules.user.User;
 import com.huedimo.modules.place.dto.CreatePlaceRequest;
 
@@ -51,6 +52,29 @@ class PlaceServiceTest {
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    void publicListDoesNotQueryUnapprovedPlaces() {
+        assertTrue(placeService.getAllPlaces(null, "pending").isEmpty());
+        assertTrue(placeService.getAllPlaces("cafe", "rejected").isEmpty());
+        verifyNoInteractions(placeRepository);
+    }
+
+    @Test
+    void pendingPlaceDetailIsPrivateToItsOwner() {
+        Place pending = Place.builder().id("pending").status("pending").createdBy(mockUser.getId()).build();
+        when(placeRepository.findById("pending")).thenReturn(java.util.Optional.of(pending));
+        assertThrows(NotFoundException.class, () -> placeService.getPlaceById("pending"));
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn(User.builder().id(UUID.randomUUID()).role("user").build());
+        SecurityContextHolder.setContext(securityContext);
+        assertThrows(NotFoundException.class, () -> placeService.getPlaceById("pending"));
+
+        when(authentication.getPrincipal()).thenReturn(mockUser);
+        assertSame(pending, placeService.getPlaceById("pending"));
     }
 
     @Test

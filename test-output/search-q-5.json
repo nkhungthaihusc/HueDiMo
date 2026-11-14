@@ -1,0 +1,140 @@
+{
+  "request": {
+    "url": "https://huedimo.onrender.com/api/places/search?q=UNESCO&limit=20",
+    "header": [
+      {
+        "key": "User-Agent",
+        "value": "PostmanRuntime/7.56.1",
+        "system": true
+      },
+      {
+        "key": "Accept",
+        "value": "*/*",
+        "system": true
+      },
+      {
+        "key": "Cache-Control",
+        "value": "no-cache",
+        "system": true
+      },
+      {
+        "key": "Postman-Token",
+        "value": "a43ba355-183a-4121-b76d-15dcf58d62e1",
+        "system": true
+      },
+      {
+        "key": "Host",
+        "value": "huedimo.onrender.com",
+        "system": true
+      },
+      {
+        "key": "Accept-Encoding",
+        "value": "gzip, deflate, br",
+        "system": true
+      },
+      {
+        "key": "Connection",
+        "value": "keep-alive",
+        "system": true
+      }
+    ],
+    "method": "GET",
+    "body": ""
+  },
+  "response": {
+    "id": "d0c9b01b-cd55-4869-88f9-1d231e8f91cf",
+    "status": "OK",
+    "code": 200,
+    "header": [
+      {
+        "key": "Date",
+        "value": "Sun, 08 Nov 2026 13:44:51 GMT"
+      },
+      {
+        "key": "Content-Type",
+        "value": "application/json; charset=utf-8"
+      },
+      {
+        "key": "Content-Length",
+        "value": "682"
+      },
+      {
+        "key": "Connection",
+        "value": "keep-alive"
+      },
+      {
+        "key": "access-control-allow-origin",
+        "value": "*"
+      },
+      {
+        "key": "Content-Encoding",
+        "value": "br"
+      },
+      {
+        "key": "etag",
+        "value": "W/\"3d2-zOGS5xohDQ9K53DZq28mwyf5fGk\""
+      },
+      {
+        "key": "rndr-id",
+        "value": "f941da80-1755-44bb"
+      },
+      {
+        "key": "Server",
+        "value": "cloudflare"
+      },
+      {
+        "key": "vary",
+        "value": "Accept-Encoding"
+      },
+      {
+        "key": "x-powered-by",
+        "value": "Express"
+      },
+      {
+        "key": "x-render-origin-server",
+        "value": "Render"
+      },
+      {
+        "key": "cf-cache-status",
+        "value": "DYNAMIC"
+      },
+      {
+        "key": "CF-RAY",
+        "value": "a57503c36f105dd6-HKG"
+      },
+      {
+        "key": "alt-svc",
+        "value": "h3=\":443\"; ma=86400"
+      }
+    ],
+    "cookie": [],
+    "responseTime": 905,
+    "responseSize": 978,
+    "downloadedBytes": 682,
+    "body": "{\"data\":[{\"id\":\"dai-noi\",\"name\":\"Đại Nội Huế (Hoàng Thành)\",\"category\":\"ancient\",\"lat\":16.47023,\"lng\":107.57725,\"rating\":\"5.00\",\"description\":\"Quần thể hoàng cung triều Nguyễn được UNESCO công nhận là Di sản Văn hóa Thế giới.\",\"price\":\"200000.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/dai-noi.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:29.801Z\",\"updated_at\":\"2026-09-17T08:40:52.644Z\",\"address\":\"Đường 23/8, P. Thuận Hòa, TP. Huế\",\"opening_hours\":\"07:00 - 17:30\",\"estimated_duration_minutes\":150,\"best_time_to_visit\":\"morning\",\"highlights\":[\"Ngọ Môn\",\"Điện Thái Hòa\",\"Tử Cấm Thành\",\"Cung Diên Thọ\"],\"notes\":\"Nên mang nón dù che nắng vì khuôn viên rất rộng; mặc đồ lịch sự.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/dai-noi.jpg\"],\"status\":\"approved\"}]}"
+  },
+  "timestamp": "2026-11-08T13:45:37.420Z",
+  "tests": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "results": [
+      {
+        "name": "HTTP 200",
+        "passed": true,
+        "consoleLogs": []
+      },
+      {
+        "name": "Khong qua 20 ket qua",
+        "passed": true,
+        "consoleLogs": []
+      },
+      {
+        "name": "Chi dia diem approved",
+        "passed": true,
+        "consoleLogs": []
+      }
+    ]
+  },
+  "scriptLogs": []
+}

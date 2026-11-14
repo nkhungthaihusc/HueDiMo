@@ -1,5 +1,7 @@
 package com.huedimo.modules.itinerary;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +26,7 @@ import org.springframework.web.client.RestClient;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.huedimo.common.exceptions.status400.BadRequestException;
 import com.huedimo.common.exceptions.status403.ForbiddenException;
 import com.huedimo.common.exceptions.status404.NotFoundException;
 import com.huedimo.common.exceptions.status503.ServiceUnavailableException;
@@ -71,11 +74,27 @@ public class ItineraryService {
     @Value("${gemini.model:gemini-1.5-flash}")
     String geminiModel;
 
-    /**
-     * 1. POST /api/itineraries/generate
-     * Sinh lịch trình du lịch thông minh bằng AI (tối ưu cung đường liền kề, chống đi zig-zag)
-     */
+    private static final int MAX_ITINERARY_DAYS = 14;
+
+    private static void validateTripLength(LocalDate start, LocalDate end, JsonNode days) {
+        if (start == null || end == null || end.isBefore(start)) {
+            throw new BadRequestException("Khoảng ngày của lộ trình không hợp lệ.");
+        }
+        if (ChronoUnit.DAYS.between(start, end) >= MAX_ITINERARY_DAYS
+                || (days != null && days.isArray() && days.size() > MAX_ITINERARY_DAYS)) {
+            throw new BadRequestException("Lộ trình tối đa 14 ngày.");
+        }
+    }
+
     public Object generateItinerary(GenerateItineraryRequest request) {
+        try {
+            validateTripLength(LocalDate.parse(request.getStartDate()), LocalDate.parse(request.getEndDate()), null);
+        } catch (DateTimeParseException | NullPointerException ex) {
+            throw new BadRequestException("Khoảng ngày của lộ trình không hợp lệ.");
+        }
+        if (request.getBudget() == null || !Double.isFinite(request.getBudget()) || request.getBudget() <= 0) {
+            throw new BadRequestException("Ngân sách phải là số dương.");
+        }
         log.info("Generating itinerary with AI for request: {} -> {}", request.getStartDate(), request.getEndDate());
 
         if (geminiApiKey == null || geminiApiKey.isBlank()) {
@@ -131,9 +150,10 @@ public class ItineraryService {
 
             // Bổ sung các thông số chuyến đi vào kết quả trả về
             if (itineraryResult instanceof ObjectNode objNode) {
-                if (request.getBudget() != null && !objNode.has("budget")) {
-                    objNode.put("budget", request.getBudget());
+                if (objNode.path("days").size() > MAX_ITINERARY_DAYS) {
+                    throw new ServiceUnavailableException("AI trả về lộ trình quá 14 ngày. Vui lòng thử lại.");
                 }
+                objNode.put("budget", request.getBudget());
                 if (request.getTransportMode() != null && !objNode.has("transportMode")) {
                     objNode.put("transportMode", request.getTransportMode());
                 }
@@ -289,6 +309,12 @@ public class ItineraryService {
         User currentUser = SecurityUtils.getCurrentUser();
         log.info("Saving itinerary for user {}: {}", currentUser.getId(), request.getTitle());
 
+        Double budget = request.getBudget();
+        if (budget != null && (!Double.isFinite(budget) || budget < 0)) {
+            throw new BadRequestException("Ngân sách phải là số không âm.");
+        }
+        if (budget != null && budget == 0) budget = null;
+
         Itinerary itineraryToSave;
 
         if (request.getId() != null) {
@@ -301,10 +327,12 @@ public class ItineraryService {
                 throw new ForbiddenException("Bạn không có quyền cập nhật lịch trình này");
             }
 
+            validateTripLength(request.getStartDate(), request.getEndDate(),
+                    request.getDays() != null ? request.getDays() : existing.getDays());
             existing.setTitle(request.getTitle().trim());
             existing.setStartDate(request.getStartDate());
             existing.setEndDate(request.getEndDate());
-            existing.setBudget(request.getBudget());
+            existing.setBudget(budget);
             existing.setTotalEstimatedCost(request.getTotalEstimatedCost());
             existing.setTransportMode(request.getTransportMode());
             existing.setGroupSize(request.getGroupSize());
@@ -319,6 +347,7 @@ public class ItineraryService {
             }
             itineraryToSave = existing;
         } else {
+            validateTripLength(request.getStartDate(), request.getEndDate(), request.getDays());
             // Kiểm tra xem đã có bản ghi cùng tiêu đề và ngày đi/về của user chưa để tránh tạo trùng lặp
             Optional<Itinerary> duplicateOpt = itineraryRepository
                     .findFirstByUserIdAndTitleAndStartDateAndEndDateOrderByUpdatedAtDesc(
@@ -326,7 +355,10 @@ public class ItineraryService {
 
             if (duplicateOpt.isPresent()) {
                 itineraryToSave = duplicateOpt.get();
-                itineraryToSave.setBudget(request.getBudget());
+                if (request.getDays() == null) {
+                    validateTripLength(request.getStartDate(), request.getEndDate(), itineraryToSave.getDays());
+                }
+                itineraryToSave.setBudget(budget);
                 itineraryToSave.setTotalEstimatedCost(request.getTotalEstimatedCost());
                 itineraryToSave.setTransportMode(request.getTransportMode());
                 itineraryToSave.setGroupSize(request.getGroupSize());
@@ -345,7 +377,7 @@ public class ItineraryService {
                         .title(request.getTitle().trim())
                         .startDate(request.getStartDate())
                         .endDate(request.getEndDate())
-                        .budget(request.getBudget())
+                        .budget(budget)
                         .totalEstimatedCost(request.getTotalEstimatedCost())
                         .transportMode(request.getTransportMode())
                         .groupSize(request.getGroupSize())
@@ -555,6 +587,8 @@ public class ItineraryService {
         if (!isPublic && !isOwner) {
             throw new ForbiddenException("Không thể sao chép lịch trình riêng tư.");
         }
+
+        validateTripLength(source.getStartDate(), source.getEndDate(), source.getDays());
 
         // Tăng forks_count trên lộ trình gốc
         source.setForksCount((source.getForksCount() != null ? source.getForksCount() : 0L) + 1L);

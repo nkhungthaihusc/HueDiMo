@@ -348,6 +348,7 @@ button:disabled { cursor: not-allowed; }
 }
 
 @media (min-width: 768px) {
+  .home-shell[data-add-mode="true"] .home-weather { top: calc(204px + var(--safe-top)); }
   .map-permission-notice { top: auto; bottom: 24px; left: 104px; width: calc(100% - 560px); max-width: 560px; transform: none; translate: none; flex-wrap: wrap; background: #fffbeb; color: #92400e; border-color: #fde68a; box-shadow: 0 2px 8px rgb(15 23 42 / .08); }
   .map-permission-notice > div:first-of-type { flex: 1 1 calc(100% - 36px); }
   .map-permission-notice > div:last-of-type { margin-left: auto; }

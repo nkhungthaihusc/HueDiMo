@@ -35,6 +35,7 @@ public class GenerateItineraryRequest {
 
     String transportMode;
 
+    @Positive(message = "Số lượng người phải là số nguyên dương")
     Integer groupSize;
 
     String startPlaceId;

@@ -1,0 +1,130 @@
+{
+  "request": {
+    "url": "https://huedimo.onrender.com/api/reverse-geocode?lat=16.48761234&lng=107.60231234",
+    "header": [
+      {
+        "key": "User-Agent",
+        "value": "PostmanRuntime/7.56.1",
+        "system": true
+      },
+      {
+        "key": "Accept",
+        "value": "*/*",
+        "system": true
+      },
+      {
+        "key": "Cache-Control",
+        "value": "no-cache",
+        "system": true
+      },
+      {
+        "key": "Postman-Token",
+        "value": "9d8ebc80-bfe4-4a7a-ba47-fa4b7ae26010",
+        "system": true
+      },
+      {
+        "key": "Host",
+        "value": "huedimo.onrender.com",
+        "system": true
+      },
+      {
+        "key": "Accept-Encoding",
+        "value": "gzip, deflate, br",
+        "system": true
+      },
+      {
+        "key": "Connection",
+        "value": "keep-alive",
+        "system": true
+      }
+    ],
+    "method": "GET",
+    "body": ""
+  },
+  "response": {
+    "id": "8e94835c-bece-4254-ad17-9bf76cff115c",
+    "status": "OK",
+    "code": 200,
+    "header": [
+      {
+        "key": "Date",
+        "value": "Sun, 08 Nov 2026 13:48:28 GMT"
+      },
+      {
+        "key": "Content-Type",
+        "value": "application/json; charset=utf-8"
+      },
+      {
+        "key": "Content-Length",
+        "value": "203"
+      },
+      {
+        "key": "Connection",
+        "value": "keep-alive"
+      },
+      {
+        "key": "access-control-allow-origin",
+        "value": "*"
+      },
+      {
+        "key": "Content-Encoding",
+        "value": "br"
+      },
+      {
+        "key": "etag",
+        "value": "W/\"146-SXlJIlqt0di1iA9784KWQGZwXNM\""
+      },
+      {
+        "key": "rndr-id",
+        "value": "85f05d34-56f6-417d"
+      },
+      {
+        "key": "Server",
+        "value": "cloudflare"
+      },
+      {
+        "key": "vary",
+        "value": "Accept-Encoding"
+      },
+      {
+        "key": "x-powered-by",
+        "value": "Express"
+      },
+      {
+        "key": "x-render-origin-server",
+        "value": "Render"
+      },
+      {
+        "key": "cf-cache-status",
+        "value": "DYNAMIC"
+      },
+      {
+        "key": "CF-RAY",
+        "value": "a575091288268b94-HKG"
+      },
+      {
+        "key": "alt-svc",
+        "value": "h3=\":443\"; ma=86400"
+      }
+    ],
+    "cookie": [],
+    "responseTime": 726,
+    "responseSize": 326,
+    "downloadedBytes": 203,
+    "body": "{\"data\":{\"address\":\"Phạm Văn Đồng, P. Phú Thượng, Hương Thuỷ\",\"road\":\"Phạm Văn Đồng\",\"ward\":\"P. Phú Thượng\",\"city\":\"Hương Thuỷ\",\"fullAddress\":\"Phạm Văn Đồng, Phú Thượng, Phường Mỹ Thượng, Hương Thuỷ, Thành phố Huế, 49118, Việt Nam\",\"source\":\"nominatim\",\"cached\":false}}"
+  },
+  "timestamp": "2026-11-08T13:49:14.769Z",
+  "tests": {
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "results": [
+      {
+        "name": "HTTP 200",
+        "passed": true,
+        "consoleLogs": []
+      }
+    ]
+  },
+  "scriptLogs": []
+}

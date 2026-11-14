@@ -1,3 +1,17 @@
+export const MAX_ITINERARY_DAYS = 14;
+
+export function latestItineraryEndDate(startDate: string): string {
+  const start = new Date(`${startDate}T00:00:00Z`);
+  if (!Number.isFinite(start.getTime())) return "";
+  start.setUTCDate(start.getUTCDate() + MAX_ITINERARY_DAYS - 1);
+  return start.toISOString().split("T")[0];
+}
+
+export function isItineraryDateRangeValid(startDate: string, endDate: string): boolean {
+  return Boolean(startDate && endDate && startDate <= endDate &&
+    endDate <= latestItineraryEndDate(startDate));
+}
+
 import type { CategoryId, Place } from "@/lib/types";
 
 export type TransportMode = "motorbike" | "car" | "bicycle" | "walking";

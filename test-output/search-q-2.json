@@ -1,0 +1,140 @@
+{
+  "request": {
+    "url": "https://huedimo.onrender.com/api/places/search?q=L%C4%83ng&limit=20",
+    "header": [
+      {
+        "key": "User-Agent",
+        "value": "PostmanRuntime/7.56.1",
+        "system": true
+      },
+      {
+        "key": "Accept",
+        "value": "*/*",
+        "system": true
+      },
+      {
+        "key": "Cache-Control",
+        "value": "no-cache",
+        "system": true
+      },
+      {
+        "key": "Postman-Token",
+        "value": "09cf2bd8-1729-4d52-b192-5c56a7a91eb3",
+        "system": true
+      },
+      {
+        "key": "Host",
+        "value": "huedimo.onrender.com",
+        "system": true
+      },
+      {
+        "key": "Accept-Encoding",
+        "value": "gzip, deflate, br",
+        "system": true
+      },
+      {
+        "key": "Connection",
+        "value": "keep-alive",
+        "system": true
+      }
+    ],
+    "method": "GET",
+    "body": ""
+  },
+  "response": {
+    "id": "4028488e-9c37-44de-a2e8-d2298b15797f",
+    "status": "OK",
+    "code": 200,
+    "header": [
+      {
+        "key": "Date",
+        "value": "Sun, 08 Nov 2026 13:44:43 GMT"
+      },
+      {
+        "key": "Content-Type",
+        "value": "application/json; charset=utf-8"
+      },
+      {
+        "key": "Transfer-Encoding",
+        "value": "chunked"
+      },
+      {
+        "key": "Connection",
+        "value": "keep-alive"
+      },
+      {
+        "key": "access-control-allow-origin",
+        "value": "*"
+      },
+      {
+        "key": "Content-Encoding",
+        "value": "br"
+      },
+      {
+        "key": "etag",
+        "value": "W/\"53cc-80MGDZqyG6YtNMh8Hy3XMn11tNY\""
+      },
+      {
+        "key": "rndr-id",
+        "value": "ffa8c923-cf5a-4b31"
+      },
+      {
+        "key": "Server",
+        "value": "cloudflare"
+      },
+      {
+        "key": "vary",
+        "value": "Accept-Encoding"
+      },
+      {
+        "key": "x-powered-by",
+        "value": "Express"
+      },
+      {
+        "key": "x-render-origin-server",
+        "value": "Render"
+      },
+      {
+        "key": "cf-cache-status",
+        "value": "DYNAMIC"
+      },
+      {
+        "key": "CF-RAY",
+        "value": "a57503910b762416-HKG"
+      },
+      {
+        "key": "alt-svc",
+        "value": "h3=\":443\"; ma=86400"
+      }
+    ],
+    "cookie": [],
+    "responseTime": 864,
+    "responseSize": 21452,
+    "downloadedBytes": 5583,
+    "body": "{\"data\":[{\"id\":\"lang-co\",\"name\":\"Lăng Khải Định (Ứng Lăng)\",\"category\":\"ancient\",\"lat\":16.39893,\"lng\":107.59029,\"rating\":\"4.70\",\"description\":\"Đỉnh cao nghệ thuật ghép sành sứ và pha trộn kiến trúc Đông - Tây độc đáo.\",\"price\":\"150000.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-co.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:29.866Z\",\"updated_at\":\"2026-09-17T08:41:52.820Z\",\"address\":\"Xã Thủy Bằng, TP. Huế\",\"opening_hours\":\"07:00 - 17:30\",\"estimated_duration_minutes\":90,\"best_time_to_visit\":\"morning\",\"highlights\":[\"Cung Thiên Định\",\"Tượng đồng vua Khải Định\",\"Tranh Cửu Long Ẩn Vân\"],\"notes\":\"Cần leo nhiều bậc thang dốc; không gian lộng lẫy để chụp ảnh.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-co.jpg\"],\"status\":\"approved\"},{\"id\":\"lang-co-phuoc-tich\",\"name\":\"Làng cổ Phước Tích\",\"category\":\"cultural\",\"lat\":16.63824,\"lng\":107.30994,\"rating\":\"4.60\",\"description\":\"Ngôi làng cổ hơn 500 năm tuổi nổi tiếng với quần thể nhà rường cổ nguyên vẹn nép mình bên dòng sông Ô Lâu hiền hòa.\",\"price\":\"30000.00\",\"is_local\":true,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-co-phuoc-tich.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:32.754Z\",\"updated_at\":\"2026-09-17T08:41:56.713Z\",\"address\":\"Xã Phong Hòa, Huyện Phong Điền, Thừa Thiên Huế\",\"opening_hours\":\"07:00 - 18:00\",\"estimated_duration_minutes\":120,\"best_time_to_visit\":\"morning\",\"highlights\":[\"Quần thể hơn 20 ngôi nhà rường cổ\",\"Cây thị nghìn năm\",\"Lò gốm cổ truyền\"],\"notes\":\"Cách trung tâm Huế khoảng 40km về phía bắc, di chuyển bằng xe máy hoặc ô tô rất thuận tiện.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-co-phuoc-tich.jpg\"],\"status\":\"approved\"},{\"id\":\"lang-tu-duc\",\"name\":\"Lăng Tự Đức (Khiêm Lăng)\",\"category\":\"ancient\",\"lat\":16.43255,\"lng\":107.56608,\"rating\":\"4.60\",\"description\":\"Khu lăng tẩm mang phong cách hoa viên sơn thủy hữu tình, trầm mặc và thi vị bậc nhất cố đô.\",\"price\":\"150000.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-tu-duc.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:29.920Z\",\"updated_at\":\"2026-09-17T08:42:30.562Z\",\"address\":\"Thôn Thượng Ba, P. Thủy Xuân, TP. Huế\",\"opening_hours\":\"07:00 - 17:30\",\"estimated_duration_minutes\":100,\"best_time_to_visit\":\"afternoon\",\"highlights\":[\"Hồ Lưu Khiêm\",\"Xung Khiêm Tạ\",\"Nhà bia Khiêm Cung Ký\"],\"notes\":\"Khuôn viên nhiều bóng mát, thích hợp tản bộ thư thả.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-tu-duc.jpg\"],\"status\":\"approved\"},{\"id\":\"lang-minh-mang-hieu-lang\",\"name\":\"Lăng Minh Mạng (Hiếu Lăng)\",\"category\":\"ancient\",\"lat\":16.387889,\"lng\":107.56825,\"rating\":\"4.60\",\"description\":\"Lăng tẩm quy chuẩn đối xứng bậc nhất triều Nguyễn, hài hòa tuyệt đối giữa thiên nhiên và kiến trúc uy nghiêm.\",\"price\":\"150000.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-minh-mang-hieu-lang.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:29.985Z\",\"updated_at\":\"2026-09-17T08:42:21.965Z\",\"address\":\"Xã Hương Thọ, TP. Huế\",\"opening_hours\":\"07:00 - 17:30\",\"estimated_duration_minutes\":100,\"best_time_to_visit\":\"morning\",\"highlights\":[\"Đại Hồng Môn\",\"Điện Sùng Ân\",\"Cầu Thông Minh Chính Trực\"],\"notes\":\"Cách trung tâm khoảng 12km; khuôn viên rợp bóng thông xanh.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-minh-mang-hieu-lang.jpg\"],\"status\":\"approved\"},{\"id\":\"lang-gia-long-thien-tho-lang\",\"name\":\"Lăng Gia Long (Thiên Thọ Lăng)\",\"category\":\"ancient\",\"lat\":16.36186,\"lng\":107.59683,\"rating\":\"4.50\",\"description\":\"Nơi an nghỉ của vị vua lập quốc triều Nguyễn, khung cảnh khoáng đạt và hoang sơ giữa rừng thông.\",\"price\":\"150000.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-gia-long-thien-tho-lang.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:30.090Z\",\"updated_at\":\"2026-09-17T08:42:09.311Z\",\"address\":\"Xã Hương Thọ, TP. Huế\",\"opening_hours\":\"07:00 - 17:00\",\"estimated_duration_minutes\":90,\"best_time_to_visit\":\"morning\",\"highlights\":[\"Mộ song táng\",\"Điện Minh Thành\",\"Rừng thông đại ngàn\"],\"notes\":\"Khu vực yên tĩnh, thích hợp cho ai thích tìm hiểu lịch sử nguyên bản.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-gia-long-thien-tho-lang.jpg\"],\"status\":\"approved\"},{\"id\":\"lang-co-kim-long\",\"name\":\"Làng cổ Kim Long\",\"category\":\"cultural\",\"lat\":16.45846,\"lng\":107.56061,\"rating\":\"4.50\",\"description\":\"Vùng đất kinh kỳ xưa từng là thủ phủ xứ Đàng Trong, nổi tiếng với những khu nhà vườn rường cổ và đặc sản bánh ướt thịt nướng.\",\"price\":\"0.00\",\"is_local\":true,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-co-kim-long.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:34.372Z\",\"updated_at\":\"2026-09-17T08:41:55.052Z\",\"address\":\"Phường Kim Long, TP. Huế\",\"opening_hours\":\"Cả ngày\",\"estimated_duration_minutes\":90,\"best_time_to_visit\":\"morning\",\"highlights\":[\"Dãy nhà rường cổ kính có tuổi đời hàng thế kỷ\",\"Bánh ướt thịt nướng Kim Long trứ danh\",\"Đường hoa ven sông\"],\"notes\":\"Thích hợp kết hợp dạo xe đạp từ trung tâm ghé chùa Thiên Mụ và ghé thưởng thức ẩm thực bản địa.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-co-kim-long.jpg\"],\"status\":\"approved\"},{\"id\":\"lang-huong-thuy-xuan\",\"name\":\"Làng hương Thủy Xuân\",\"category\":\"cultural\",\"lat\":16.4355,\"lng\":107.56223,\"rating\":\"4.50\",\"description\":\"Làng nghề làm hương trầm thủ công truyền thống rực rỡ sắc màu, góc check-in nổi bật bậc nhất trên mạng xã hội.\",\"price\":\"0.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-huong-thuy-xuan.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:32.201Z\",\"updated_at\":\"2026-09-17T08:42:12.816Z\",\"address\":\"Đường Huyền Trân Công Chúa, P. Thủy Xuân, TP. Huế\",\"opening_hours\":\"07:00 - 19:00\",\"estimated_duration_minutes\":45,\"best_time_to_visit\":\"morning\",\"highlights\":[\"Bó hương đa sắc xòe quạt\",\"Trải nghiệm tự tay làm hương\",\"Thuê cổ phục chụp ảnh\"],\"notes\":\"Có thể chụp ảnh miễn phí tại các gian hàng; nên mua ủng hộ nụ trầm, quạt hoặc quà lưu niệm.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-huong-thuy-xuan.jpg\"],\"status\":\"approved\"},{\"id\":\"lang-hoa-giay-thanh-tien\",\"name\":\"Làng hoa giấy Thanh Tiên\",\"category\":\"cultural\",\"lat\":16.5122,\"lng\":107.6251,\"rating\":\"4.50\",\"description\":\"Làng nghề thủ công truyền thống hơn 300 năm chuyên làm hoa sen giấy tinh xảo dùng trong thờ cúng và trang trí.\",\"price\":\"0.00\",\"is_local\":true,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-hoa-giay-thanh-tien.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:32.590Z\",\"updated_at\":\"2026-09-17T08:42:11.167Z\",\"address\":\"Xã Phú Mậu, TP. Huế\",\"opening_hours\":\"07:30 - 17:30\",\"estimated_duration_minutes\":60,\"best_time_to_visit\":\"morning\",\"highlights\":[\"Hoa sen giấy rực rỡ\",\"Trải nghiệm tự tay gấp cánh hoa sen\",\"Nghệ nhân lão thành\"],\"notes\":\"Rộn ràng nhất vào những tháng giáp Tết Nguyên Đán; có thể mua hoa giấy về làm kỷ niệm.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-hoa-giay-thanh-tien.jpg\"],\"status\":\"approved\"},{\"id\":\"lang-dong-khanh-tu-lang\",\"name\":\"Lăng Đồng Khánh (Tư Lăng)\",\"category\":\"ancient\",\"lat\":16.429444,\"lng\":107.568333,\"rating\":\"4.40\",\"description\":\"Công trình phản ánh giai đoạn giao thoa nghệ thuật truyền thống và nét kiến trúc Tây Âu buổi đầu.\",\"price\":\"100000.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-dong-khanh-tu-lang.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:30.243Z\",\"updated_at\":\"2026-09-17T08:42:03.052Z\",\"address\":\"Thôn Thượng Hai, P. Thủy Xuân, TP. Huế\",\"opening_hours\":\"07:00 - 17:00\",\"estimated_duration_minutes\":60,\"best_time_to_visit\":\"afternoon\",\"highlights\":[\"Điện Ngưng Hy\",\"Hệ thống kính màu Tây phương\",\"Hoa văn khảm sành sứ\"],\"notes\":\"Nằm gần lăng Tự Đức, tiện kết hợp trên cùng một tuyến đường.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-dong-khanh-tu-lang.jpg\"],\"status\":\"approved\"},{\"id\":\"lang-thieu-tri-xuong-lang\",\"name\":\"Lăng Thiệu Trị (Xương Lăng)\",\"category\":\"ancient\",\"lat\":16.41722,\"lng\":107.5725,\"rating\":\"4.40\",\"description\":\"Lăng tẩm không có la thành bao bọc riêng biệt, giao hòa với ruộng đồng và làng quê mộc mạc.\",\"price\":\"50000.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-thieu-tri-xuong-lang.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:30.173Z\",\"updated_at\":\"2026-09-17T08:42:25.770Z\",\"address\":\"Làng Cư Chánh, Xã Thủy Bằng, TP. Huế\",\"opening_hours\":\"07:00 - 17:00\",\"estimated_duration_minutes\":60,\"best_time_to_visit\":\"morning\",\"highlights\":[\"Điện Biểu Đức\",\"Hồ Nhuận Trạch\",\"Bức bình phong cổ\"],\"notes\":\"Lăng vắng khách hơn các lăng khác, rất thanh bình và cổ kính.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-thieu-tri-xuong-lang.jpg\"],\"status\":\"approved\"},{\"id\":\"lang-duong-no\",\"name\":\"Làng Dương Nỗ\",\"category\":\"cultural\",\"lat\":16.4925,\"lng\":107.6272,\"rating\":\"4.30\",\"description\":\"Ngôi làng bình dị ven bờ sông Phổ Lợi, nơi gắn liền với tuổi thơ của Chủ tịch Hồ Chí Minh trong những năm tháng ở Huế.\",\"price\":\"0.00\",\"is_local\":true,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-duong-no.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:33.245Z\",\"updated_at\":\"2026-09-17T08:42:07.124Z\",\"address\":\"Xã Phú Dương, TP. Huế\",\"opening_hours\":\"07:30 - 17:00\",\"estimated_duration_minutes\":60,\"best_time_to_visit\":\"morning\",\"highlights\":[\"Nhà lưu niệm Bác Hồ thời niên thiếu\",\"Đình làng Dương Nỗ\",\"Bến nước cây đa\"],\"notes\":\"Không gian đồng quê mộc mạc, thích hợp cho các chuyến tìm hiểu văn hóa lịch sử cội nguồn.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/lang-duong-no.jpg\"],\"status\":\"approved\"},{\"id\":\"pilgrimage-village-boutique-resort-spa-lang-hanh-huong\",\"name\":\"Pilgrimage Village Boutique Resort & Spa (Làng Hành Hương)\",\"category\":\"hotel\",\"lat\":16.4357,\"lng\":107.5705,\"rating\":\"4.80\",\"description\":\"Khu resort mộc mạc ẩn mình giữa làng quê và vườn tược Thủy Xuân, hướng tới trải nghiệm tái tạo năng lượng.\",\"price\":\"2200000.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/pilgrimage-village-boutique-resort-spa-lang-hanh-huong.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:31.616Z\",\"updated_at\":\"2026-09-17T08:42:56.301Z\",\"address\":\"130 Minh Mạng, P. Thủy Xuân, TP. Huế\",\"opening_hours\":\"24/24\",\"estimated_duration_minutes\":1440,\"best_time_to_visit\":\"all_day\",\"highlights\":[\"Hồ bơi Vedanà\",\"Nhà gỗ mộc truyền thống\",\"Lớp học thiền & yoga miễn phí\"],\"notes\":\"Tuyệt vời cho kỳ nghỉ dưỡng tĩnh tâm, tránh xa sự ồn ào đô thị.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/pilgrimage-village-boutique-resort-spa-lang-hanh-huong.jpg\"],\"status\":\"approved\"},{\"id\":\"vinh-lang-co\",\"name\":\"Vịnh Lăng Cô\",\"category\":\"nature\",\"lat\":16.2308,\"lng\":108.0265,\"rating\":\"4.70\",\"description\":\"Một trong những vịnh biển đẹp nhất thế giới với bãi cát trắng thoai thoải uốn quanh chân đèo Hải Vân hùng vĩ.\",\"price\":\"0.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/vinh-lang-co.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:33.547Z\",\"updated_at\":\"2026-09-17T08:43:10.777Z\",\"address\":\"Thị trấn Lăng Cô, Huyện Phú Lộc, Thừa Thiên Huế\",\"opening_hours\":\"Cả ngày\",\"estimated_duration_minutes\":180,\"best_time_to_visit\":\"morning\",\"highlights\":[\"Bãi biển cát trắng mịn màng\",\"Nước biển xanh màu ngọc bích\",\"Hải sản đầm phá tươi sống\"],\"notes\":\"Thời điểm tắm biển lý tưởng nhất từ tháng 4 đến tháng 8; nên kết hợp ngắm vịnh từ đèo Hải Vân.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/vinh-lang-co.jpg\"],\"status\":\"approved\"},{\"id\":\"hai-van-quan\",\"name\":\"Hải Vân Quan\",\"category\":\"ancient\",\"lat\":16.1876,\"lng\":108.1311,\"rating\":\"4.80\",\"description\":\"Đệ nhất hùng quan - cửa ải quân sự lịch sử nằm trên đỉnh đèo Hải Vân hiểm trở, ranh giới tự nhiên giữa Huế và Đà Nẵng.\",\"price\":\"0.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/hai-van-quan.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:33.603Z\",\"updated_at\":\"2026-09-17T08:41:26.378Z\",\"address\":\"Đỉnh đèo Hải Vân, Thị trấn Lăng Cô, Huyện Phú Lộc, Thừa Thiên Huế\",\"opening_hours\":\"07:00 - 17:30\",\"estimated_duration_minutes\":90,\"best_time_to_visit\":\"morning\",\"highlights\":[\"Cổng thành đá rêu phong\",\"Toàn cảnh vịnh Lăng Cô và Đà Nẵng từ trên cao\",\"Vết tích hào chiến lũy\"],\"notes\":\"Vừa được trùng tu khang trang; gió trên đỉnh đèo rất mạnh, nên chuẩn bị áo khoác nhẹ.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/hai-van-quan.jpg\"],\"status\":\"approved\"},{\"id\":\"dam-lap-an\",\"name\":\"Đầm Lập An\",\"category\":\"nature\",\"lat\":16.24048,\"lng\":108.06356,\"rating\":\"4.60\",\"description\":\"Đầm nước lợ tuyệt đẹp nằm dưới chân đèo Hải Vân, khung cảnh mây núi trập trùng soi bóng đáy nước trong vắt.\",\"price\":\"0.00\",\"is_local\":true,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/dam-lap-an.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:33.482Z\",\"updated_at\":\"2026-09-17T08:41:01.133Z\",\"address\":\"Thị trấn Lăng Cô, Huyện Phú Lộc, Thừa Thiên Huế\",\"opening_hours\":\"Cả ngày\",\"estimated_duration_minutes\":90,\"best_time_to_visit\":\"sunset\",\"highlights\":[\"Con đường rẽ nước xuất hiện khi thủy triều rút\",\"Khung cảnh bè hàu mộc mạc\",\"Cà phê ven đầm ngắm núi mây\"],\"notes\":\"Điểm check-in nổi bật trên cung đường Huế - Đà Nẵng, hải sản hàu đầm cực kỳ tươi béo.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/dam-lap-an.jpg\"],\"status\":\"approved\"},{\"id\":\"ca-phe-giao\",\"name\":\"Cà phê Giao\",\"category\":\"food\",\"lat\":16.4746,\"lng\":107.5956,\"rating\":\"4.50\",\"description\":\"Quán cà phê mang phong cách hoài niệm, ẩn mình bình yên trong lòng thành phố nhộn nhịp, góc trò chuyện thư thả.\",\"price\":\"35000.00\",\"is_local\":true,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/ca-phe-giao.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:34.159Z\",\"updated_at\":\"2026-09-17T08:40:03.921Z\",\"address\":\"118 Chi Lăng, P. Gia Hội, TP. Huế\",\"opening_hours\":\"07:00 - 22:00\",\"estimated_duration_minutes\":60,\"best_time_to_visit\":\"morning\",\"highlights\":[\"Không gian nhà cổ ngập tràn ánh nắng\",\"Cà phê phin truyền thống\",\"Góc ngồi đọc sách an yên\"],\"notes\":\"Rất thích hợp cho những ai tìm kiếm một chốn tĩnh lặng để làm việc hoặc trò chuyện nhẹ nhàng.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/ca-phe-giao.jpg\"],\"status\":\"approved\"},{\"id\":\"khach-san\",\"name\":\"Silk Path Grand Hue Hotel\",\"category\":\"hotel\",\"lat\":16.45807,\"lng\":107.58025,\"rating\":\"4.70\",\"description\":\"Khách sạn 5 sao sang trọng nằm trung tâm, phong cách pha trộn giữa quý tộc Đông Dương và nét cung đình lãng mạn.\",\"price\":\"2000000.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/khach-san.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:31.495Z\",\"updated_at\":\"2026-09-17T08:41:37.539Z\",\"address\":\"02 Lê Lợi, P. Vĩnh Ninh, TP. Huế\",\"opening_hours\":\"24/24\",\"estimated_duration_minutes\":1440,\"best_time_to_visit\":\"all_day\",\"highlights\":[\"Hồ bơi ngoài trời xanh mát\",\"Nhà hàng ẩm thực Âu Á\",\"Phòng ốc phong cách Indochine\"],\"notes\":\"Vị trí ngay bờ sông Hương và sát ga xe lửa Huế, cực kỳ thuận tiện đi lại.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/khach-san.jpg\"],\"status\":\"approved\"},{\"id\":\"doi-vong-canh\",\"name\":\"Đồi Vọng Cảnh\",\"category\":\"nature\",\"lat\":16.4294,\"lng\":107.5619,\"rating\":\"4.60\",\"description\":\"Điểm cao tuyệt mỹ ngắm trọn khúc uốn chữ S của sông Hương trong ánh tà dương lãng đãng.\",\"price\":\"0.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/doi-vong-canh.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:31.794Z\",\"updated_at\":\"2026-09-17T08:41:18.966Z\",\"address\":\"Số 102 Huyền Trân Công Chúa, P. Thủy Xuân, TP. Huế\",\"opening_hours\":\"05:00 - 19:00\",\"estimated_duration_minutes\":60,\"best_time_to_visit\":\"sunset\",\"highlights\":[\"Khúc quanh sông Hương\",\"Rừng thông vi vu\",\"Chòi ngắm cảnh mới sửa sang\"],\"notes\":\"Nên đi tầm 16:30 - 17:30 để đón khoảnh khắc hoàng hôn nhuộm vàng dòng sông.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/doi-vong-canh.jpg\"],\"status\":\"approved\"},{\"id\":\"ho-truoi\",\"name\":\"Hồ Truồi\",\"category\":\"nature\",\"lat\":16.2798,\"lng\":107.7512,\"rating\":\"4.50\",\"description\":\"Hồ nước nhân tạo rộng lớn yên bình dưới chân dãy núi Bạch Mã, làn nước trong vắt phẳng lặng quanh năm.\",\"price\":\"0.00\",\"is_local\":true,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/ho-truoi.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:33.662Z\",\"updated_at\":\"2026-09-17T08:41:31.766Z\",\"address\":\"Xã Lộc Hòa, Huyện Phú Lộc, Thừa Thiên Huế\",\"opening_hours\":\"07:00 - 17:00\",\"estimated_duration_minutes\":120,\"best_time_to_visit\":\"morning\",\"highlights\":[\"Đi đò bồng bềnh giữa lòng hồ\",\"Khung cảnh núi rừng mờ ảo mây sương\",\"Các con suối đá thượng nguồn\"],\"notes\":\"Thường kết hợp cùng chuyến viếng thăm Thiền viện Trúc Lâm Bạch Mã nằm trên bán đảo giữa hồ.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/ho-truoi.jpg\"],\"status\":\"approved\"},{\"id\":\"cau-ngoi-thanh-toan-cho-que\",\"name\":\"Cầu Ngói Thanh Toàn & Chợ Quê\",\"category\":\"cultural\",\"lat\":16.43852,\"lng\":107.64305,\"rating\":\"4.50\",\"description\":\"Kiến trúc 'thượng gia hạ kiều' cổ kính hiếm có, bảo tồn trọn vẹn văn hóa làng quê nông thôn Bắc Trung Bộ.\",\"price\":\"0.00\",\"is_local\":true,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/cau-ngoi-thanh-toan-cho-que.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:32.321Z\",\"updated_at\":\"2026-09-17T08:40:10.962Z\",\"address\":\"Xã Thủy Thanh, Thị xã Hương Thủy, Thừa Thiên Huế\",\"opening_hours\":\"Cả ngày\",\"estimated_duration_minutes\":60,\"best_time_to_visit\":\"afternoon\",\"highlights\":[\"Cầu ngói cổ\",\"Nhà trưng bày nông cụ truyền thống\",\"Các món chè quê dân dã\"],\"notes\":\"Không khí mộc mạc yên bình; thứ Bảy và Chủ Nhật thường có phiên chợ quê tái hiện rộn ràng.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/cau-ngoi-thanh-toan-cho-que.jpg\"],\"status\":\"approved\"}]}"
+  },
+  "timestamp": "2026-11-08T13:45:29.418Z",
+  "tests": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "results": [
+      {
+        "name": "HTTP 200",
+        "passed": true,
+        "consoleLogs": []
+      },
+      {
+        "name": "Khong qua 20 ket qua",
+        "passed": true,
+        "consoleLogs": []
+      },
+      {
+        "name": "Chi dia diem approved",
+        "passed": true,
+        "consoleLogs": []
+      }
+    ]
+  },
+  "scriptLogs": []
+}

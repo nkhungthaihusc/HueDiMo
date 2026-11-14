@@ -1,5 +1,7 @@
 "use client";
 
+import { isItineraryDateRangeValid, latestItineraryEndDate } from "@/lib/itinerary/types";
+
 import { useState } from "react";
 import type { Itinerary, TransportMode } from "@/lib/itinerary/types";
 import { TRANSPORT_OPTIONS } from "@/lib/itinerary/types";
@@ -30,7 +32,7 @@ const NOTE_SUGGESTIONS = [
 interface ItineraryFormPanelProps {
   places: Place[];
   onCancel: () => void;
-  onGenerated: (itinerary: Itinerary) => void;
+  onGenerated: (itinerary: Itinerary) => Promise<void>;
   onViewHistory?: () => void;
 }
 
@@ -72,8 +74,9 @@ export default function ItineraryFormPanel({
   };
 
   const budgetNum = Number(budget);
+  const validDates = isItineraryDateRangeValid(startDate, endDate);
   const valid =
-    startDate <= endDate &&
+    validDates &&
     prefs.size > 0 &&
     groupSize >= 1 &&
     Number.isFinite(budgetNum) &&
@@ -108,7 +111,7 @@ export default function ItineraryFormPanel({
       };
 
       toast.success("✨ AI đã thiết kế lịch trình du lịch Huế thành công!");
-      onGenerated(enhancedItinerary);
+      await onGenerated(enhancedItinerary);
     } catch (e) {
       const errMsg =
         e instanceof ApiError ? e.message : "Không kết nối được với máy chủ AI. Thử lại sau.";
@@ -180,11 +183,14 @@ export default function ItineraryFormPanel({
               type="date"
               value={endDate}
               min={startDate}
+              max={latestItineraryEndDate(startDate) || undefined}
               onChange={(e) => setEndDate(e.target.value)}
               className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition"
             />
           </div>
         </div>
+
+        {!validDates && <p className="text-rose-700" role="alert">Chọn khoảng thời gian từ 1 đến 14 ngày.</p>}
 
         {/* Số lượng người tham gia */}
         <div>

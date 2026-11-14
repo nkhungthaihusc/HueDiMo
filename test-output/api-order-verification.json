@@ -1,0 +1,46 @@
+[
+  {
+    "query": "Đại Nội Huế (Hoàng Thành)",
+    "count": 1,
+    "priority_and_rating_order": true,
+    "tiers_seen": [
+      100
+    ]
+  },
+  {
+    "query": "Lăng",
+    "count": 20,
+    "priority_and_rating_order": true,
+    "tiers_seen": [
+      10,
+      20,
+      40,
+      60
+    ]
+  },
+  {
+    "query": "Huế",
+    "count": 20,
+    "priority_and_rating_order": true,
+    "tiers_seen": [
+      20,
+      40
+    ]
+  },
+  {
+    "query": "ancient",
+    "count": 11,
+    "priority_and_rating_order": true,
+    "tiers_seen": [
+      15
+    ]
+  },
+  {
+    "query": "UNESCO",
+    "count": 1,
+    "priority_and_rating_order": true,
+    "tiers_seen": [
+      10
+    ]
+  }
+]

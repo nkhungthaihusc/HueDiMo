@@ -7,7 +7,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:300
  * Gửi yêu cầu lập lịch trình du lịch thông minh bằng AI qua Backend API
  */
 export async function createItinerary(request: ItineraryRequest): Promise<Itinerary> {
-  return apiFetch<Itinerary>(`${BACKEND_URL}/api/itinerary`, {
+  return apiFetch<Itinerary>(`${BACKEND_URL}/api/itineraries/generate`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

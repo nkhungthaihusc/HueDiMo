@@ -23,6 +23,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.huedimo.common.exceptions.status403.ForbiddenException;
+import com.huedimo.common.exceptions.status400.BadRequestException;
 import com.huedimo.common.exceptions.status404.NotFoundException;
 import com.huedimo.modules.user.User;
 import com.huedimo.modules.user.UserRepository;
@@ -116,14 +117,27 @@ class ItineraryServiceTest {
     }
 
     @Test
+    void rejectsFifteenDayItineraryBeforeSaving() {
+        mockSecurityContext(mockUser);
+        SaveItineraryRequest request = SaveItineraryRequest.builder()
+                .title("Lộ trình mới")
+                .startDate(LocalDate.of(2026, 11, 1))
+                .endDate(LocalDate.of(2026, 11, 15))
+                .build();
+
+        assertThrows(BadRequestException.class, () -> itineraryService.saveItinerary(request));
+        verifyNoInteractions(itineraryRepository);
+    }
+
+    @Test
     void saveItinerary_newItinerary_shouldCreateAndReturnResponse() {
         mockSecurityContext(mockUser);
 
         SaveItineraryRequest request = SaveItineraryRequest.builder()
                 .title("Lộ trình mới")
                 .startDate(LocalDate.of(2026, 11, 1))
-                .endDate(LocalDate.of(2026, 11, 2))
-                .budget(500000.0)
+                .endDate(LocalDate.of(2026, 11, 14))
+                .budget(0.0)
                 .transportMode("walking")
                 .isPublic(false)
                 .build();
@@ -143,7 +157,8 @@ class ItineraryServiceTest {
         assertNotNull(response);
         assertEquals("Lộ trình mới", response.getTitle());
         assertEquals("walking", response.getTransportMode());
-        assertEquals(2, response.getDaysCount());
+        assertEquals(14, response.getDaysCount());
+        assertNull(response.getBudget());
         verify(itineraryRepository).save(any(Itinerary.class));
     }
 

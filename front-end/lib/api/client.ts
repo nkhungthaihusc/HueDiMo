@@ -1,3 +1,4 @@
+import { getAccessToken, refreshTokens, clearSession } from "@/lib/auth/logic";
 import type { ApiErrorBody } from "@/lib/api/response";
 
 export class ApiError extends Error {
@@ -14,7 +15,10 @@ export class ApiError extends Error {
 
 // Gọi API theo quy ước chung: trả về phần data (T), ném ApiError khi lỗi.
 export async function apiFetch<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
-  const res = await fetch(input, init);
+  return readApiResponse<T>(await fetch(input, init));
+}
+
+export async function readApiResponse<T>(res: Response): Promise<T> {
   const body = await readJson(res);
 
   if (!res.ok) {
@@ -40,4 +44,44 @@ async function readJson(res: Response): Promise<unknown> {
   } catch {
     return null;
   }
+}
+export async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  let token = getAccessToken();
+
+  if (!token) {
+    const refreshRes = await refreshTokens();
+    if (refreshRes.ok && refreshRes.accessToken) {
+      token = refreshRes.accessToken;
+    }
+  }
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options.headers as Record<string, string>),
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  let res = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  if (res.status === 401) {
+    const refreshRes = await refreshTokens();
+    if (refreshRes.ok && refreshRes.accessToken) {
+      token = refreshRes.accessToken;
+      headers.Authorization = `Bearer ${token}`;
+      res = await fetch(url, {
+        ...options,
+        headers,
+      });
+    } else {
+      clearSession();
+    }
+  }
+
+  return res;
 }

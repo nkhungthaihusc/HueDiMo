@@ -8,13 +8,28 @@ import { AuthService } from "../services/auth.service";
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const VALID_TRANSPORTS = ["motorbike", "car", "bicycle", "walking"];
 
+function validateTripLength(start: unknown, end: unknown, days?: unknown): string | null {
+  const parseDate = (value: unknown) => {
+    if (typeof value !== "string" || !DATE_RE.test(value)) return NaN;
+    const date = new Date(`${value}T00:00:00Z`);
+    return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value
+      ? date.getTime()
+      : NaN;
+  };
+  const elapsed = parseDate(end) - parseDate(start);
+  if (!Number.isFinite(elapsed) || elapsed < 0) return "Khoảng ngày của lộ trình không hợp lệ.";
+  if (elapsed >= 14 * 86_400_000 || (Array.isArray(days) && days.length > 14)) {
+    return "Lộ trình tối đa 14 ngày.";
+  }
+  return null;
+}
+
 function validateRequest(body: unknown): string | null {
   if (typeof body !== "object" || body === null) return "Dữ liệu gửi lên không hợp lệ.";
   const b = body as Record<string, unknown>;
 
-  if (typeof b.startDate !== "string" || !DATE_RE.test(b.startDate)) return "Ngày bắt đầu không hợp lệ (định dạng YYYY-MM-DD).";
-  if (typeof b.endDate !== "string" || !DATE_RE.test(b.endDate)) return "Ngày kết thúc không hợp lệ (định dạng YYYY-MM-DD).";
-  if (b.startDate > b.endDate) return "Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.";
+  const dateError = validateTripLength(b.startDate, b.endDate);
+  if (dateError) return dateError;
 
   if (typeof b.budget !== "number" || !Number.isFinite(b.budget) || b.budget <= 0) {
     return "Ngân sách phải là số dương.";
@@ -29,7 +44,7 @@ function validateRequest(body: unknown): string | null {
     return "Phương tiện di chuyển không hợp lệ.";
   }
 
-  if (b.groupSize !== undefined && (typeof b.groupSize !== "number" || !Number.isFinite(b.groupSize) || b.groupSize <= 0)) {
+  if (b.groupSize !== undefined && (typeof b.groupSize !== "number" || !Number.isInteger(b.groupSize) || b.groupSize <= 0)) {
     return "Số lượng người phải là số nguyên dương.";
   }
 
@@ -86,6 +101,10 @@ export class ItineraryController {
 
       const input = req.body as ItineraryRequestInput;
       const result = await ItineraryService.generate(input);
+      if (result.days.length > 14) {
+        sendError(res, "UPSTREAM_ERROR", "AI trả về lộ trình quá 14 ngày. Vui lòng thử lại.", 502);
+        return;
+      }
       sendSuccess(res, result);
     } catch (error: any) {
       console.error("[ItineraryController] generate error:", error);
@@ -130,14 +149,21 @@ export class ItineraryController {
         return;
       }
 
-      if (!startDate || !endDate) {
-        sendError(res, "VALIDATION_ERROR", "Ngày bắt đầu và ngày kết thúc là bắt buộc.", 422);
+      const dateError = validateTripLength(startDate, endDate, days);
+      if (dateError) {
+        sendError(res, "VALIDATION_ERROR", dateError, 422);
+        return;
+      }
+
+      if (budget != null && budget !== "" &&
+          (typeof budget !== "number" || !Number.isFinite(budget) || budget < 0)) {
+        sendError(res, "VALIDATION_ERROR", "Ngân sách phải là số không âm.", 422);
         return;
       }
 
       const daysJson = JSON.stringify(Array.isArray(days) ? days : []);
       const prefArray = Array.isArray(preferences) ? preferences : [];
-      const numBudget = typeof budget === "number" ? budget : 0;
+      const numBudget = typeof budget === "number" && budget > 0 ? budget : null;
       const numTotal = typeof totalEstimatedCost === "number" ? totalEstimatedCost : 0;
       const numGroup = typeof groupSize === "number" ? groupSize : 1;
       const tMode = typeof transportMode === "string" ? transportMode : "motorbike";
@@ -599,13 +625,19 @@ export class ItineraryController {
         return;
       }
 
-      const originalRes = await pool.query("SELECT * FROM public.itineraries WHERE id = $1", [id]);
+      const originalRes = await pool.query("SELECT *, start_date::text AS start_date, end_date::text AS end_date FROM public.itineraries WHERE id = $1", [id]);
       if (originalRes.rows.length === 0) {
         sendError(res, "NOT_FOUND", "Không tìm thấy lộ trình gốc.", 404);
         return;
       }
 
       const orig = originalRes.rows[0];
+      const days = typeof orig.days === "string" ? JSON.parse(orig.days) : orig.days;
+      const dateError = validateTripLength(orig.start_date, orig.end_date, days);
+      if (dateError) {
+        sendError(res, "VALIDATION_ERROR", dateError, 422);
+        return;
+      }
 
       // Tăng số lượt fork cho lộ trình gốc
       await pool.query("UPDATE public.itineraries SET forks_count = COALESCE(forks_count, 0) + 1 WHERE id = $1", [id]);

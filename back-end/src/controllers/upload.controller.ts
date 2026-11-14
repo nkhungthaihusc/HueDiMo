@@ -1,45 +1,29 @@
-import { Request, Response, NextFunction } from "express";
-import { StorageService } from "../services/storage.service";
+import type { Request, Response, NextFunction } from "express";
+import { imageExtensions, mediaFolders, signUploads } from "../services/storage.service";
 import { sendSuccess, sendError } from "../utils/response";
 
-export const uploadController = {
-  /**
-   * POST /api/upload
-   * Nhận 1 file ('file') hoặc mảng file ('files') tải lên Supabase Storage
-   */
-  async handleUpload(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const folder = typeof req.query.folder === "string" ? req.query.folder.trim() : (req.body.folder || "general");
+export async function presignUploads(req: Request, res: Response, next: NextFunction): Promise<void> {
+  const { folder, files } = req.body ?? {};
+  if (!mediaFolders.includes(folder) || !Array.isArray(files) || files.length < 1 || files.length > 5) {
+    sendError(res, "VALIDATION_ERROR", "Chọn thư mục hợp lệ và từ 1 đến 5 ảnh.", 400);
+    return;
+  }
 
-      // Trường hợp 1: Nhận single file từ multer (field name: 'file')
-      if (req.file) {
-        const publicUrl = await StorageService.uploadFile(req.file, folder);
-        sendSuccess(res, {
-          url: publicUrl,
-          urls: [publicUrl],
-          filename: req.file.originalname,
-          size: req.file.size,
-          mimetype: req.file.mimetype,
-        });
-        return;
-      }
-
-      // Trường hợp 2: Nhận multiple files từ multer (field name: 'files')
-      if (req.files && Array.isArray(req.files) && req.files.length > 0) {
-        const files = req.files as Express.Multer.File[];
-        const urls = await StorageService.uploadMultipleFiles(files, folder);
-        sendSuccess(res, {
-          url: urls[0] || "",
-          urls,
-          total: urls.length,
-        });
-        return;
-      }
-
-      // Không tìm thấy file nào được gửi lên
-      sendError(res, "VALIDATION_ERROR", "Không tìm thấy file hình ảnh nào được gửi lên trong request. Vui lòng sử dụng field 'file' hoặc 'files'.", 400);
-    } catch (error: any) {
-      next(error);
+  const extensions: string[] = [];
+  for (const file of files) {
+    const extension = imageExtensions.get(file?.contentType);
+    const size = file?.size;
+    if (!extension || !Number.isSafeInteger(size) || size < 1 || size > 10 * 1024 * 1024) {
+      sendError(res, "VALIDATION_ERROR", "Định dạng ảnh không hợp lệ hoặc dung lượng vượt quá 10 MB.", 400);
+      return;
     }
-  },
-};
+    extensions.push(extension);
+  }
+
+  try {
+    res.set("Cache-Control", "no-store");
+    sendSuccess(res, await signUploads(folder, extensions));
+  } catch (error) {
+    next(error);
+  }
+}

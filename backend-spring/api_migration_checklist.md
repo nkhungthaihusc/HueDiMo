@@ -71,7 +71,7 @@ Danh sách này đã được đối chiếu 100% với file `app.ts` và thư m
 - [ ] `GET /api/admin/ai-settings` - Cấu hình AI Prompt
 
 ### 7. 🌤️ Utilities (`/api/...`)
-- [ ] `POST /api/upload` - Upload ảnh (Supabase)
+- [x] `POST /api/upload/presign` - Cấp URL tải ảnh trực tiếp lên Supabase Storage
 - [ ] `GET /api/weather/rainfall` - Thời tiết / Lượng mưa
 - [ ] `GET /api/water-levels` - Cảnh báo ngập lụt
 - [ ] `GET /api/reverse-geocode` - Chuyển đổi Tọa độ -> Tên đường

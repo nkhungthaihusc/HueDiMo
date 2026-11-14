@@ -1,0 +1,135 @@
+{
+  "request": {
+    "url": "https://huedimo.onrender.com/api/places/search?q=&limit=0",
+    "header": [
+      {
+        "key": "User-Agent",
+        "value": "PostmanRuntime/7.56.1",
+        "system": true
+      },
+      {
+        "key": "Accept",
+        "value": "*/*",
+        "system": true
+      },
+      {
+        "key": "Cache-Control",
+        "value": "no-cache",
+        "system": true
+      },
+      {
+        "key": "Postman-Token",
+        "value": "9a6964ec-3601-40cf-b4e0-e80aacab62cb",
+        "system": true
+      },
+      {
+        "key": "Host",
+        "value": "huedimo.onrender.com",
+        "system": true
+      },
+      {
+        "key": "Accept-Encoding",
+        "value": "gzip, deflate, br",
+        "system": true
+      },
+      {
+        "key": "Connection",
+        "value": "keep-alive",
+        "system": true
+      }
+    ],
+    "method": "GET",
+    "body": ""
+  },
+  "response": {
+    "id": "c910f2e4-5875-4a9e-949c-5aefba2b8bb9",
+    "status": "OK",
+    "code": 200,
+    "header": [
+      {
+        "key": "Date",
+        "value": "Sun, 08 Nov 2026 13:42:10 GMT"
+      },
+      {
+        "key": "Content-Type",
+        "value": "application/json; charset=utf-8"
+      },
+      {
+        "key": "Content-Length",
+        "value": "2031"
+      },
+      {
+        "key": "Connection",
+        "value": "keep-alive"
+      },
+      {
+        "key": "access-control-allow-origin",
+        "value": "*"
+      },
+      {
+        "key": "Content-Encoding",
+        "value": "br"
+      },
+      {
+        "key": "etag",
+        "value": "W/\"150e-CCmk9kFyx12ve2moPJxqg3a1cg8\""
+      },
+      {
+        "key": "rndr-id",
+        "value": "8ad9e23d-2d09-4163"
+      },
+      {
+        "key": "Server",
+        "value": "cloudflare"
+      },
+      {
+        "key": "vary",
+        "value": "Accept-Encoding"
+      },
+      {
+        "key": "x-powered-by",
+        "value": "Express"
+      },
+      {
+        "key": "x-render-origin-server",
+        "value": "Render"
+      },
+      {
+        "key": "cf-cache-status",
+        "value": "DYNAMIC"
+      },
+      {
+        "key": "CF-RAY",
+        "value": "a574ffd42c4c06b9-HKG"
+      },
+      {
+        "key": "alt-svc",
+        "value": "h3=\":443\"; ma=86400"
+      }
+    ],
+    "cookie": [],
+    "responseTime": 1888,
+    "responseSize": 5390,
+    "downloadedBytes": 2031,
+    "body": "{\"data\":[{\"id\":\"dai-noi\",\"name\":\"Đại Nội Huế (Hoàng Thành)\",\"category\":\"ancient\",\"lat\":16.47023,\"lng\":107.57725,\"rating\":\"5.00\",\"description\":\"Quần thể hoàng cung triều Nguyễn được UNESCO công nhận là Di sản Văn hóa Thế giới.\",\"price\":\"200000.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/dai-noi.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:29.801Z\",\"updated_at\":\"2026-09-17T08:40:52.644Z\",\"address\":\"Đường 23/8, P. Thuận Hòa, TP. Huế\",\"opening_hours\":\"07:00 - 17:30\",\"estimated_duration_minutes\":150,\"best_time_to_visit\":\"morning\",\"highlights\":[\"Ngọ Môn\",\"Điện Thái Hòa\",\"Tử Cấm Thành\",\"Cung Diên Thọ\"],\"notes\":\"Nên mang nón dù che nắng vì khuôn viên rất rộng; mặc đồ lịch sự.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/dai-noi.jpg\"],\"status\":\"approved\"},{\"id\":\"azerai-la-residence-hue\",\"name\":\"Azerai La Residence Hue\",\"category\":\"hotel\",\"lat\":16.45909,\"lng\":107.58015,\"rating\":\"4.80\",\"description\":\"Khu nghỉ dưỡng di sản Art Deco danh tiếng trải dài bên bờ nam sông Hương thơ mộng.\",\"price\":\"5500000.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/azerai-la-residence-hue.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:31.553Z\",\"updated_at\":\"2026-09-17T08:39:41.542Z\",\"address\":\"05 Lê Lợi, P. Vĩnh Ninh, TP. Huế\",\"opening_hours\":\"24/24\",\"estimated_duration_minutes\":1440,\"best_time_to_visit\":\"all_day\",\"highlights\":[\"Dinh thự cổ thập niên 1930\",\"Tầm nhìn ôm trọn sông Hương\",\"Hồ bơi nước mặn\"],\"notes\":\"Không gian riêng tư, đẳng cấp quốc tế, dịch vụ chăm sóc spa và ẩm thực hoàn hảo.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/azerai-la-residence-hue.jpg\"],\"status\":\"approved\"},{\"id\":\"chua-huyen-khong-son-thuong\",\"name\":\"Chùa Huyền Không Sơn Thượng\",\"category\":\"spiritual\",\"lat\":16.45056,\"lng\":107.49361,\"rating\":\"4.80\",\"description\":\"Chùa Nam tông tĩnh mịch giữa thung lũng thông reo, đậm phong vị thiền thất ẩn dật.\",\"price\":\"0.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/chua-huyen-khong-son-thuong.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:30.596Z\",\"updated_at\":\"2026-09-17T08:40:36.163Z\",\"address\":\"Thôn Chầm, P. Hương Hồ, Thị xã Hương Trà\",\"opening_hours\":\"06:30 - 18:00\",\"estimated_duration_minutes\":90,\"best_time_to_visit\":\"morning\",\"highlights\":[\"Cung Nghinh Lương\",\"Vườn thư pháp\",\"Hồ sen súng\"],\"notes\":\"Đường vào có đoạn dốc cua nhỏ; trang phục thanh lịch, giữ sự thanh tịnh tuyệt đối.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/chua-huyen-khong-son-thuong.jpg\"],\"status\":\"approved\"},{\"id\":\"hai-van-quan\",\"name\":\"Hải Vân Quan\",\"category\":\"ancient\",\"lat\":16.1876,\"lng\":108.1311,\"rating\":\"4.80\",\"description\":\"Đệ nhất hùng quan - cửa ải quân sự lịch sử nằm trên đỉnh đèo Hải Vân hiểm trở, ranh giới tự nhiên giữa Huế và Đà Nẵng.\",\"price\":\"0.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/hai-van-quan.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:33.603Z\",\"updated_at\":\"2026-09-17T08:41:26.378Z\",\"address\":\"Đỉnh đèo Hải Vân, Thị trấn Lăng Cô, Huyện Phú Lộc, Thừa Thiên Huế\",\"opening_hours\":\"07:00 - 17:30\",\"estimated_duration_minutes\":90,\"best_time_to_visit\":\"morning\",\"highlights\":[\"Cổng thành đá rêu phong\",\"Toàn cảnh vịnh Lăng Cô và Đà Nẵng từ trên cao\",\"Vết tích hào chiến lũy\"],\"notes\":\"Vừa được trùng tu khang trang; gió trên đỉnh đèo rất mạnh, nên chuẩn bị áo khoác nhẹ.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/hai-van-quan.jpg\"],\"status\":\"approved\"},{\"id\":\"pilgrimage-village-boutique-resort-spa-lang-hanh-huong\",\"name\":\"Pilgrimage Village Boutique Resort & Spa (Làng Hành Hương)\",\"category\":\"hotel\",\"lat\":16.4357,\"lng\":107.5705,\"rating\":\"4.80\",\"description\":\"Khu resort mộc mạc ẩn mình giữa làng quê và vườn tược Thủy Xuân, hướng tới trải nghiệm tái tạo năng lượng.\",\"price\":\"2200000.00\",\"is_local\":false,\"image_url\":\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/pilgrimage-village-boutique-resort-spa-lang-hanh-huong.jpg\",\"created_by\":null,\"created_at\":\"2026-09-09T09:35:31.616Z\",\"updated_at\":\"2026-09-17T08:42:56.301Z\",\"address\":\"130 Minh Mạng, P. Thủy Xuân, TP. Huế\",\"opening_hours\":\"24/24\",\"estimated_duration_minutes\":1440,\"best_time_to_visit\":\"all_day\",\"highlights\":[\"Hồ bơi Vedanà\",\"Nhà gỗ mộc truyền thống\",\"Lớp học thiền & yoga miễn phí\"],\"notes\":\"Tuyệt vời cho kỳ nghỉ dưỡng tĩnh tâm, tránh xa sự ồn ào đô thị.\",\"images\":[\"https://vhyfauholmouikskxecp.supabase.co/storage/v1/object/public/huedimo-media/places/pilgrimage-village-boutique-resort-spa-lang-hanh-huong.jpg\"],\"status\":\"approved\"}]}"
+  },
+  "timestamp": "2026-11-08T13:42:57.263Z",
+  "tests": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "results": [
+      {
+        "name": "HTTP 200",
+        "passed": true,
+        "consoleLogs": []
+      },
+      {
+        "name": "Rating giam dan",
+        "passed": true,
+        "consoleLogs": []
+      }
+    ]
+  },
+  "scriptLogs": []
+}
