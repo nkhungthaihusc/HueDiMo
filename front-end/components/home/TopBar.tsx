@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Menu, X, MapPin, Sparkles, Route, Globe, Wallet, Trophy, UserRound, LogOut } from "lucide-react";
+import { Menu, X, MapPin, Sparkles, Route, Globe, Wallet, Trophy, UserRound, LogOut, ShieldCheck, ArrowUpRight } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import UserAvatar from "@/components/ui/UserAvatar";
 
@@ -83,7 +83,13 @@ export default function TopBar(props: TopBarProps) {
           <div className="mt-3 border-t border-slate-100 pt-3">
             {user ? <>
               <button type="button" onClick={() => runAction(props.onOpenProfile)} className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-sm hover:bg-slate-50"><UserRound size={19} />Hồ sơ cá nhân</button>
-              {user.role === "admin" && <Link href="/admin" className="flex min-h-12 items-center rounded-xl px-3 text-sm font-semibold text-brand-700">Trang quản trị →</Link>}
+              {user.role === "admin" && (
+                <Link href="/admin" className="group flex min-h-12 items-center gap-3 rounded-xl border border-brand-700 bg-linear-to-r from-brand-800 to-brand-700 px-3 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:from-brand-900 hover:to-brand-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600">
+                  <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-white/15" aria-hidden="true"><ShieldCheck size={17} /></span>
+                  <span className="flex-1">Trang quản trị</span>
+                  <ArrowUpRight size={17} aria-hidden="true" className="motion-safe:transition-transform motion-safe:group-hover:translate-x-0.5 motion-safe:group-hover:-translate-y-0.5" />
+                </Link>
+              )}
               <button type="button" onClick={handleLogout} className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-sm text-rose-600 hover:bg-rose-50"><LogOut size={19} />Đăng xuất</button>
             </> : <Link href="/register" className="flex min-h-12 items-center justify-center rounded-xl bg-brand-50 text-sm font-semibold text-brand-700">Tạo tài khoản miễn phí</Link>}
           </div>

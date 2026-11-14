@@ -680,7 +680,7 @@ export const swaggerDocument = {
     "/api/auth/oauth-login": {
       post: {
         tags: ["Authentication"],
-        summary: "Đăng nhập hoặc đăng ký bằng tài khoản mạng xã hội (Google, Facebook)",
+        summary: "Đăng nhập hoặc đăng ký bằng tài khoản Google",
         description: "Xác minh phiên OAuth qua Supabase Auth rồi cấp token HueDiMo.",
         requestBody: {
           required: true,

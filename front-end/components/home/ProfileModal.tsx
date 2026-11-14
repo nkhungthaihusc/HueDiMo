@@ -21,6 +21,9 @@ import {
   User as UserIcon,
   Mail,
   ShieldCheck,
+  ArrowLeft,
+  ChevronRight,
+  KeyRound,
 } from "lucide-react";
 
 import type { Place } from "@/lib/types";
@@ -317,8 +320,12 @@ export default function ProfileModal({
 
           {user?.provider === "local" && (
             <button type="button" onClick={() => setActiveTab(activeTab === "password" ? "info" : "password")}
-              className="mb-3 rounded-lg px-3 py-2 text-sm font-semibold text-indigo-700 dark:text-indigo-300">
-              {activeTab === "password" ? "Về thông tin cá nhân" : "Đổi mật khẩu"}
+              className="group mb-3 flex min-h-12 w-full items-center gap-3 rounded-xl border border-brand-200 bg-linear-to-r from-brand-50 to-white px-3 py-2 text-left text-sm font-semibold text-brand-800 transition-colors hover:border-brand-400 hover:to-brand-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 dark:border-brand-800 dark:from-brand-900/40 dark:to-slate-900 dark:text-brand-200 dark:hover:to-brand-900/30">
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-brand-100 text-brand-700 dark:bg-brand-900 dark:text-brand-200" aria-hidden="true">
+                {activeTab === "password" ? <ArrowLeft size={17} /> : <KeyRound size={17} />}
+              </span>
+              <span className="flex-1">{activeTab === "password" ? "Về thông tin cá nhân" : "Đổi mật khẩu"}</span>
+              {activeTab !== "password" && <ChevronRight size={17} aria-hidden="true" className="motion-safe:transition-transform motion-safe:group-hover:translate-x-0.5" />}
             </button>
           )}
           {activeTab === "password" ? (
@@ -368,7 +375,7 @@ export default function ProfileModal({
                   </label>
                   {user?.provider && user.provider !== "local" ? (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 uppercase tracking-wider">
-                      {user.provider === "google" ? "Tài khoản Google" : user.provider === "facebook" ? "Tài khoản Facebook" : user.provider}
+                      {user.provider === "google" ? "Tài khoản Google" : "Tài khoản liên kết"}
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">

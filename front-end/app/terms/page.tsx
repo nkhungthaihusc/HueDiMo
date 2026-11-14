@@ -63,7 +63,7 @@ export default function TermsOfServicePage() {
               Tài khoản người dùng & Trách nhiệm
             </h2>
             <ul className="list-disc pl-5 space-y-1 text-xs">
-              <li>Bạn có thể đăng nhập bằng email hoặc thông qua các nhà cung cấp bên thứ ba (Google, Facebook OAuth).</li>
+              <li>Bạn có thể đăng nhập bằng email hoặc bằng tài khoản Google.</li>
               <li>Bạn chịu trách nhiệm bảo mật thông tin đăng nhập và mọi hoạt động diễn ra dưới tài khoản của mình.</li>
               <li>Nghiêm cấm hành vi giả mạo danh tính, tạo tài khoản ảo để gian lận điểm thưởng hoặc thao túng xếp hạng du lịch.</li>
             </ul>

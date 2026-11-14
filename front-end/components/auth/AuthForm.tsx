@@ -24,7 +24,6 @@ export default function AuthForm({ mode }: AuthFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [facebookLoading, setFacebookLoading] = useState(false);
 
   const isLogin = mode === "login";
 
@@ -108,30 +107,6 @@ export default function AuthForm({ mode }: AuthFormProps) {
     }
   };
 
-  const handleFacebookLogin = async () => {
-    try {
-      setFacebookLoading(true);
-      setError(null);
-      const redirectTo = getOAuthRedirectUrl(window.location.origin);
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider: "facebook",
-        options: {
-          redirectTo,
-        },
-      });
-      if (oauthError) {
-        setError(oauthError.message || "Không thể kết nối đến Facebook.");
-        toast.error(oauthError.message || "Lỗi Facebook Auth");
-        setFacebookLoading(false);
-      }
-    } catch {
-      const msg = "Đã xảy ra lỗi khi kết nối Facebook.";
-      setError(msg);
-      toast.error(msg);
-      setFacebookLoading(false);
-    }
-  };
-
   return (
     <div className="w-full max-w-[420px] rounded-2xl border border-slate-200 bg-white p-5 sm:p-8 shadow-sm">
       {/* Tab Switcher mượt mà giữa Đăng nhập và Đăng ký */}
@@ -170,14 +145,12 @@ export default function AuthForm({ mode }: AuthFormProps) {
         </p>
       </div>
 
-      {/* Các nút Social OAuth (Google & Facebook) */}
-      <div className="grid grid-cols-2 gap-3">
-        {/* Nút Google */}
+      <div className="grid">
         <button
           type="button"
           onClick={handleGoogleLogin}
-          disabled={submitting || googleLoading || facebookLoading}
-          className="group relative flex items-center justify-center gap-2.5 rounded-2xl border border-purple-100/90 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 shadow-2xs transition-ui hover:border-purple-200 hover:bg-purple-50/40 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
+          disabled={submitting || googleLoading}
+          className="group relative flex items-center justify-center min-h-11 gap-2.5 rounded-xl border border-purple-100/90 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 shadow-2xs transition-ui hover:border-purple-200 hover:bg-purple-50/40 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {googleLoading ? (
             <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
@@ -201,25 +174,9 @@ export default function AuthForm({ mode }: AuthFormProps) {
               />
             </svg>
           )}
-          <span>Google</span>
+          <span>Tiếp tục với Google</span>
         </button>
 
-        {/* Nút Facebook */}
-        <button
-          type="button"
-          onClick={handleFacebookLogin}
-          disabled={submitting || googleLoading || facebookLoading}
-          className="group relative flex items-center justify-center gap-2.5 rounded-2xl border border-purple-100/90 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 shadow-2xs transition-ui hover:border-purple-200 hover:bg-purple-50/40 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {facebookLoading ? (
-            <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[#1877F2] border-t-transparent" />
-          ) : (
-            <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="#1877F2">
-              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-            </svg>
-          )}
-          <span>Facebook</span>
-        </button>
       </div>
 
       {/* Đường phân cách thanh lịch */}

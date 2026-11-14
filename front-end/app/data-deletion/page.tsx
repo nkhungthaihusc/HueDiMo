@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Trash2, CheckCircle2, ShieldAlert, Mail, ExternalLink, HelpCircle } from "lucide-react";
+import { ArrowLeft, Trash2, CheckCircle2, ShieldAlert, Mail, HelpCircle } from "lucide-react";
 import { toast } from "@/components/ui/Toast";
 
 export default function DataDeletionPage() {
@@ -50,70 +50,21 @@ export default function DataDeletionPage() {
         <div className="mb-10 text-center">
           <div className="mx-auto mb-3 inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-800">
             <Trash2 className="h-3.5 w-3.5" />
-            <span>Facebook & Google Data Deletion Instructions</span>
+            <span>Quyền xóa dữ liệu</span>
           </div>
           <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
             Hướng Dẫn & Yêu Cầu Xóa Dữ Liệu
           </h1>
           <p className="mt-2 text-xs text-slate-500 max-w-lg mx-auto leading-relaxed">
-            Theo Quy chuẩn bảo vệ dữ liệu người dùng của Facebook (Meta) và pháp luật bảo mật, người dùng có toàn quyền gỡ bỏ và xóa vĩnh viễn dữ liệu tài khoản khỏi ứng dụng HueDiMo.
+            Bạn có thể gửi yêu cầu xóa dữ liệu tài khoản khỏi HueDiMo theo hướng dẫn bên dưới.
           </p>
         </div>
 
         {/* Content Box */}
         <div className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-10 shadow-xl shadow-slate-200/40 space-y-8">
-          {/* Method 1: Gỡ ứng dụng trực tiếp trên Facebook */}
           <section>
             <h2 className="flex items-center gap-2 text-base font-bold text-slate-900 mb-3">
-              <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-brand-600 text-white text-xs font-bold">
-                1
-              </span>
-              Cách 1: Gỡ bỏ liên kết HueDiMo trực tiếp trên Facebook
-            </h2>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Nếu bạn đã đăng nhập HueDiMo bằng tài khoản Facebook và muốn thu hồi quyền truy cập cũng như ngừng đồng bộ dữ liệu:
-            </p>
-
-            <ol className="mt-3 list-decimal pl-5 space-y-2 text-xs text-slate-600 leading-relaxed">
-              <li>
-                Truy cập vào tài khoản Facebook cá nhân của bạn, bấm vào ảnh đại diện góc trên bên phải $\rightarrow$ chọn <strong>Cài đặt & quyền riêng tư (Settings & Privacy)</strong> $\rightarrow$ chọn <strong>Cài đặt (Settings)</strong>.
-              </li>
-              <li>
-                Ở menu bên trái, tìm và chọn mục <strong>Ứng dụng và trang web (Apps and Websites)</strong>.
-              </li>
-              <li>
-                Tìm ứng dụng <strong>HueDiMo</strong> trong danh sách các ứng dụng đang hoạt động.
-              </li>
-              <li>
-                Bấm nút <strong>Gỡ (Remove)</strong> bên cạnh tên ứng dụng HueDiMo.
-              </li>
-              <li>
-                Tích chọn ô <em>"Đồng thời xóa các bài viết, video hoặc sự kiện mà HueDiMo đã đăng"</em> (nếu có) và bấm <strong>Gỡ</strong> để hoàn tất.
-              </li>
-            </ol>
-
-            <div className="mt-4 flex items-center gap-2">
-              <a
-                href="https://www.facebook.com/settings?tab=applications"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-brand-600 transition"
-              >
-                <span>Mở trang Cài đặt Ứng dụng Facebook</span>
-                <ExternalLink className="h-3.5 w-3.5" />
-              </a>
-            </div>
-          </section>
-
-          <hr className="border-slate-100" />
-
-          {/* Method 2: Yêu cầu xóa vĩnh viễn dữ liệu trên hệ thống máy chủ HueDiMo */}
-          <section>
-            <h2 className="flex items-center gap-2 text-base font-bold text-slate-900 mb-3">
-              <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-brand-600 text-white text-xs font-bold">
-                2
-              </span>
-              Cách 2: Gửi yêu cầu xóa toàn bộ dữ liệu khỏi máy chủ HueDiMo
+              Gửi yêu cầu xóa toàn bộ dữ liệu khỏi máy chủ HueDiMo
             </h2>
             <p className="text-xs text-slate-600 leading-relaxed">
               Sau khi nhận được yêu cầu, hệ thống sẽ tiến hành xóa vĩnh viễn các thông tin của bạn khỏi cơ sở dữ liệu (Bao gồm Họ tên, Email, Ảnh đại diện, Lịch sử check-in, Điểm số văn hóa và Lịch trình đã lưu) trong vòng <strong>24 đến 48 giờ làm việc</strong>.

@@ -80,7 +80,7 @@ export default function PrivacyPolicyPage() {
                   Đăng nhập qua Mạng xã hội (OAuth)
                 </div>
                 <p className="text-xs text-slate-500">
-                  Khi bạn đăng nhập bằng <strong>Google</strong> hoặc <strong>Facebook</strong>, chúng tôi chỉ tiếp nhận các thông tin cơ bản được bạn đồng ý chia sẻ: Họ tên, Địa chỉ email và Ảnh đại diện (Avatar).
+                  Khi bạn đăng nhập bằng <strong>Google</strong>, chúng tôi chỉ tiếp nhận các thông tin cơ bản được bạn đồng ý chia sẻ: Họ tên, Địa chỉ email và Ảnh đại diện (Avatar).
                 </p>
               </div>
 
@@ -159,7 +159,7 @@ export default function PrivacyPolicyPage() {
             </p>
             <ul className="list-disc pl-5 space-y-1 mt-2">
               <li>Xem và chỉnh sửa tên hiển thị, ảnh đại diện tại mục Hồ sơ cá nhân.</li>
-              <li>Hủy liên kết tài khoản Facebook hoặc Google khỏi HueDiMo.</li>
+              <li>Hủy liên kết tài khoản Google khỏi HueDiMo.</li>
               <li>Yêu cầu xóa toàn bộ tài khoản và các dữ liệu liên quan vĩnh viễn khỏi máy chủ của chúng tôi.</li>
             </ul>
             <div className="mt-3">

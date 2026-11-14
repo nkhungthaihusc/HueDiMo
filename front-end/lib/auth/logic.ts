@@ -151,7 +151,7 @@ export async function loginUser(
 }
 
 /**
- * Đăng nhập / Đăng ký qua OAuth (Google, Facebook)
+ * Đăng nhập / Đăng ký qua OAuth (Google)
  */
 export async function oauthLoginUser(providerAccessToken: string): Promise<{ ok: boolean; user?: User; error?: string }> {
   try {

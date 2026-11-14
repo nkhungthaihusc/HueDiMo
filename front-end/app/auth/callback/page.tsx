@@ -17,7 +17,7 @@ export default function AuthCallbackPage() {
 
     const handleOAuthSync = async () => {
       try {
-        // Lấy session từ Supabase sau khi Google / Facebook redirect về
+        // Lấy session từ Supabase sau khi Google redirect về
         const { data: { session }, error } = await supabase.auth.getSession();
 
         if (error) {
@@ -60,15 +60,13 @@ export default function AuthCallbackPage() {
 
     const syncWithBackend = async (session: Session) => {
       const oauthUser = session.user;
-      const provider = oauthUser.app_metadata?.provider || "oauth";
-      const providerName =
-        provider === "google"
-          ? "Google"
-          : provider === "facebook"
-          ? "Facebook"
-          : "mạng xã hội";
+      if (oauthUser.app_metadata?.provider !== "google") {
+        setErrorMsg("HueDiMo chỉ hỗ trợ Google cho đăng nhập qua bên thứ ba.");
+        setTimeout(() => router.replace("/login?error=oauth_failed"), 2000);
+        return;
+      }
 
-      setStatusText(`Đang đồng bộ hồ sơ HueDiMo từ ${providerName}...`);
+      setStatusText("Đang đồng bộ hồ sơ HueDiMo từ Google...");
 
       const metadata = oauthUser.user_metadata || {};
       const name =
@@ -80,7 +78,7 @@ export default function AuthCallbackPage() {
 
       const res = await oauthLoginUser(session.access_token);
       if (res.ok) {
-        toast.success(`Xin chào ${name}!`, `Đăng nhập ${providerName} thành công`);
+        toast.success(`Xin chào ${name}!`, "Đăng nhập Google thành công");
         // Kích hoạt sự kiện để AuthProvider cập nhật session
         window.dispatchEvent(new Event("huedimo-session-changed"));
         router.replace("/");

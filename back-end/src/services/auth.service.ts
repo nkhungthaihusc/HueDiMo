@@ -103,7 +103,7 @@ export const AuthService = {
   },
 
   /**
-   * Đăng nhập / Đăng ký bằng OAuth (Google, Facebook, etc.)
+   * Đăng nhập / Đăng ký bằng OAuth (Google)
    */
   async oauthLogin(
     email: string,

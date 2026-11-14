@@ -68,7 +68,7 @@ export const AuthController = {
       const { data: { user }, error } = await supabase.auth.getUser(accessToken);
       const provider = user?.app_metadata?.provider;
       if (error || !user?.email || !user.email_confirmed_at ||
-          (provider !== "google" && provider !== "facebook")) {
+          provider !== "google") {
         sendError(res, "UNAUTHORIZED", "Phiên đăng nhập mạng xã hội không hợp lệ.", 401);
         return;
       }
