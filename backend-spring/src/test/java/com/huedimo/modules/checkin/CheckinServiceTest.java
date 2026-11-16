@@ -92,6 +92,7 @@ class CheckinServiceTest {
     void checkin_whenValidWithoutGps_shouldAward100PointsAndIncrementCheckinCount() {
         mockSecurityContext(mockUser);
         when(placeRepository.findById("dai-noi-hue")).thenReturn(Optional.of(mockPlace));
+        when(userRepository.findByIdForUpdate(mockUser.getId())).thenReturn(Optional.of(mockUser));
         when(checkinRepository.existsByUserIdAndPlaceIdAndCreatedAtGreaterThanEqual(eq(mockUser.getId()), eq("dai-noi-hue"), any()))
                 .thenReturn(false);
 
@@ -115,7 +116,8 @@ class CheckinServiceTest {
         assertEquals(100, response.getPointsEarned());
         assertEquals(300, response.getTotalPoints());
         assertEquals(3, response.getTotalCheckins());
-        verify(userRepository).save(mockUser);
+        assertEquals(300, mockUser.getPoints());
+        assertEquals(3, mockUser.getCheckinCount());
         verify(checkinRepository).save(any(Checkin.class));
     }
 
@@ -148,6 +150,7 @@ class CheckinServiceTest {
     void checkin_whenGpsWithinRadius_shouldSucceed() {
         mockSecurityContext(mockUser);
         when(placeRepository.findById("dai-noi-hue")).thenReturn(Optional.of(mockPlace));
+        when(userRepository.findByIdForUpdate(mockUser.getId())).thenReturn(Optional.of(mockUser));
         when(checkinRepository.existsByUserIdAndPlaceIdAndCreatedAtGreaterThanEqual(eq(mockUser.getId()), eq("dai-noi-hue"), any()))
                 .thenReturn(false);
 
@@ -175,6 +178,7 @@ class CheckinServiceTest {
     void checkin_whenAlreadyCheckedInToday_shouldThrowConflictException() {
         mockSecurityContext(mockUser);
         when(placeRepository.findById("dai-noi-hue")).thenReturn(Optional.of(mockPlace));
+        when(userRepository.findByIdForUpdate(mockUser.getId())).thenReturn(Optional.of(mockUser));
         when(checkinRepository.existsByUserIdAndPlaceIdAndCreatedAtGreaterThanEqual(eq(mockUser.getId()), eq("dai-noi-hue"), any()))
                 .thenReturn(true);
 

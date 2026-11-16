@@ -1,9 +1,9 @@
 # 🚀 HueDiMo API Migration Checklist (Express -> Spring Boot)
 
-Danh sách này đã được đối chiếu 100% với file `app.ts` và thư mục `routes` bên Express để đảm bảo không bỏ sót bất kỳ API nào.
+Checklist đối chiếu các route Express với Spring Boot.
 
-- [x] : Đã hoàn thành bên Spring Boot
-- [ ] : Chưa làm, cần code tiếp (Migrate từ Express)
+- [x] : Đã có route hoặc chức năng tương đương bên Spring Boot
+- [ ] : Còn thiếu route hoặc hành vi tương thích với Express
 - [✨] : Phát triển mới hoàn toàn (Chưa từng có ở Express)
 
 ---
@@ -11,20 +11,26 @@ Danh sách này đã được đối chiếu 100% với file `app.ts` và thư m
 ## PHẦN 1: CÁC API CẦN MIGRATE TỪ EXPRESS SANG SPRING BOOT
 
 ### 1. 🔐 Authentication (`/api/auth`)
-- [x] `POST /api/auth/send-otp` - Gửi mã OTP qua Email xác thực đăng ký (Mới ✨)
-- [x] `POST /api/auth/verify-otp` - Xác thực mã OTP 6 số (Mới ✨)
+- [x] `POST /api/auth/send-otp` - Gửi mã OTP đăng ký qua email (route riêng của Spring)
+- [x] `POST /api/auth/verify-otp` - Xác thực mã OTP đăng ký (route riêng của Spring)
+- [ ] `POST /api/auth/register/otp` - Route gửi OTP đăng ký của Express, có giới hạn lượt gửi
 - [x] `POST /api/auth/register` - Đăng ký tài khoản (kèm kiểm tra OTP đã xác thực)
 - [x] `POST /api/auth/login` - Đăng nhập
 - [x] `GET /api/auth/me` - Lấy Profile (yêu cầu token)
-- [x] `POST /api/auth/refresh` - Refresh Token
+- [ ] `POST /api/auth/refresh` - Spring đã cấp token mới, còn thiếu lưu và luân chuyển refresh token như Express
 - [x] `PATCH /api/auth/profile` - Cập nhật thông tin User
-- [x] `POST /api/auth/logout` - Đăng xuất
-- [ ] `POST /api/auth/oauth-login` - Đăng nhập Google/Facebook
+- [ ] `POST /api/auth/logout` - Spring đã có route, còn thiếu thu hồi refresh token
+- [ ] `POST /api/auth/password/reset/otp` - Gửi OTP đặt lại mật khẩu
+- [ ] `POST /api/auth/password/reset/verify` - Xác thực OTP đặt lại mật khẩu
+- [ ] `POST /api/auth/password/reset` - Đặt lại mật khẩu bằng OTP
+- [ ] `POST /api/auth/password/otp` - Gửi OTP đổi mật khẩu cho người đã đăng nhập
+- [ ] `PATCH /api/auth/password` - Đổi mật khẩu cho người đã đăng nhập
+- [ ] `POST /api/auth/oauth-login` - Đăng nhập Google qua Supabase
 
 ### 2. 📍 Places (`/api/places`)
 - [x] `GET /api/places` - Danh sách địa điểm đã duyệt
 - [x] `GET /api/places/search` - Tìm kiếm địa điểm
-- [x] `GET /api/places/{id}` - Chi tiết địa điểm
+- [x] `GET /api/places/{id}` - Chi tiết địa điểm (route riêng của Spring)
 - [x] `POST /api/places` - Đóng góp địa điểm mới (kèm gán `createdBy`)
 - [x] `GET /api/places/my` - Danh sách địa điểm tự đóng góp (đã hoàn thiện ✨)
 
@@ -34,6 +40,7 @@ Danh sách này đã được đối chiếu 100% với file `app.ts` và thư m
 
 ### 4. 🗺️ Itinerary (`/api/itineraries` hoặc `/api/itinerary`)
 - [x] `POST /api/itineraries/generate` - AI tự tạo lịch trình
+- [ ] `POST /api/itineraries` và `POST /api/itinerary` - Route tương thích cũ của Express; chọn tạo lịch trình khi `places` là mảng, còn lại chuyển sang lưu
 - [x] `POST /api/itineraries/save` - Lưu lịch trình vào DB
 - [x] `GET /api/itineraries/my` - Lấy lịch trình của tôi
 - [x] `GET /api/itineraries/community` - Khám phá lịch trình cộng đồng
@@ -53,28 +60,40 @@ Danh sách này đã được đối chiếu 100% với file `app.ts` và thư m
 - [x] `GET /api/leaderboard` - Bảng xếp hạng User
 
 ### 6. 👑 Admin (`/api/admin`)
-- [ ] `GET /api/admin/stats` - Dashboard Statistics
-- [ ] `GET /api/admin/places` - Quản lý tất cả địa điểm (CRUD & Duyệt)
-- [ ] `PATCH /api/admin/places/{id}/status` - Duyệt địa điểm
+- [x] `GET /api/admin/stats` - Thống kê dashboard
+- [x] `GET /api/admin/places` - Tìm kiếm, lọc và phân trang địa điểm
+- [ ] `POST /api/admin/places` - Admin tạo địa điểm
+- [x] `PATCH /api/admin/places/{id}/status` - Duyệt, từ chối hoặc đưa về chờ duyệt
 - [ ] `PUT /api/admin/places/{id}` - Admin sửa địa điểm
 - [ ] `DELETE /api/admin/places/{id}` - Admin xóa địa điểm
 - [ ] `GET /api/admin/places/export-csv` - Xuất CSV
+- [ ] `POST /api/admin/places/import-csv/preview` - Xem trước dữ liệu CSV
 - [ ] `POST /api/admin/places/import-csv` - Nhập CSV
-- [ ] `GET /api/admin/users` - Quản lý Users
-- [ ] `PATCH /api/admin/users/{id}/role` - Cấp quyền Admin
-- [ ] `PATCH /api/admin/users/{id}/status` - Khóa tài khoản
+- [x] `GET /api/admin/users` - Tìm kiếm, lọc theo vai trò và phân trang tài khoản
+- [x] `GET /api/admin/users/{id}` - Chi tiết tài khoản
+- [x] `PATCH /api/admin/users/{id}/role` - Đổi vai trò
+- [x] `PATCH /api/admin/users/{id}/status` - Khóa hoặc mở khóa tài khoản
 - [ ] `GET /api/admin/reviews` - Quản lý Review
 - [ ] `DELETE /api/admin/reviews/{id}` - Xóa Review vi phạm
 - [ ] `GET /api/admin/itineraries` - Quản lý lịch trình
+- [ ] `PATCH /api/admin/itineraries/{id}/visibility` - Đổi trạng thái công khai
 - [ ] `DELETE /api/admin/itineraries/{id}` - Xóa lịch trình
+- [ ] `GET /api/admin/itinerary-comments` - Danh sách bình luận lịch trình
+- [ ] `DELETE /api/admin/itinerary-comments/{id}` - Xóa bình luận vi phạm
 - [ ] `GET /api/admin/logs` - Audit Logs
+- [ ] `DELETE /api/admin/logs` - Xóa nhật ký
 - [ ] `GET /api/admin/ai-settings` - Cấu hình AI Prompt
+- [ ] `PUT /api/admin/ai-settings` - Cập nhật cấu hình AI
+- [ ] `POST /api/admin/ai-settings/test` - Kiểm tra cấu hình AI
 
 ### 7. 🌤️ Utilities (`/api/...`)
 - [x] `POST /api/upload/presign` - Cấp URL tải ảnh trực tiếp lên Supabase Storage
-- [ ] `GET /api/weather/rainfall` - Thời tiết / Lượng mưa
+- [x] `GET /api/weather/rainfall` - Lượng mưa từ Vrain, có dữ liệu dự phòng
 - [ ] `GET /api/water-levels` - Cảnh báo ngập lụt
-- [ ] `GET /api/reverse-geocode` - Chuyển đổi Tọa độ -> Tên đường
+- [x] `GET /api/reverse-geocode` - Tra địa chỉ qua `GEOCODING_REVERSE_URL`; trả tọa độ khi thiếu cấu hình hoặc nhà cung cấp gặp lỗi
+- [ ] `GET /api/map/**` - Proxy tài nguyên Goong cho bản đồ web
+- [ ] `GET /api/health` - Kiểm tra kết nối cơ sở dữ liệu
+- [x] Swagger UI và OpenAPI - Spring dùng `/swagger-ui/index.html` và `/v3/api-docs`. Express dùng `/api/docs` và `/api/docs.json`.
 
 ---
 

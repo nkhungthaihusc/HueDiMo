@@ -21,7 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 @RestController
-@RequestMapping("/api/itineraries/{id}/comments")
+@RequestMapping({"/api/itineraries/{id}/comments", "/api/itinerary/{id}/comments"})
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ItineraryCommentController {

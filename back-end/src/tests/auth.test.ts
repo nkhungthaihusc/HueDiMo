@@ -388,6 +388,46 @@ async function runTests() {
     }
   });
 
+  await test("Đăng nhập Google - xác minh danh tính Google của tài khoản đã đăng ký qua email", async () => {
+    const email = `google_${testEmail}`;
+    const { supabase } = require("../config/supabase") as typeof import("../config/supabase");
+    const supabaseMock = mock.method(supabase.auth, "getUser", async () => ({
+      data: { user: {
+        id: "fixture-supabase-id",
+        email,
+        email_confirmed_at: "2026-01-01T00:00:00Z",
+        app_metadata: { provider: "email", providers: ["email", "google"] },
+        user_metadata: { full_name: "Google Tester" },
+        identities: [{ provider: "google", identity_data: { sub: "1234567890" } }],
+      } },
+      error: null,
+    }));
+    const realFetch = globalThis.fetch;
+    const googleMock = mock.method(globalThis, "fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+      if (input !== "https://openidconnect.googleapis.com/v1/userinfo") return realFetch(input, init);
+      const token = new Headers(init?.headers).get("authorization");
+      const sub = token === "Bearer matching-google-token" ? "1234567890" : "different-google-user";
+      return Promise.resolve(Response.json({ sub, email, email_verified: true }));
+    });
+    try {
+      assert.equal((await authRequest("oauth-login", { accessToken: "supabase-token" })).status, 401);
+      assert.equal((await authRequest("oauth-login", {
+        accessToken: "supabase-token", googleAccessToken: "different-google-token",
+      })).status, 401);
+      const login = await authRequest("oauth-login", {
+        accessToken: "supabase-token", googleAccessToken: "matching-google-token",
+      });
+      assert.equal(login.status, 200);
+      const { data } = await login.json();
+      assert.equal(data.user.email, email);
+      assert.equal(data.user.provider, "google");
+      assert.ok(data.accessToken);
+    } finally {
+      googleMock.mock.restore();
+      supabaseMock.mock.restore();
+    }
+  });
+
   console.log(`\n=== TỔNG KẾT: ${passed} PASS, ${failed} FAIL ===\n`);
 
   server.close();

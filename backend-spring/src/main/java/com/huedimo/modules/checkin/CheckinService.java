@@ -44,9 +44,9 @@ public class CheckinService {
      */
     @Transactional
     public CheckinResponse checkin(CheckinRequest request) {
-        User currentUser = SecurityUtils.getCurrentUser();
+        var userId = SecurityUtils.getCurrentUser().getId();
         String placeId = request.getPlaceId().trim();
-        log.info("User {} checking in at place {}", currentUser.getId(), placeId);
+        log.info("User {} checking in at place {}", userId, placeId);
 
         // 1. Kiểm tra địa điểm có tồn tại hay không
         Place place = placeRepository.findById(placeId)
@@ -68,6 +68,9 @@ public class CheckinService {
         }
 
         // 3. Kiểm tra chống spam: Trong ngày hôm nay đã check-in địa điểm này chưa
+        User currentUser = userRepository.findByIdForUpdate(userId)
+                .filter(user -> !"banned".equals(user.getStatus()))
+                .orElseThrow(() -> new ForbiddenException("Tài khoản không được phép check-in."));
         LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
         boolean alreadyCheckedIn = checkinRepository.existsByUserIdAndPlaceIdAndCreatedAtGreaterThanEqual(
                 currentUser.getId(), placeId, startOfDay);
@@ -93,7 +96,6 @@ public class CheckinService {
 
         currentUser.setPoints(newPoints);
         currentUser.setCheckinCount(newCheckinCount);
-        userRepository.save(currentUser);
 
         return CheckinResponse.builder()
                 .checkinId(savedCheckin.getId())

@@ -154,12 +154,12 @@ export async function loginUser(
 /**
  * Đăng nhập / Đăng ký qua OAuth (Google)
  */
-export async function oauthLoginUser(providerAccessToken: string): Promise<{ ok: boolean; user?: User; error?: string }> {
+export async function oauthLoginUser(supabaseAccessToken: string, googleAccessToken?: string | null): Promise<{ ok: boolean; user?: User; error?: string }> {
   try {
     const res = await fetch(`${BACKEND_URL}/api/auth/oauth-login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ accessToken: providerAccessToken }),
+      body: JSON.stringify({ accessToken: supabaseAccessToken, googleAccessToken: googleAccessToken ?? undefined }),
     });
 
     const json = await res.json();

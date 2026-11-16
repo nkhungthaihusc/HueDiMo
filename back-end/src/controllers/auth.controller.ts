@@ -88,7 +88,7 @@ export const AuthController = {
    */
   async oauthLogin(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { accessToken } = req.body ?? {};
+      const { accessToken, googleAccessToken } = req.body ?? {};
       if (typeof accessToken !== "string" || !accessToken || accessToken.length > 8192) {
         sendError(res, "UNAUTHORIZED", "Vui lòng xác thực với nhà cung cấp đăng nhập.", 401);
         return;
@@ -96,17 +96,48 @@ export const AuthController = {
 
       const { supabase } = await import("../config/supabase.js");
       const { data: { user }, error } = await supabase.auth.getUser(accessToken);
-      const provider = user?.app_metadata?.provider;
-      if (error || !user?.email || !user.email_confirmed_at ||
-          provider !== "google") {
+      if (error || !user?.email || !user.email_confirmed_at) {
         sendError(res, "UNAUTHORIZED", "Phiên đăng nhập mạng xã hội không hợp lệ.", 401);
         return;
+      }
+
+      // Supabase's primary provider describes sign-up, not the current Google identity.
+      if (user.app_metadata?.provider !== "google" || googleAccessToken !== undefined) {
+        const googleIdentity = user.identities?.find((identity) => identity.provider === "google");
+        if (!googleIdentity || typeof googleAccessToken !== "string" || !googleAccessToken || googleAccessToken.length > 8192) {
+          sendError(res, "UNAUTHORIZED", "Không thể xác minh phiên Google. Vui lòng đăng nhập lại bằng Google.", 401);
+          return;
+        }
+
+        try {
+          const google = await fetch("https://openidconnect.googleapis.com/v1/userinfo", {
+            headers: { Authorization: `Bearer ${googleAccessToken}` },
+            signal: AbortSignal.timeout(5000),
+            redirect: "error",
+          });
+          if (google.status >= 500 || google.status === 429) {
+            sendError(res, "UPSTREAM_ERROR", "Google chưa phản hồi xác thực. Vui lòng thử lại sau.", 503);
+            return;
+          }
+          const identity = google.ok ? await google.json() as {
+            sub?: unknown; email?: unknown; email_verified?: unknown;
+          } : null;
+          if (!identity || typeof identity.sub !== "string" || identity.sub !== googleIdentity.identity_data?.sub ||
+              typeof identity.email !== "string" || identity.email_verified !== true ||
+              identity.email.toLowerCase() !== user.email.toLowerCase()) {
+            sendError(res, "UNAUTHORIZED", "Không thể xác minh phiên Google. Vui lòng đăng nhập lại bằng Google.", 401);
+            return;
+          }
+        } catch {
+          sendError(res, "UPSTREAM_ERROR", "Không thể kết nối để xác thực Google. Vui lòng thử lại sau.", 503);
+          return;
+        }
       }
 
       const metadata = user.user_metadata;
       const name = typeof metadata.full_name === "string" ? metadata.full_name : undefined;
       const avatar = typeof metadata.avatar_url === "string" ? metadata.avatar_url : undefined;
-      const result = await AuthService.oauthLogin(user.email, name, avatar, provider);
+      const result = await AuthService.oauthLogin(user.email, name, avatar, "google");
       sendSuccess(res, result, 200);
     } catch (error: any) {
       if (error.code === "FORBIDDEN") {

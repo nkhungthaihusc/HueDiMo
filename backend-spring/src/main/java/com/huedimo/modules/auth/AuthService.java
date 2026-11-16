@@ -4,7 +4,10 @@ import java.util.UUID;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.huedimo.common.exceptions.status401.UnauthorizedException;
+import com.huedimo.common.exceptions.status403.ForbiddenException;
 import com.huedimo.common.utils.SecurityUtils;
 import com.huedimo.modules.auth.dto.AuthResponse;
 import com.huedimo.modules.auth.dto.LoginRequest;
@@ -90,9 +93,10 @@ public class AuthService {
     public AuthResponse login(LoginRequest request) {
         final User user = userRepository.findByEmail(request.getEmail().toLowerCase().trim())
                 .orElseThrow(() -> new RuntimeException("Tài khoảng không tồn tại"));
-        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+        if (user.getPasswordHash() == null || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new RuntimeException("Mật khẩu không chính xác!");
         }
+        ensureAccountIsActive(user);
         return AuthResponse.builder()
                 .id(user.getId())
                 .name(user.getName())
@@ -126,6 +130,7 @@ public class AuthService {
 
         final User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Tài khoảng không tồn tại hoặc token không hợp lệ"));
+        ensureAccountIsActive(user);
         return AuthResponse.builder()
                 .id(userId)
                 .name(user.getName())
@@ -139,8 +144,17 @@ public class AuthService {
                 .build();
     }
 
+    private static void ensureAccountIsActive(User user) {
+        if ("banned".equals(user.getStatus())) {
+            throw new ForbiddenException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.");
+        }
+    }
+
+    @Transactional
     public UserResponse updateUser(UpdateProfileRequest request) {
-        User currentUser = SecurityUtils.getCurrentUser();
+        User currentUser = userRepository.findByIdForUpdate(SecurityUtils.getCurrentUser().getId())
+                .orElseThrow(() -> new UnauthorizedException("Tài khoản không còn tồn tại."));
+        ensureAccountIsActive(currentUser);
 
         // 1. Kiểm tra và cập nhật thông tin nếu có truyền lên
         if (request.getName() != null && !request.getName().isBlank()) {
@@ -149,18 +163,15 @@ public class AuthService {
         if (request.getAvatarUrl() != null) {
             currentUser.setAvatarUrl(request.getAvatarUrl().trim());
         }
-        // 2. Lưu xuống CSDL
-        User savedUser = userRepository.save(currentUser);
-
         return UserResponse.builder()
-                .id(savedUser.getId())
-                .name(savedUser.getName())
-                .email(savedUser.getEmail())
-                .avatarUrl(savedUser.getAvatarUrl())
-                .role(savedUser.getRole())
-                .status(savedUser.getStatus())
-                .points(savedUser.getPoints())
-                .checkinCount(savedUser.getCheckinCount())
+                .id(currentUser.getId())
+                .name(currentUser.getName())
+                .email(currentUser.getEmail())
+                .avatarUrl(currentUser.getAvatarUrl())
+                .role(currentUser.getRole())
+                .status(currentUser.getStatus())
+                .points(currentUser.getPoints())
+                .checkinCount(currentUser.getCheckinCount())
                 .build();
     }
 }

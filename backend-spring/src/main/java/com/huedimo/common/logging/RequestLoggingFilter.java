@@ -85,14 +85,15 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
     private void logRequestBox(ContentCachingRequestWrapper req, ContentCachingResponseWrapper res, String timeStr, long duration) {
         String method = req.getMethod();
         String uri = req.getRequestURI();
-        String queryString = req.getQueryString();
+        String queryString = uri.equals(req.getContextPath() + "/api/reverse-geocode") ? null : req.getQueryString();
         String fullUrl = queryString != null ? uri + "?" + queryString : uri;
         int status = res.getStatus();
 
         String clientIp = extractClientIp(req);
         String authUser = extractAuthenticatedUser();
 
-        String payload = extractBody(req.getContentAsByteArray(), req.getContentType());
+        String payload = uri.startsWith(req.getContextPath() + "/api/auth/") ? null
+                : extractBody(req.getContentAsByteArray(), req.getContentType());
         String responseBody = extractBody(res.getContentAsByteArray(), res.getContentType());
 
         // Color calculations

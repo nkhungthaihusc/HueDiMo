@@ -791,7 +791,10 @@ export const swaggerDocument = {
               schema: {
                 type: "object",
                 required: ["accessToken"],
-                properties: { accessToken: { type: "string", description: "Access token của phiên Supabase Auth" } },
+                properties: {
+                  accessToken: { type: "string", description: "Access token của phiên Supabase Auth" },
+                  googleAccessToken: { type: "string", description: "Token Google để xác minh danh tính đã liên kết với tài khoản Supabase" },
+                },
               },
             },
           },

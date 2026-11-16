@@ -60,12 +60,6 @@ export default function AuthCallbackPage() {
 
     const syncWithBackend = async (session: Session) => {
       const oauthUser = session.user;
-      if (oauthUser.app_metadata?.provider !== "google") {
-        setErrorMsg("HueDiMo chỉ hỗ trợ Google cho đăng nhập qua bên thứ ba.");
-        setTimeout(() => router.replace("/login?error=oauth_failed"), 2000);
-        return;
-      }
-
       setStatusText("Đang đồng bộ hồ sơ HueDiMo từ Google...");
 
       const metadata = oauthUser.user_metadata || {};
@@ -76,7 +70,8 @@ export default function AuthCallbackPage() {
         oauthUser.email?.split("@")[0] ||
         "Người dùng";
 
-      const res = await oauthLoginUser(session.access_token);
+      const res = await oauthLoginUser(session.access_token, session.provider_token);
+      if (!active) return;
       if (res.ok) {
         toast.success(`Xin chào ${name}!`, "Đăng nhập Google thành công");
         // Kích hoạt sự kiện để AuthProvider cập nhật session

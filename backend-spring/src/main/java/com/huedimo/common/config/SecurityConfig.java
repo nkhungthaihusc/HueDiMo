@@ -1,5 +1,8 @@
 package com.huedimo.common.config;
 
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,6 +15,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.huedimo.common.logging.RequestLoggingFilter;
 import com.huedimo.modules.auth.jwt.JwtAuthenticationFilter;
@@ -28,6 +33,19 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public UrlBasedCorsConfigurationSource corsConfigurationSource(
+            @Value("${APP_CORS_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:3000}") List<String> origins) {
+        var cors = new CorsConfiguration();
+        cors.setAllowedOrigins(origins.stream().map(String::strip).filter(origin -> !origin.isEmpty()).toList());
+        cors.setAllowedMethods(List.of("GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        cors.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        cors.setExposedHeaders(List.of("Content-Disposition"));
+        var source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", cors);
+        return source;
     }
 
     @Bean
@@ -56,12 +74,13 @@ public class SecurityConfig {
                                 "/api/auth/refresh",
                                 "/api/auth/logout"
                         ).permitAll()
-                        .requestMatchers("/api/itineraries/my").authenticated()
+                        .requestMatchers("/api/itineraries/my", "/api/itinerary/my").authenticated()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/itineraries/community").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/itineraries/{id}").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/itineraries/{id}/comments").permitAll()
+                        .requestMatchers("/api/itineraries/community", "/api/itinerary/community").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/itineraries/{id}", "/api/itinerary/{id}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/itineraries/{id}/comments", "/api/itinerary/{id}/comments").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/leaderboard").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/weather/rainfall", "/api/reverse-geocode").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(requestLoggingFilter, JwtAuthenticationFilter.class);

@@ -50,7 +50,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UUID userUuid = UUID.fromString(userId);
-                Optional<User> userOptional = userRepository.findById(userUuid);
+                Optional<User> userOptional = userRepository.findById(userUuid)
+                        .filter(user -> !"banned".equals(user.getStatus()));
                 if (userOptional.isPresent()) {
                     User user = userOptional.get();
                     var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().toUpperCase()));
