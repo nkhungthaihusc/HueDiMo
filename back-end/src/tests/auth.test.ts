@@ -428,6 +428,50 @@ async function runTests() {
     }
   });
 
+  await test("Tải ảnh đại diện - báo rõ khóa Storage thiếu hoặc bị từ chối và dùng được Secret key", async () => {
+    const config = ["SUPABASE_URL", "SUPABASE_SECRET_KEY", "SUPABASE_SERVICE_ROLE_KEY"] as const;
+    const previous = config.map((key) => [key, process.env[key]] as const);
+    process.env.SUPABASE_URL = "https://storage-fixture.example.com";
+    delete process.env.SUPABASE_SECRET_KEY;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const realFetch = globalThis.fetch;
+    const storageMock = mock.method(globalThis, "fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+      if (typeof input !== "string" || !input.startsWith("https://storage-fixture.example.com/")) {
+        return realFetch(input, init);
+      }
+      const key = new Headers(init?.headers).get("apikey");
+      if (key !== "sb_secret_fixture") return Promise.resolve(Response.json({ message: "Invalid key" }, { status: 403 }));
+      const path = new URL(input).pathname.replace("/storage/v1", "");
+      return Promise.resolve(Response.json({ url: `${path}?token=fixture` }));
+    });
+    const presign = () => fetch(`${baseUrl}/api/upload/presign`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ folder: "avatars", files: [{ contentType: "image/png", size: 1024 }] }),
+    });
+    try {
+      const missing = await presign();
+      assert.equal(missing.status, 503);
+      assert.match((await missing.json()).error.message, /chưa cấu hình/);
+      process.env.SUPABASE_SECRET_KEY = "sb_secret_invalid_fixture";
+      const rejected = await presign();
+      assert.equal(rejected.status, 503);
+      assert.match((await rejected.json()).error.message, /từ chối khóa/);
+      process.env.SUPABASE_SECRET_KEY = "sb_secret_fixture";
+      const signed = await presign();
+      assert.equal(signed.status, 200);
+      const { data: [avatar] } = await signed.json();
+      assert.match(avatar.uploadUrl, /\/huedimo-media\/avatars\/[\w-]+\.png\?token=fixture$/);
+      assert.match(avatar.publicUrl, /\/object\/public\/huedimo-media\/avatars\/[\w-]+\.png$/);
+    } finally {
+      storageMock.mock.restore();
+      for (const [key, value] of previous) {
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+      }
+    }
+  });
+
   console.log(`\n=== TỔNG KẾT: ${passed} PASS, ${failed} FAIL ===\n`);
 
   server.close();

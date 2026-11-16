@@ -106,7 +106,7 @@ JWT_REFRESH_SECRET=your_super_secret_refresh_jwt_key
 
 # Supabase Storage (nếu sử dụng tính năng upload ảnh)
 SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+SUPABASE_SECRET_KEY=your_supabase_secret_key
 
 # Optional: API Keys thời tiết / AI Itinerary
 OPENAI_API_KEY=your_openai_or_gemini_key

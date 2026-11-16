@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { imageExtensions, mediaFolders, signUploads } from "../services/storage.service";
+import { imageExtensions, mediaFolders, signUploads, StorageUploadError } from "../services/storage.service";
 import { sendSuccess, sendError } from "../utils/response";
 
 export async function presignUploads(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -24,6 +24,10 @@ export async function presignUploads(req: Request, res: Response, next: NextFunc
     res.set("Cache-Control", "no-store");
     sendSuccess(res, await signUploads(folder, extensions));
   } catch (error) {
+    if (error instanceof StorageUploadError) {
+      sendError(res, "UPSTREAM_ERROR", error.message, error.status);
+      return;
+    }
     next(error);
   }
 }

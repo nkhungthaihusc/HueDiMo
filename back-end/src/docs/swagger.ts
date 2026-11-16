@@ -1561,6 +1561,8 @@ export const swaggerDocument = {
           },
           "400": { description: "Thông tin ảnh không hợp lệ" },
           "401": { description: "Yêu cầu đăng nhập" },
+          "502": { description: "Supabase Storage không thể cấp URL tải ảnh" },
+          "503": { description: "Thiếu hoặc sai khóa máy chủ Supabase Storage" },
         },
       },
     },
