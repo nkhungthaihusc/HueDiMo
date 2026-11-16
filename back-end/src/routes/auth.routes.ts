@@ -11,7 +11,9 @@ const limitOtpRequests = rateLimit({
   standardHeaders: "draft-8",
   legacyHeaders: false,
   handler: (_req, res) => {
-    sendError(res, "RATE_LIMITED", "Bạn đã yêu cầu quá nhiều mã OTP. Vui lòng thử lại sau.", 429);
+    const retryAfter = Number(res.get("Retry-After"));
+    const details = Number.isFinite(retryAfter) && retryAfter > 0 ? { retryAfterSeconds: retryAfter } : undefined;
+    sendError(res, "RATE_LIMITED", "Bạn đã yêu cầu quá nhiều mã OTP. Vui lòng thử lại sau.", 429, details);
   },
 });
 

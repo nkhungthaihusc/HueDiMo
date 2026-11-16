@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { AuthService } from "../services/auth.service";
-import { sendEmailOtp } from "../services/email-otp.service";
+import { sendEmailOtp, type EmailOtpResult } from "../services/email-otp.service";
 import { UserModel } from "../models/user.model";
 import { sendSuccess, sendError } from "../utils/response";
 import type { AuthenticatedRequest } from "../middleware/auth.middleware";
@@ -14,11 +14,12 @@ function normalizeEmail(value: unknown): string | null {
   return email.length <= 254 && EMAIL_REGEX.test(email) ? email : null;
 }
 
-function sendOtpResponse(res: Response, result: "sent" | "cooldown" | "unconfigured" | "delivery_failed"): void {
+function sendOtpResponse(res: Response, result: EmailOtpResult): void {
   if (result === "sent") {
     sendSuccess(res, { sent: true });
-  } else if (result === "cooldown") {
-    sendError(res, "RATE_LIMITED", "Vui lòng chờ ít nhất 60 giây giữa hai lần yêu cầu mã OTP.", 429);
+  } else if (typeof result === "object") {
+    res.set("Retry-After", String(result.retryAfterSeconds));
+    sendError(res, "RATE_LIMITED", "Vui lòng chờ trước khi yêu cầu mã OTP mới.", 429, result);
   } else {
     sendError(res, "UPSTREAM_ERROR", "Không thể gửi mã OTP. Vui lòng thử lại sau.", 503);
   }

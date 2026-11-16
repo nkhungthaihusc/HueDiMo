@@ -192,6 +192,8 @@ Dự án phát triển cho cộng đồng yêu Huế và du khách thập phươ
 
 Mã gồm 6 chữ số, có hiệu lực trong 5 phút và chỉ dùng một lần cho đúng email và thao tác. Có tối đa 5 lượt thử mỗi mã và cần chờ 60 giây giữa hai lần gửi cho cùng email và thao tác. Express giới hạn các yêu cầu gửi mã công khai theo IP. Nếu chạy sau reverse proxy, cấu hình `TRUSTED_PROXY_ADDRESSES` bằng danh sách IP hoặc CIDR của các proxy tin cậy.
 
+Trên Render Free, cấu hình `RESEND_API_KEY` và `MAIL_FROM` trên dịch vụ Express để gửi email qua HTTPS. `MAIL_FROM` là địa chỉ thuộc tên miền đã xác minh trên Resend, ví dụ `HueDiMo <otp@example.com>`. Khi có `RESEND_API_KEY`, Express gửi qua Resend. `AUTH_OTP_SECRET` vẫn cần có.
+
 ### Khóa Goong cho bản đồ web
 
 Đặt khóa Maptiles mới trong `GOONG_MAP_KEY` của backend Express. Đặt

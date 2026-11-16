@@ -5,7 +5,7 @@ export class ApiError extends Error {
   readonly code: string;
   readonly status: number;
 
-  constructor(message: string, code: string, status: number) {
+  constructor(message: string, code: string, status: number, public readonly details?: unknown) {
     super(message);
     this.name = "ApiError";
     this.code = code;
@@ -27,6 +27,7 @@ export async function readApiResponse<T>(res: Response): Promise<T> {
       err?.message ?? `Yêu cầu thất bại (mã lỗi ${res.status}).`,
       err?.code ?? "INTERNAL_ERROR",
       res.status,
+      err?.details,
     );
   }
 

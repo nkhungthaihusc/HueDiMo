@@ -10,6 +10,7 @@ async function runTests() {
   process.env.AUTH_OTP_SECRET = randomBytes(32).toString("hex");
   process.env.MAIL_USERNAME = "sender@example.com";
   process.env.MAIL_PASSWORD = "smtp-mock";
+  delete process.env.RESEND_API_KEY;
   const otpEmails: { text: string; html: string }[] = [];
   const transport = nodemailer.createTransport({ jsonTransport: true });
   transport.use("compile", (mail, done) => {
@@ -120,7 +121,16 @@ async function runTests() {
     assert.equal((await authRequest("register", { name: testName, email: testEmail, password: testPassword, otp: "381749" })).status, 422);
     assert.equal((await authRequest("register/otp", { email: testEmail.toUpperCase() })).status, 200);
     const otp = await readOtp("đăng ký tài khoản");
-    assert.equal((await authRequest("register/otp", { email: testEmail })).status, 429);
+    await pool.query(
+      `UPDATE public.otps SET created_at = (NOW() AT TIME ZONE 'UTC') - INTERVAL '40 seconds'
+       WHERE email = $1 AND purpose = 'register'`,
+      [testEmail],
+    );
+    const cooldown = await authRequest("register/otp", { email: testEmail });
+    assert.equal(cooldown.status, 429);
+    const { error } = await cooldown.json();
+    assert.ok(error.details.retryAfterSeconds > 0 && error.details.retryAfterSeconds <= 20);
+    assert.equal(cooldown.headers.get("retry-after"), String(error.details.retryAfterSeconds));
     const res = await fetch(`${baseUrl}/api/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -337,6 +347,34 @@ async function runTests() {
     assert.equal((await change(nextOtp, "WrongPassword@")).status, 422);
     assert.equal((await change(nextOtp)).status, 200);
     assert.equal((await authRequest("login", { email: testEmail, password: newPassword })).status, 200);
+  });
+
+  await test("Đăng ký - gửi OTP qua HTTPS khi cấu hình Resend", async () => {
+    const realFetch = globalThis.fetch;
+    const email = `https_${testEmail}`;
+    process.env.RESEND_API_KEY = "fixture-resend-key";
+    process.env.MAIL_FROM = "HueDiMo <otp@example.com>";
+    let sent = false;
+    const fetchMock = mock.method(globalThis, "fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+      if (input !== "https://api.resend.com/emails") return realFetch(input, init);
+      assert.equal(init?.method, "POST");
+      assert.equal(new Headers(init?.headers).get("authorization"), "Bearer fixture-resend-key");
+      const body = JSON.parse(String(init?.body));
+      assert.equal(body.to, email);
+      assert.equal(body.from, process.env.MAIL_FROM);
+      otpEmails.push({ text: body.text, html: body.html });
+      sent = true;
+      return Promise.resolve(Response.json({ id: "fixture-message" }));
+    });
+    try {
+      assert.equal((await authRequest("register/otp", { email })).status, 200);
+      assert.ok(sent);
+      await readOtp("đăng ký tài khoản");
+    } finally {
+      fetchMock.mock.restore();
+      delete process.env.RESEND_API_KEY;
+      delete process.env.MAIL_FROM;
+    }
   });
 
   console.log(`\n=== TỔNG KẾT: ${passed} PASS, ${failed} FAIL ===\n`);

@@ -37,7 +37,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
   const isLogin = mode === "login";
   const isReset = mode === "reset";
   const isRegister = mode === "register";
-  const { remaining, startCooldown } = useOtpCooldown(`${mode}:${email.trim().toLowerCase()}`);
+  const { remaining, startCooldown, resumeCooldown } = useOtpCooldown(`${mode}:${email.trim().toLowerCase()}`);
 
   const requestOtp = async () => {
     if (sendingOtp || submitting || remaining > 0 || !emailInput.current?.reportValidity()) return;
@@ -53,7 +53,9 @@ export default function AuthForm({ mode }: AuthFormProps) {
       setOtpSent(true);
       startCooldown();
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "Không thể gửi mã OTP.");
+      if (!resumeCooldown(failure)) {
+        setError(failure instanceof Error ? failure.message : "Không thể gửi mã OTP.");
+      }
     } finally {
       setSendingOtp(false);
     }

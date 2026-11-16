@@ -13,7 +13,7 @@ export default function ChangePasswordForm({ onChanged }: { onChanged: () => voi
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const { remaining, startCooldown } = useOtpCooldown("change-password");
+  const { remaining, startCooldown, resumeCooldown } = useOtpCooldown("change-password");
 
   async function requestOtp() {
     if (sending || busy || remaining > 0) return;
@@ -25,7 +25,9 @@ export default function ChangePasswordForm({ onChanged }: { onChanged: () => voi
       setSent(true);
       startCooldown();
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "Không thể gửi mã OTP.");
+      if (!resumeCooldown(failure)) {
+        setError(failure instanceof Error ? failure.message : "Không thể gửi mã OTP.");
+      }
     } finally {
       setSending(false);
     }
