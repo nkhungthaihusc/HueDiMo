@@ -512,9 +512,39 @@ export const swaggerDocument = {
           content: { "application/json": { schema: { $ref: "#/components/schemas/EmailOtpRequest" } } },
         },
         responses: {
-          "202": { description: "Đã tiếp nhận yêu cầu gửi mã" },
+          "200": { description: "Đã gửi mã OTP" },
+          "404": { description: "Email này chưa được đăng ký." },
           "422": { description: "Email không hợp lệ" },
           "429": { description: "Vượt giới hạn yêu cầu gửi mã" },
+          "503": { description: "Dịch vụ gửi mã OTP không khả dụng" },
+        },
+      },
+    },
+    "/api/auth/password/reset/verify": {
+      post: {
+        tags: ["Authentication"],
+        security: [],
+        summary: "Xác minh OTP và cấp token đặt lại mật khẩu có hiệu lực 5 phút",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: {
+            type: "object",
+            required: ["email", "otp"],
+            properties: {
+              email: { type: "string", format: "email" },
+              otp: { type: "string", pattern: "^[0-9]{6}$" },
+            },
+          } } },
+        },
+        responses: {
+          "200": {
+            description: "OTP đã được xác minh",
+            content: { "application/json": { schema: {
+              type: "object",
+              properties: { data: { type: "object", properties: { resetToken: { type: "string" } } } },
+            } } },
+          },
+          "422": { description: "Email hoặc mã OTP không hợp lệ" },
           "503": { description: "Máy chủ chưa cấu hình xác thực OTP" },
         },
       },
@@ -523,15 +553,15 @@ export const swaggerDocument = {
       post: {
         tags: ["Authentication"],
         security: [],
-        summary: "Đặt lại mật khẩu bằng mã OTP",
+        summary: "Đặt lại mật khẩu sau khi đã xác minh OTP",
         requestBody: {
           required: true,
           content: { "application/json": { schema: {
             type: "object",
-            required: ["email", "otp", "newPassword", "confirmPassword"],
+            required: ["email", "resetToken", "newPassword", "confirmPassword"],
             properties: {
               email: { type: "string", format: "email" },
-              otp: { type: "string", pattern: "^[0-9]{6}$" },
+              resetToken: { type: "string", maxLength: 2048 },
               newPassword: { type: "string", format: "password", minLength: 8 },
               confirmPassword: { type: "string", format: "password" },
             },
@@ -539,7 +569,7 @@ export const swaggerDocument = {
         },
         responses: {
           "200": { description: "Đã đặt lại mật khẩu" },
-          "422": { description: "Email, mã OTP hoặc mật khẩu không hợp lệ" },
+          "422": { description: "Email, token đặt lại hoặc mật khẩu không hợp lệ" },
           "503": { description: "Máy chủ chưa cấu hình xác thực OTP" },
         },
       },

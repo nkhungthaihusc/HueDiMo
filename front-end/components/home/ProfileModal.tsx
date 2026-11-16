@@ -329,7 +329,7 @@ export default function ProfileModal({
             </button>
           )}
           {activeTab === "password" ? (
-            <ChangePasswordForm onChanged={() => {
+            <ChangePasswordForm email={user?.email ?? ""} onChanged={() => {
               clearSession();
               onClose();
               window.location.assign("/login");

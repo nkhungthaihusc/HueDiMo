@@ -153,8 +153,37 @@ export const AuthController = {
     }
 
     try {
-      await AuthService.queuePasswordResetOtp(email, secret);
-      sendSuccess(res, { accepted: true }, 202);
+      const result = await AuthService.requestPasswordResetOtp(email, secret);
+      if (result === "ineligible") {
+        sendError(res, "NOT_FOUND", "Email này chưa được đăng ký.", 404);
+        return;
+      }
+      sendOtpResponse(res, result);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async verifyPasswordResetOtp(req: Request, res: Response, next: NextFunction): Promise<void> {
+    const email = normalizeEmail(req.body?.email);
+    const { otp } = req.body ?? {};
+    if (!email || typeof otp !== "string" || !OTP_REGEX.test(otp)) {
+      sendError(res, "VALIDATION_ERROR", "Vui lòng nhập email hợp lệ và mã OTP gồm 6 chữ số.", 422);
+      return;
+    }
+    const secret = process.env.AUTH_OTP_SECRET;
+    if (!secret) {
+      sendError(res, "UPSTREAM_ERROR", "Máy chủ chưa cấu hình xác thực OTP.", 503);
+      return;
+    }
+    try {
+      const resetToken = await AuthService.verifyPasswordResetOtp(email, otp, secret);
+      if (!resetToken) {
+        sendError(res, "VALIDATION_ERROR", "Mã OTP không đúng, đã hết hạn hoặc đã hết lượt thử.", 422);
+        return;
+      }
+      res.set("Cache-Control", "no-store");
+      sendSuccess(res, { resetToken });
     } catch (error) {
       next(error);
     }
@@ -162,9 +191,9 @@ export const AuthController = {
 
   async resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
     const email = normalizeEmail(req.body?.email);
-    const { newPassword, confirmPassword, otp } = req.body ?? {};
-    if (!email || typeof otp !== "string" || !OTP_REGEX.test(otp)) {
-      sendError(res, "VALIDATION_ERROR", "Vui lòng nhập email hợp lệ và mã OTP gồm 6 chữ số.", 422);
+    const { newPassword, confirmPassword, resetToken } = req.body ?? {};
+    if (!email || typeof resetToken !== "string" || !resetToken || resetToken.length > 2048) {
+      sendError(res, "VALIDATION_ERROR", "Vui lòng xác minh OTP trước khi đặt lại mật khẩu.", 422, { field: "resetToken" });
       return;
     }
     if (typeof newPassword !== "string" || newPassword.length < 8 ||
@@ -179,8 +208,8 @@ export const AuthController = {
     }
 
     try {
-      if (!await AuthService.resetPassword(email, newPassword, otp, secret)) {
-        sendError(res, "VALIDATION_ERROR", "Mã OTP không đúng, đã hết hạn hoặc đã hết lượt thử.", 422);
+      if (!await AuthService.resetPassword(email, newPassword, resetToken, secret)) {
+        sendError(res, "VALIDATION_ERROR", "Phiên đặt lại mật khẩu không hợp lệ hoặc đã hết hạn. Vui lòng xác minh lại OTP.", 422, { field: "resetToken" });
         return;
       }
       sendSuccess(res, { changed: true });

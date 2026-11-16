@@ -291,18 +291,20 @@ async function runTests() {
     }
   });
 
-  await test("Quên mật khẩu - mã hết hạn bị từ chối, mã mới dùng một lần và thu hồi refresh token", async () => {
+  await test("Quên mật khẩu - xác minh OTP trước, sau đó dùng token một lần để đổi mật khẩu", async () => {
     const signedIn = await (await authRequest("login", { email: testEmail, password: testPassword })).json();
     const missing = await authRequest("password/reset/otp", { email: `missing_${testEmail}` });
     const requested = await authRequest("password/reset/otp", { email: testEmail });
-    assert.equal(requested.status, 202);
-    assert.equal(missing.status, requested.status);
-    assert.deepEqual(await missing.json(), await requested.json());
+    assert.equal(missing.status, 404);
+    assert.equal((await missing.json()).error.code, "NOT_FOUND");
+    assert.equal(requested.status, 200);
     const expiredOtp = await readOtp("đặt lại mật khẩu");
     const newPassword = "ResetPassword123@";
-    const reset = (otp: string) => authRequest("password/reset", {
-      email: testEmail, otp, newPassword, confirmPassword: newPassword,
+    const verify = (otp: string) => authRequest("password/reset/verify", { email: testEmail, otp });
+    const reset = (resetToken?: string) => authRequest("password/reset", {
+      email: testEmail, resetToken, newPassword, confirmPassword: newPassword,
     });
+    assert.equal((await reset()).status, 422);
     await pool.query(
       `UPDATE public.otps
        SET created_at = (NOW() AT TIME ZONE 'UTC') - INTERVAL '6 minutes',
@@ -310,11 +312,20 @@ async function runTests() {
        WHERE email = $1 AND purpose = 'reset_password'`,
       [testEmail],
     );
-    assert.equal((await reset(expiredOtp)).status, 422);
-    assert.equal((await authRequest("password/reset/otp", { email: testEmail })).status, 202);
+    assert.equal((await verify(expiredOtp)).status, 422);
+    assert.equal((await authRequest("password/reset/otp", { email: testEmail })).status, 200);
     const otp = await readOtp("đặt lại mật khẩu");
-    assert.equal((await reset(otp)).status, 200);
     assert.equal((await reset(otp)).status, 422);
+    const verification = await verify(otp);
+    assert.equal(verification.status, 200);
+    assert.equal(verification.headers.get("cache-control"), "no-store");
+    const { data: { resetToken } } = await verification.json();
+    assert.equal(typeof resetToken, "string");
+    assert.equal((await verify(otp)).status, 422);
+    assert.equal((await authRequest("login", { email: testEmail, password: testPassword })).status, 200);
+    assert.equal((await authRequest("login", { email: testEmail, password: newPassword })).status, 401);
+    assert.equal((await reset(resetToken)).status, 200);
+    assert.equal((await reset(resetToken)).status, 422);
     assert.equal((await authRequest("refresh", { refreshToken: signedIn.data.refreshToken })).status, 401);
     assert.equal((await authRequest("login", { email: testEmail, password: testPassword })).status, 401);
     assert.equal((await authRequest("login", { email: testEmail, password: newPassword })).status, 200);

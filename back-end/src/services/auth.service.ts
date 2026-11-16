@@ -15,6 +15,8 @@ const REFRESH_TOKEN_EXPIRES_IN = "30d";
 const ACCESS_TOKEN_MINUTES = 15;
 const REFRESH_TOKEN_DAYS = 30;
 const SALT_ROUNDS = 10;
+const PASSWORD_RESET_AUDIENCE = "huedimo-password-reset";
+export const PASSWORD_RESET_TOKEN_TTL_SECONDS = 300;
 
 export interface AuthTokens {
   accessToken: string;
@@ -64,7 +66,20 @@ function passwordOtpSubject(user: PasswordAccount): string {
   return JSON.stringify([user.id, user.password_hash]);
 }
 
-async function replacePassword(client: PoolClient, user: PasswordAccount, nextHash: string): Promise<boolean> {
+async function findPasswordAccountByEmail(email: string): Promise<PasswordAccount | null> {
+  const user = await UserModel.findByEmail(email);
+  if (!user?.password_hash || user.provider !== "local" || user.status === "banned") return null;
+  return { id: user.id, email: user.email, password_hash: user.password_hash };
+}
+
+function passwordResetSigningKey(user: PasswordAccount, secret: string): Buffer {
+  // A successful password update changes the signing key, invalidating any outstanding reset token.
+  return crypto.createHmac("sha256", secret)
+    .update(JSON.stringify([PASSWORD_RESET_AUDIENCE, user.id, user.email, user.password_hash]))
+    .digest();
+}
+
+async function replacePassword(client: Pick<PoolClient, "query">, user: PasswordAccount, nextHash: string): Promise<boolean> {
   const result = await client.query(
     `WITH changed AS (
        UPDATE public.users SET password_hash = $1, updated_at = NOW()
@@ -88,17 +103,10 @@ export const AuthService = {
     return sendEmailOtp(user.email, "change_password", passwordOtpSubject(user), secret);
   },
 
-  async queuePasswordResetOtp(email: string, secret: string) {
-    const user = await UserModel.findByEmail(email);
-    if (user?.provider === "local" && user.status !== "banned" && user.password_hash) {
-      void sendEmailOtp(user.email, "reset_password", passwordOtpSubject({ ...user, password_hash: user.password_hash }), secret)
-        .then((result) => {
-          if (result === "unconfigured" || result === "delivery_failed") {
-            console.warn("Không thể gửi email OTP đặt lại mật khẩu:", result);
-          }
-        })
-        .catch(() => console.error("Không thể xử lý yêu cầu OTP đặt lại mật khẩu."));
-    }
+  async requestPasswordResetOtp(email: string, secret: string) {
+    const user = await findPasswordAccountByEmail(email);
+    if (!user) return "ineligible";
+    return sendEmailOtp(user.email, "reset_password", passwordOtpSubject(user), secret);
   },
 
   async changePassword(userId: string, currentPassword: string, newPassword: string, otp: string, otpSecret: string) {
@@ -112,17 +120,34 @@ export const AuthService = {
     return changed ? "changed" : "invalid_otp";
   },
 
-  async resetPassword(email: string, newPassword: string, otp: string, secret: string) {
-    const user = await UserModel.findByEmail(email);
-    if (!user?.password_hash || user.provider !== "local" || user.status === "banned") return false;
-
-    const account = { ...user, password_hash: user.password_hash };
+  async verifyPasswordResetOtp(email: string, otp: string, secret: string) {
+    const user = await findPasswordAccountByEmail(email);
+    if (!user) return null;
     return withVerifiedEmailOtp(
-      email, "reset_password", passwordOtpSubject(account), otp, secret,
-      async (client) => replacePassword(client, account, await bcrypt.hash(newPassword, SALT_ROUNDS)),
+      user.email, "reset_password", passwordOtpSubject(user), otp, secret,
+      async () => jwt.sign({}, passwordResetSigningKey(user, secret), {
+        algorithm: "HS256",
+        audience: PASSWORD_RESET_AUDIENCE,
+        subject: user.id,
+        expiresIn: PASSWORD_RESET_TOKEN_TTL_SECONDS,
+      }),
     );
   },
 
+  async resetPassword(email: string, newPassword: string, resetToken: string, secret: string) {
+    const user = await findPasswordAccountByEmail(email);
+    if (!user) return false;
+    try {
+      jwt.verify(resetToken, passwordResetSigningKey(user, secret), {
+        algorithms: ["HS256"],
+        audience: PASSWORD_RESET_AUDIENCE,
+        subject: user.id,
+      });
+    } catch {
+      return false;
+    }
+    return replacePassword(pool, user, await bcrypt.hash(newPassword, SALT_ROUNDS));
+  },
   /**
    * Tạo cặp Access Token (15 phút) và Refresh Token (30 ngày)
    * Kèm ngày giờ hết hạn chi tiết (ISO 8601 string)
