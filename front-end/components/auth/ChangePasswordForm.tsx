@@ -1,47 +1,40 @@
 "use client";
 
-import Script from "next/script";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { authFetch, readApiResponse } from "@/lib/api/client";
 import { toast } from "@/components/ui/Toast";
+import { useOtpCooldown } from "@/lib/auth/useOtpCooldown";
 
-type Turnstile = {
-  render: (element: HTMLElement, options: Record<string, unknown>) => string;
-  reset: (id: string) => void;
-  remove: (id: string) => void;
-};
-
-const sitekey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 const backend = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
 
 export default function ChangePasswordForm({ onChanged }: { onChanged: () => void }) {
-  const container = useRef<HTMLDivElement>(null);
-  const widget = useRef<string | null>(null);
-  const [ready, setReady] = useState(false);
-  const [token, setToken] = useState("");
+  const [otp, setOtp] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const { remaining, startCooldown } = useOtpCooldown("change-password");
 
-  useEffect(() => {
-    if (!ready || !sitekey || !container.current) return;
-    const api = (window as Window & { turnstile?: Turnstile }).turnstile;
-    if (!api) return;
-    widget.current = api.render(container.current, {
-      sitekey, action: "change_password", size: "flexible",
-      callback: setToken,
-      "expired-callback": () => setToken(""),
-      "error-callback": () => { setToken(""); setError("Không thể tải CAPTCHA. Hãy mở lại biểu mẫu."); },
-    });
-    return () => {
-      if (widget.current !== null) api.remove(widget.current);
-      widget.current = null;
-    };
-  }, [ready]);
+  async function requestOtp() {
+    if (sending || busy || remaining > 0) return;
+    setSending(true);
+    setError("");
+    try {
+      await readApiResponse(await authFetch(`${backend}/api/auth/password/otp`, { method: "POST" }));
+      setOtp("");
+      setSent(true);
+      startCooldown();
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "Không thể gửi mã OTP.");
+    } finally {
+      setSending(false);
+    }
+  }
 
   return (
     <form className="space-y-3" onSubmit={async (event) => {
       event.preventDefault();
-      if (busy || !token) return;
+      if (busy || sending || !sent || otp.length !== 6) return;
       const data = new FormData(event.currentTarget);
       const currentPassword = data.get("currentPassword");
       const newPassword = data.get("newPassword");
@@ -55,7 +48,7 @@ export default function ChangePasswordForm({ onChanged }: { onChanged: () => voi
       try {
         await readApiResponse(await authFetch(`${backend}/api/auth/password`, {
           method: "PATCH",
-          body: JSON.stringify({ currentPassword, newPassword, confirmPassword, captchaToken: token }),
+          body: JSON.stringify({ currentPassword, newPassword, confirmPassword, otp }),
         }));
         toast.success("Đã đổi mật khẩu. Vui lòng đăng nhập lại.");
         onChanged();
@@ -63,10 +56,6 @@ export default function ChangePasswordForm({ onChanged }: { onChanged: () => voi
         setError(failure instanceof Error ? failure.message : "Không thể đổi mật khẩu.");
       } finally {
         setBusy(false);
-        setToken("");
-        if (widget.current !== null) {
-          (window as Window & { turnstile?: Turnstile }).turnstile?.reset(widget.current);
-        }
       }
     }}>
       {([
@@ -81,15 +70,25 @@ export default function ChangePasswordForm({ onChanged }: { onChanged: () => voi
             className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900" />
         </label>
       ))}
-      {sitekey ? (
-        <>
-          <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
-            onReady={() => setReady(true)} onError={() => setError("Không thể tải CAPTCHA.")} />
-          <div ref={container} />
-        </>
-      ) : <p role="status" className="text-sm">Tính năng đổi mật khẩu đang chờ cấu hình CAPTCHA.</p>}
+      <div className="flex flex-wrap items-end gap-2">
+        {sent && (
+          <label className="block min-w-36 flex-1 text-sm font-medium">
+            Mã OTP qua email
+            <input name="change-password-otp" type="text" inputMode="numeric"
+              autoComplete="section-change-otp one-time-code"
+              required maxLength={6} pattern="[0-9]{6}" value={otp}
+              onChange={(event) => setOtp(event.target.value.replace(/\D/g, ""))}
+              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900" />
+          </label>
+        )}
+        <button type="button" onClick={requestOtp} disabled={sending || busy || remaining > 0}
+          className="rounded-xl border border-indigo-200 px-3 py-2 text-sm font-semibold text-indigo-700 disabled:opacity-50">
+          {sending ? "Đang gửi…" : remaining > 0 ? `Gửi lại mã (${remaining}s)` : sent ? "Gửi lại mã" : "Gửi mã OTP"}
+        </button>
+      </div>
+      {sent && <p role="status" className="text-sm">Mã đã được gửi đến email tài khoản và có hiệu lực trong 5 phút.</p>}
       {error && <p role="alert" className="text-sm text-rose-600">{error}</p>}
-      <button type="submit" disabled={busy || !token}
+      <button type="submit" disabled={busy || sending || !sent || otp.length !== 6}
         className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
         {busy ? "Đang đổi mật khẩu…" : "Đổi mật khẩu"}
       </button>

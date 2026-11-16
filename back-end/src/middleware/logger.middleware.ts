@@ -47,7 +47,7 @@ function sanitizeData(data: any): any {
   }
 
   const clone: Record<string, any> = {};
-  const sensitiveKeys = ["password", "currentPassword", "newPassword", "confirmPassword", "captchaToken", "password_hash", "token", "refreshToken", "accessToken", "authorization", "secret"];
+  const sensitiveKeys = ["password", "currentPassword", "newPassword", "confirmPassword", "otp", "password_hash", "token", "refreshToken", "accessToken", "authorization", "secret"];
 
   for (const key of Object.keys(data)) {
     const val = data[key];

@@ -1,4 +1,4 @@
-import { getAccessToken, refreshTokens, clearSession } from "@/lib/auth/logic";
+import { getAccessToken, refreshTokens } from "@/lib/auth/logic";
 import type { Place } from "@/lib/types";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
@@ -29,7 +29,10 @@ function normalizePlace(raw: any): Place {
     images: Array.isArray(raw.images) && raw.images.length > 0 ? raw.images : (raw.image_url ? [raw.image_url] : undefined),
     address: raw.address || undefined,
     openingHours: raw.opening_hours || raw.openingHours || undefined,
-    duration: raw.estimated_duration_minutes ? `${raw.estimated_duration_minutes} phút` : undefined,
+    duration: raw.estimated_duration_minutes > 0 ? `${raw.estimated_duration_minutes} phút` : undefined,
+    dressCode: raw.dress_code?.trim() || undefined,
+    rules: Array.isArray(raw.rules) ? raw.rules : undefined,
+    activities: Array.isArray(raw.activities) ? raw.activities : undefined,
     bestTime: raw.best_time_to_visit || raw.bestTime || undefined,
     highlights: Array.isArray(raw.highlights) ? raw.highlights : undefined,
     notes: raw.notes || undefined,
@@ -41,7 +44,10 @@ function normalizePlace(raw: any): Place {
  * Tự động xoay vòng token nếu token hết hạn (401).
  * Địa điểm sẽ được lưu với trạng thái Chờ duyệt (status: 'pending') và cần Admin duyệt trước khi hiển thị công khai.
  */
-export async function contributePlace(data: Partial<Place>): Promise<ContributePlaceResponse> {
+export async function contributePlace(data: Partial<Place> & {
+  estimated_duration_minutes?: number;
+  dress_code?: string;
+}): Promise<ContributePlaceResponse> {
   let token = getAccessToken();
 
   // Nếu chưa có accessToken nhưng có refreshToken, thử lấy trước
@@ -79,8 +85,7 @@ export async function contributePlace(data: Partial<Place>): Promise<ContributeP
         body: JSON.stringify(data),
       });
     } else {
-      clearSession();
-      throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.");
+      throw new Error("Không thể xác thực để gửi đóng góp. Vui lòng thử lại.");
     }
   }
 

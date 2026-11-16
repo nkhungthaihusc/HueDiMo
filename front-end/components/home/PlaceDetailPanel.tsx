@@ -99,7 +99,30 @@ function calculateDistanceMeters(lat1: number, lon1: number, lat2: number, lon2:
   return R * c;
 }
 
-export default function PlaceDetailPanel({
+export default function PlaceDetailPanel(props: PlaceDetailPanelProps) {
+  if (props.place.status === "pending") {
+    return (
+      <div className="place-pending-panel glass-strong pointer-events-auto w-full rounded-3xl border border-white/40 p-4 shadow-2xl sm:w-[410px]">
+        <button
+          type="button"
+          onClick={props.onBack}
+          aria-label="Quay lại danh sách"
+          className="mb-3 inline-flex h-10 items-center gap-2 rounded-full border border-ink-200 px-4 text-xs font-bold text-ink-800 hover:bg-ink-100"
+        >
+          <span aria-hidden="true">←</span> Quay lại
+        </button>
+        <h2 className="break-words text-lg font-extrabold text-ink-900">{props.place.name}</h2>
+        <p role="status" className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-950">
+          Địa điểm đang chờ duyệt
+        </p>
+      </div>
+    );
+  }
+
+  return <ApprovedPlaceDetails {...props} />;
+}
+
+function ApprovedPlaceDetails({
   place,
   onBack,
   onAddToItinerary,
@@ -569,13 +592,6 @@ export default function PlaceDetailPanel({
               <span>{cat.label}</span>
             </span>
 
-            {place.status === "pending" && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-xs font-bold text-amber-800">
-                <span>⏳</span>
-                <span>Chờ BQT duyệt</span>
-              </span>
-            )}
-
             {place.isLocal && (
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-xs font-medium text-emerald-800">
                 <span>🌿</span>
@@ -591,18 +607,6 @@ export default function PlaceDetailPanel({
               </span>
             )}
           </div>
-
-          {place.status === "pending" && (
-            <div className="mb-2.5 flex items-start gap-2.5 rounded-2xl bg-amber-50 border border-amber-200/80 p-2.5 text-amber-900 shadow-2xs text-xs">
-              <span className="text-sm">⏳</span>
-              <div>
-                <div className="font-bold text-amber-950">Địa điểm đóng góp đang chờ phê duyệt</div>
-                <div className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
-                  Địa điểm của bạn đã được gửi thành công. Sau khi Ban Quản Trị xác nhận, địa điểm sẽ hiển thị công khai cho tất cả du khách.
-                </div>
-              </div>
-            </div>
-          )}
 
           <h2 className="text-xl font-extrabold text-ink-900 leading-snug">
             {place.name}
@@ -869,7 +873,11 @@ export default function PlaceDetailPanel({
                 <div className="rounded-2xl bg-amber-500/10 border border-amber-500/20 p-3.5 space-y-2 text-xs text-amber-900">
                   <div className="flex items-center gap-2 font-bold text-amber-950">
                     <span className="text-base">👔</span>
-                    <span>Quy định trang phục & Văn hóa ứng xử</span>
+                    <span>
+                      {specifics.dressCode && specifics.rules?.length
+                        ? "Trang phục và nội quy"
+                        : specifics.dressCode ? "Trang phục" : "Nội quy"}
+                    </span>
                   </div>
 
                   {specifics.dressCode && (
@@ -912,14 +920,14 @@ export default function PlaceDetailPanel({
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="rounded-xl bg-cyan-50/60 p-2 border border-cyan-100">
+                    {specifics.hotel.checkInTime && <div className="rounded-xl bg-cyan-50/60 p-2 border border-cyan-100">
                       <span className="text-[10px] text-ink-500 block">Giờ nhận phòng (Check-in)</span>
-                      <span className="font-bold text-cyan-900 text-sm">{specifics.hotel.checkInTime || "14:00"}</span>
-                    </div>
-                    <div className="rounded-xl bg-cyan-50/60 p-2 border border-cyan-100">
+                      <span className="font-bold text-cyan-900 text-sm">{specifics.hotel.checkInTime}</span>
+                    </div>}
+                    {specifics.hotel.checkOutTime && <div className="rounded-xl bg-cyan-50/60 p-2 border border-cyan-100">
                       <span className="text-[10px] text-ink-500 block">Giờ trả phòng (Check-out)</span>
-                      <span className="font-bold text-cyan-900 text-sm">{specifics.hotel.checkOutTime || "12:00"}</span>
-                    </div>
+                      <span className="font-bold text-cyan-900 text-sm">{specifics.hotel.checkOutTime}</span>
+                    </div>}
                   </div>
 
                   {specifics.hotel.roomTypes && specifics.hotel.roomTypes.length > 0 && (

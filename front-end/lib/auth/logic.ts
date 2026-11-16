@@ -90,13 +90,14 @@ export function clearSession() {
 export async function registerUser(
   name: string,
   email: string,
-  password: string
+  password: string,
+  otp: string,
 ): Promise<{ ok: boolean; user?: User; error?: string }> {
   try {
     const res = await fetch(`${BACKEND_URL}/api/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, password, otp }),
     });
 
     const json = await res.json();
@@ -194,7 +195,19 @@ export function refreshTokens(): Promise<{ ok: boolean; accessToken?: string }> 
   }
   if (pendingRefresh?.token === token) return pendingRefresh.request;
 
-  const request = rotateRefreshToken(token).finally(() => {
+  const accountId = getSession()?.id;
+  const refresh = async () => {
+    if (getSession()?.id !== accountId) return { ok: false };
+    const latestRefreshToken = getRefreshToken();
+    if (latestRefreshToken === token) return rotateRefreshToken(token);
+
+    const accessToken = getAccessToken();
+    return latestRefreshToken && accessToken ? { ok: true, accessToken } : { ok: false };
+  };
+  const rotation = Promise.resolve(navigator.locks
+    ? navigator.locks.request("huedimo-refresh-token", refresh)
+    : refresh());
+  const request = rotation.catch(() => ({ ok: false })).finally(() => {
     if (pendingRefresh?.request === request) pendingRefresh = undefined;
   });
   pendingRefresh = { token, request };
@@ -244,11 +257,8 @@ export async function fetchCurrentUser(): Promise<User | null> {
     });
 
     // Nếu access token hết hạn (401), tự động xoay vòng refresh token
-    if (res.status === 401) {
-      const latestToken = getAccessToken();
-      const refreshRes = latestToken && latestToken !== token
-        ? { ok: true, accessToken: latestToken }
-        : await refreshTokens();
+    if (res.status === 401 && getAccessToken() === token) {
+      const refreshRes = await refreshTokens();
       if (!refreshRes.ok || !refreshRes.accessToken) {
         return getSession();
       }
@@ -259,8 +269,6 @@ export async function fetchCurrentUser(): Promise<User | null> {
         signal: AbortSignal.timeout(15000),
       headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (res.status === 401 && getAccessToken() === token) clearSession();
     }
 
     if (!res.ok || getAccessToken() !== token) return getSession();
@@ -286,6 +294,7 @@ export async function updateUserProfile(data: {
   avatarUrl?: string;
   avatar_url?: string;
 }): Promise<{ ok: boolean; user?: User; error?: string }> {
+  const accountId = getSession()?.id;
   let token = getAccessToken();
   if (!token) {
     return { ok: false, error: "Vui lòng đăng nhập lại để cập nhật thông tin." };
@@ -308,11 +317,10 @@ export async function updateUserProfile(data: {
       body: JSON.stringify(payload),
     });
 
-    if (res.status === 401) {
+    if (res.status === 401 && getSession()?.id === accountId) {
       const refreshRes = await refreshTokens();
       if (!refreshRes.ok || !refreshRes.accessToken) {
-        clearSession();
-        return { ok: false, error: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại." };
+        return { ok: false, error: "Không thể xác thực để cập nhật hồ sơ. Vui lòng thử lại." };
       }
       token = refreshRes.accessToken;
       res = await fetch(`${BACKEND_URL}/api/auth/profile`, {
@@ -334,7 +342,7 @@ export async function updateUserProfile(data: {
     }
 
     const rawUpdatedUser = json.data?.user;
-    if (rawUpdatedUser) {
+    if (rawUpdatedUser && getSession()?.id === accountId && getAccessToken() === token) {
       const updatedUser = normalizeUser(rawUpdatedUser);
       const currentRefreshToken = getRefreshToken() || "";
       const accessExpires = getAccessTokenExpiresAt() || undefined;

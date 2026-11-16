@@ -184,11 +184,13 @@ Tài liệu Swagger liệt kê chi tiết:
 Dự án phát triển cho cộng đồng yêu Huế và du khách thập phương. Phân phối dưới giấy phép [MIT](LICENSE).
 
 
-### CAPTCHA cho đổi mật khẩu trên web
+### OTP qua email cho tài khoản HueDiMo trên web
 
-Tạo widget Cloudflare Turnstile cho các tên miền frontend cần sử dụng. Cấu hình
-`NEXT_PUBLIC_TURNSTILE_SITE_KEY` khi build frontend và `TURNSTILE_SECRET_KEY` trên
-backend Express. Tài khoản đăng nhập bằng mật khẩu mở **Hồ sơ → Đổi mật khẩu**.
+1. Áp dụng [migration OTP](supabase/migrations/V3_auth_email_otps.sql) để mở rộng bảng `public.otps` hiện có trên Supabase. Nếu Spring vẫn kết nối vào cùng cơ sở dữ liệu, triển khai bản Spring có truy vấn `purpose IS NULL` sau migration và trước khi triển khai Express. Spring giữ các bản ghi OTP đăng ký hiện có.
+2. Cấu hình `AUTH_OTP_SECRET`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME` và `MAIL_PASSWORD` trong `back-end/.env` hoặc trên dịch vụ Express. Tạo `AUTH_OTP_SECRET` bằng `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` và dùng cùng giá trị trên các instance Express. Các biến `MAIL_*` dùng cùng cấu hình SMTP với Spring. Cổng 587 dùng STARTTLS, cổng 465 dùng TLS ngay khi kết nối.
+3. Triển khai Express và frontend. Bấm **Gửi mã OTP** ở **Tạo tài khoản**, **Đăng nhập → Quên mật khẩu?** hoặc **Hồ sơ → Đổi mật khẩu**. Đổi mật khẩu vẫn yêu cầu mật khẩu hiện tại. Đặt lại mật khẩu áp dụng cho tài khoản có mật khẩu HueDiMo.
+
+Mã gồm 6 chữ số, có hiệu lực trong 5 phút và chỉ dùng một lần cho đúng email và thao tác. Có tối đa 5 lượt thử mỗi mã và cần chờ 60 giây giữa hai lần gửi cho cùng email và thao tác. Express giới hạn các yêu cầu gửi mã công khai theo IP. Nếu chạy sau reverse proxy, cấu hình `TRUSTED_PROXY_ADDRESSES` bằng danh sách IP hoặc CIDR của các proxy tin cậy.
 
 ### Khóa Goong cho bản đồ web
 

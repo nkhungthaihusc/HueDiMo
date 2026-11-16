@@ -34,6 +34,9 @@ public class Otp {
     @Column(name = "otp_code", nullable = false, length = 10)
     private String otpCode;
 
+    @Column(name = "purpose", insertable = false, updatable = false)
+    private String purpose;
+
     @Column(name = "expiry_time", nullable = false)
     private LocalDateTime expiryTime;
 

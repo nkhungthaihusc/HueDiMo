@@ -1,9 +1,23 @@
 import "dotenv/config";
-import app from "../app";
+import assert from "node:assert/strict";
+import { randomBytes } from "node:crypto";
+import { mock } from "node:test";
+import nodemailer from "nodemailer";
 import { pool } from "../config/db";
 import type { Server } from "http";
 
 async function runTests() {
+  process.env.AUTH_OTP_SECRET = randomBytes(32).toString("hex");
+  process.env.MAIL_USERNAME = "sender@example.com";
+  process.env.MAIL_PASSWORD = "smtp-mock";
+  const otpEmails: { text: string; html: string }[] = [];
+  const transport = nodemailer.createTransport({ jsonTransport: true });
+  transport.use("compile", (mail, done) => {
+    otpEmails.push({ text: String(mail.data.text), html: String(mail.data.html) });
+    done();
+  });
+  const smtpMock = mock.method(nodemailer, "createTransport", () => transport);
+  const { default: app } = require("../app") as typeof import("../app");
   const PORT = 3097;
   const server: Server = app.listen(PORT);
 
@@ -27,6 +41,32 @@ async function runTests() {
   const testName = "Du Khách Huế";
   let accessToken = "";
   let refreshToken = "";
+
+  function authRequest(path: string, body: object, token?: string, method = "POST") {
+    return fetch(`${baseUrl}/api/auth/${path}`, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: JSON.stringify(body),
+    });
+  }
+
+  async function readOtp(purpose: string) {
+    for (let attempt = 0; attempt < 50 && !otpEmails.length; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    const email = otpEmails.shift();
+    assert.ok(email, "Expected an OTP email");
+    const otp = email.text.match(/\b\d{6}\b/)?.[0];
+    assert.ok(otp, "Expected a six-digit code in the text fallback");
+    assert.ok(email.html.includes(`<span dir="ltr">${otp}</span>`));
+    assert.doesNotMatch(email.html, /\/copy-otp/);
+    assert.ok(email.html.includes(purpose));
+    assert.ok(email.html.includes("5 phút"));
+    return otp;
+  }
 
   console.log("=== BẮT ĐẦU KIỂM THỬ AUTH DUAL TOKEN & REFRESH ROTATION ===");
 
@@ -71,10 +111,20 @@ async function runTests() {
 
   // 4. Register successful -> returns accessToken (15m) & refreshToken (30d) with expiry dates
   await test("POST /api/auth/register - Đăng ký thành công trả về 201 và cặp accessToken (15p) + refreshToken (30 ngày) kèm ngày hết hạn", async () => {
+    assert.equal((await authRequest("register", { name: testName, email: testEmail, password: testPassword })).status, 422);
+    await pool.query(
+      `INSERT INTO public.otps (email, otp_code, expiry_time, used, verified, created_at)
+       VALUES ($1, '381749', (NOW() AT TIME ZONE 'UTC') + INTERVAL '5 minutes', FALSE, FALSE, NOW() AT TIME ZONE 'UTC')`,
+      [testEmail],
+    );
+    assert.equal((await authRequest("register", { name: testName, email: testEmail, password: testPassword, otp: "381749" })).status, 422);
+    assert.equal((await authRequest("register/otp", { email: testEmail.toUpperCase() })).status, 200);
+    const otp = await readOtp("đăng ký tài khoản");
+    assert.equal((await authRequest("register/otp", { email: testEmail })).status, 429);
     const res = await fetch(`${baseUrl}/api/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: testName, email: testEmail, password: testPassword }),
+      body: JSON.stringify({ name: testName, email: testEmail, password: testPassword, otp }),
     });
     const json: any = await res.json();
     if (
@@ -91,6 +141,8 @@ async function runTests() {
     }
     accessToken = json.data.accessToken;
     refreshToken = json.data.refreshToken;
+    const { rows } = await pool.query("SELECT used FROM public.otps WHERE email = $1 AND purpose IS NULL", [testEmail]);
+    assert.deepEqual(rows, [{ used: false }]);
   });
 
   // 5. Register conflict
@@ -98,7 +150,7 @@ async function runTests() {
     const res = await fetch(`${baseUrl}/api/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: testName, email: testEmail, password: testPassword }),
+      body: JSON.stringify({ name: testName, email: testEmail, password: testPassword, otp: "123456" }),
     });
     const json: any = await res.json();
     if (res.status !== 409 || json.error?.code !== "CONFLICT") {
@@ -229,9 +281,68 @@ async function runTests() {
     }
   });
 
+  await test("Quên mật khẩu - mã hết hạn bị từ chối, mã mới dùng một lần và thu hồi refresh token", async () => {
+    const signedIn = await (await authRequest("login", { email: testEmail, password: testPassword })).json();
+    const missing = await authRequest("password/reset/otp", { email: `missing_${testEmail}` });
+    const requested = await authRequest("password/reset/otp", { email: testEmail });
+    assert.equal(requested.status, 202);
+    assert.equal(missing.status, requested.status);
+    assert.deepEqual(await missing.json(), await requested.json());
+    const expiredOtp = await readOtp("đặt lại mật khẩu");
+    const newPassword = "ResetPassword123@";
+    const reset = (otp: string) => authRequest("password/reset", {
+      email: testEmail, otp, newPassword, confirmPassword: newPassword,
+    });
+    await pool.query(
+      `UPDATE public.otps
+       SET created_at = (NOW() AT TIME ZONE 'UTC') - INTERVAL '6 minutes',
+           expiry_time = (NOW() AT TIME ZONE 'UTC') - INTERVAL '1 minute'
+       WHERE email = $1 AND purpose = 'reset_password'`,
+      [testEmail],
+    );
+    assert.equal((await reset(expiredOtp)).status, 422);
+    assert.equal((await authRequest("password/reset/otp", { email: testEmail })).status, 202);
+    const otp = await readOtp("đặt lại mật khẩu");
+    assert.equal((await reset(otp)).status, 200);
+    assert.equal((await reset(otp)).status, 422);
+    assert.equal((await authRequest("refresh", { refreshToken: signedIn.data.refreshToken })).status, 401);
+    assert.equal((await authRequest("login", { email: testEmail, password: testPassword })).status, 401);
+    assert.equal((await authRequest("login", { email: testEmail, password: newPassword })).status, 200);
+  });
+
+  await test("Đổi mật khẩu - cần đăng nhập, kiểm tra mật khẩu hiện tại và giới hạn 5 lượt OTP", async () => {
+    const currentPassword = "ResetPassword123@";
+    const newPassword = "ChangedPassword123@";
+    const login = await authRequest("login", { email: testEmail, password: currentPassword });
+    assert.equal(login.status, 200);
+    const { data } = await login.json();
+    assert.equal((await authRequest("password/otp", {})).status, 401);
+    const change = (otp: string, current = currentPassword) => authRequest("password", {
+      currentPassword: current, otp, newPassword, confirmPassword: newPassword,
+    }, data.accessToken, "PATCH");
+    assert.equal((await authRequest("password/otp", {}, data.accessToken)).status, 200);
+    const otp = await readOtp("đổi mật khẩu");
+    const wrongOtp = otp === "000000" ? "999999" : "000000";
+    for (let attempt = 0; attempt < 5; attempt++) {
+      assert.equal((await change(wrongOtp)).status, 422);
+    }
+    assert.equal((await change(otp)).status, 422);
+    await pool.query(
+      `UPDATE public.otps SET created_at = (NOW() AT TIME ZONE 'UTC') - INTERVAL '61 seconds'
+       WHERE email = $1 AND purpose = 'change_password'`,
+      [testEmail],
+    );
+    assert.equal((await authRequest("password/otp", {}, data.accessToken)).status, 200);
+    const nextOtp = await readOtp("đổi mật khẩu");
+    assert.equal((await change(nextOtp, "WrongPassword@")).status, 422);
+    assert.equal((await change(nextOtp)).status, 200);
+    assert.equal((await authRequest("login", { email: testEmail, password: newPassword })).status, 200);
+  });
+
   console.log(`\n=== TỔNG KẾT: ${passed} PASS, ${failed} FAIL ===\n`);
 
   server.close();
+  smtpMock.mock.restore();
   await pool.end();
 
   if (failed > 0) {

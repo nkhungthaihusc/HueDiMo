@@ -1,4 +1,4 @@
-import { getAccessToken, refreshTokens, clearSession } from "@/lib/auth/logic";
+import { getAccessToken, refreshTokens } from "@/lib/auth/logic";
 import type { User } from "@/lib/types";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
@@ -71,8 +71,7 @@ export async function checkinPlace(
     if (res.status === 401) {
       const refreshRes = await refreshTokens();
       if (!refreshRes.ok || !refreshRes.accessToken) {
-        clearSession();
-        return { ok: false, error: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!" };
+        return { ok: false, error: "Không thể xác thực để check-in. Vui lòng thử lại." };
       }
       token = refreshRes.accessToken;
       res = await fetch(`${BACKEND_URL}/api/checkins`, {

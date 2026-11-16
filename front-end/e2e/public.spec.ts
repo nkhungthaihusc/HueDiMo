@@ -17,6 +17,45 @@ test("tìm địa điểm, xem chi tiết và xử lý truy vấn rỗng kết q
   await expect(page.getByText(/Không tìm thấy địa điểm nào phù hợp/)).toBeVisible();
 });
 
+test("chi tiết địa điểm chỉ hiện thông tin tham quan đã được nhập", async ({ page }) => {
+  const empty = {
+    ...place, id: "e2e-empty-details", name: "Di tích không có thông tin thêm",
+    category: "ancient", created_by: visitor.id, estimated_duration_minutes: null,
+    dress_code: null, rules: [], activities: [],
+  };
+  const filled = {
+    ...empty, id: "e2e-filled-details", name: "Di tích có thông tin thêm",
+    estimated_duration_minutes: 45, dress_code: "Mang giày đế mềm",
+    rules: ["Không chụp ảnh bên trong"], activities: ["Tham quan vườn"],
+  };
+  const headers = { "access-control-allow-origin": "*" };
+  await page.route("**/api/places", (route) => route.fulfill({ headers, json: { data: [empty, filled] } }));
+  await page.route("**/api/places/search?*", (route) => {
+    const query = new URL(route.request().url()).searchParams.get("q");
+    return route.fulfill({ headers, json: { data: [empty, filled].filter((item) => item.name === query) } });
+  });
+
+  await page.goto("/");
+  const search = page.getByPlaceholder(/Tìm kiếm danh lam/);
+  async function select(name: string) {
+    await search.fill(name);
+    await page.getByText(name, { exact: true }).filter({ visible: true }).first().click();
+    const panel = page.getByRole("region", { name, exact: true });
+    await expect(panel.getByRole("heading", { name, exact: true })).toBeVisible();
+    return panel;
+  }
+
+  const emptyPanel = await select(empty.name);
+  await expect(emptyPanel.getByText(/60 phút|trang phục|nội quy|hoạt động & trải nghiệm|vé người lớn/i)).toHaveCount(0);
+  await emptyPanel.getByRole("button", { name: "Quay lại danh sách" }).click();
+
+  const filledPanel = await select(filled.name);
+  await expect(filledPanel.getByText(/45 phút/)).toBeVisible();
+  for (const value of [filled.dress_code, ...filled.rules, ...filled.activities]) {
+    await expect(filledPanel.getByText(value, { exact: true })).toBeVisible();
+  }
+});
+
 test("menu mở các luồng công khai và yêu cầu đăng nhập cho tính năng cá nhân", async ({ page }) => {
   await page.goto("/");
   await openFeature(page, "Bảng xếp hạng");
@@ -236,7 +275,7 @@ test("địa điểm chờ duyệt chỉ xuất hiện với người đã đón
   const login = async (email: string, name: string) => {
     await page.goto("/login");
     await page.getByPlaceholder("you@example.com").fill(email);
-    await page.getByPlaceholder("Tối thiểu 6 ký tự").fill(password);
+    await page.getByLabel("Mật khẩu", { exact: true }).fill(password);
     await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
     await expect(page.getByRole("button", { name: `Hồ sơ ${name}` })).toBeVisible();
   };
@@ -249,6 +288,13 @@ test("địa điểm chờ duyệt chỉ xuất hiện với người đã đón
   await openContributions(visitor.name);
   await expect(page.getByText(pendingName, { exact: true }).filter({ visible: true }).last()).toBeVisible();
   await expect(page.getByText("Địa điểm cũ thiếu chủ sở hữu", { exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: /Xem$/ }).click();
+  const pendingPanel = page.getByRole("region", { name: pendingName, exact: true });
+  await expect(pendingPanel.getByText("Địa điểm đang chờ duyệt", { exact: true })).toBeVisible();
+  await expect(pendingPanel.getByRole("button", { name: /check-in|chỉ đường|đánh giá/i })).toHaveCount(0);
+  await expect(pendingPanel.getByText("Thông tin chi tiết", { exact: true })).toHaveCount(0);
+  await pendingPanel.getByRole("button", { name: "Quay lại danh sách" }).click();
+  await expect(pendingPanel).toHaveCount(0);
   await page.reload();
   await page.getByRole("button", { name: "Mở menu", exact: true }).click();
   await page.getByRole("button", { name: "Đăng xuất", exact: true }).click();

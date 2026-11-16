@@ -1,4 +1,5 @@
 import { pool } from "../config/db";
+import type { PoolClient } from "pg";
 
 export interface User {
   id: string;
@@ -51,8 +52,8 @@ export const UserModel = {
   /**
    * Tạo người dùng mới trong database
    */
-  async create(data: CreateUserData): Promise<SafeUser> {
-    const res = await pool.query(
+  async create(data: CreateUserData, client: Pick<PoolClient, "query"> = pool): Promise<SafeUser> {
+    const res = await client.query(
       `INSERT INTO public.users (name, email, password_hash, avatar_url, provider, points, checkin_count, status)
        VALUES ($1, $2, $3, $4, $5, 0, 0, 'active')
        RETURNING id, name, email, avatar_url, role, COALESCE(status, 'active') as status, points, checkin_count, provider, created_at, updated_at`,

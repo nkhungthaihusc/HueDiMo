@@ -30,6 +30,10 @@ export default function AddPlacePanel({ position, onCancel, onSubmit }: AddPlace
   const [name, setName] = useState("");
   const [category, setCategory] = useState<CategoryId>(CATEGORIES[0]?.id || "ancient");
   const [description, setDescription] = useState("");
+  const [durationMinutes, setDurationMinutes] = useState("");
+  const [dressCode, setDressCode] = useState("");
+  const [rules, setRules] = useState("");
+  const [activities, setActivities] = useState("");
   const [price, setPrice] = useState("");
   const [address, setAddress] = useState("");
   const [suggestedAddress, setSuggestedAddress] = useState("");
@@ -129,6 +133,19 @@ export default function AddPlacePanel({ position, onCancel, onSubmit }: AddPlace
   const handleSubmit = async () => {
     if (!name.trim() || isSubmitting) return;
 
+    const duration = durationMinutes ? Number(durationMinutes) : undefined;
+    if (duration !== undefined && (!Number.isInteger(duration) || duration < 1 || duration > 2147483647)) {
+      toast.warning("Thời gian tham quan phải là số phút nguyên dương hợp lệ.");
+      return;
+    }
+
+    const ruleItems = rules.split("\n").map((item) => item.trim()).filter(Boolean);
+    const activityItems = activities.split("\n").map((item) => item.trim()).filter(Boolean);
+    if ([ruleItems, activityItems].some((items) => items.length > 20 || items.some((item) => item.length > 200))) {
+      toast.warning("Nội quy và hoạt động được nhập tối đa 20 dòng mỗi mục, mỗi dòng tối đa 200 ký tự.");
+      return;
+    }
+
     if (isUploading) {
       toast.warning("Vui lòng đợi ảnh tải lên máy chủ hoàn tất trước khi gửi.", "Đang tải ảnh");
       return;
@@ -146,6 +163,10 @@ export default function AddPlacePanel({ position, onCancel, onSubmit }: AddPlace
         images: uploadedImages.length > 0 ? uploadedImages : undefined,
         address: address.trim() || undefined,
         openingHours: openingHours.trim() || undefined,
+        estimated_duration_minutes: duration,
+        dress_code: dressCode.trim() || undefined,
+        rules: ruleItems.length ? ruleItems : undefined,
+        activities: activityItems.length ? activityItems : undefined,
         status: "pending" as const,
       };
 
@@ -547,6 +568,38 @@ export default function AddPlacePanel({ position, onCancel, onSubmit }: AddPlace
             className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 font-medium text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition resize-none"
           />
         </div>
+
+        <fieldset className="space-y-3">
+          <legend className="mb-2 text-xs font-bold text-slate-700">Thông tin tham quan (không bắt buộc)</legend>
+          <label className="block space-y-1 text-xs font-semibold text-slate-700">
+            <span>Thời gian tham quan dự kiến (phút)</span>
+            <input
+              type="number"
+              min={1}
+              step={1}
+              max={2147483647}
+              value={durationMinutes}
+              onChange={(e) => setDurationMinutes(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            />
+          </label>
+          {[
+            { label: "Trang phục", value: dressCode, onChange: setDressCode, maxLength: 500 },
+            { label: "Nội quy (mỗi dòng một mục)", value: rules, onChange: setRules },
+            { label: "Hoạt động (mỗi dòng một mục)", value: activities, onChange: setActivities },
+          ].map(({ label, value, onChange, maxLength }) => (
+            <label key={label} className="block space-y-1 text-xs font-semibold text-slate-700">
+              <span>{label}</span>
+              <textarea
+                rows={2}
+                maxLength={maxLength}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              />
+            </label>
+          ))}
+        </fieldset>
       </div>
 
       {/* Footer Submit */}

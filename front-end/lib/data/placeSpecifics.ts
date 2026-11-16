@@ -293,120 +293,18 @@ const SPECIFICS_DICTIONARY: Record<string, PlaceSpecifics> = {
  * Nếu chưa có sẵn trong từ điển, tự động sinh dữ liệu hợp lý và chính xác theo category!
  */
 export function getPlaceSpecifics(place: Place): PlaceSpecifics {
-  // 1. Kiểm tra nếu place đã có dữ liệu cấu hình sẵn
-  if (place.menu || place.tickets || place.hotel || place.activities) {
-    return {
-      menu: place.menu,
-      tickets: place.tickets,
-      hotel: place.hotel,
-      activities: place.activities,
-      specialtiesToBuy: place.specialtiesToBuy,
-      amenities: place.amenities,
-      dressCode: place.dressCode,
-      rules: place.rules,
-      cuisineType: place.cuisineType,
-      priceRangeText: place.priceRangeText,
-    };
-  }
+  const curated = place.created_by || place.userId ? undefined : SPECIFICS_DICTIONARY[place.id];
 
-  // 2. Tìm trong từ điển các điểm nổi tiếng
-  if (SPECIFICS_DICTIONARY[place.id]) {
-    return SPECIFICS_DICTIONARY[place.id];
-  }
-
-  // 3. Dự đoán thông minh theo danh mục (Category)
-  const cat = place.category;
-
-  if (cat === "food") {
-    return {
-      cuisineType: `Ẩm thực Huế · ${place.name}`,
-      priceRangeText: place.price ? `~${place.price.toLocaleString("vi-VN")} đ / phần` : "~25.000đ - 65.000đ / người",
-      menu: [
-        { name: `Món đặc sản tại ${place.name}`, price: place.price || 35000, isSignature: true, description: "Hương vị đậm đà thơm ngon nức tiếng" },
-        { name: "Món ăn kèm chuẩn vị Cố đô", price: Math.round((place.price || 35000) * 0.7), description: "Rau sống tươi sạch ăn kèm nước chấm riêng" },
-        { name: "Đồ uống giải khát / Trà thảo mộc", price: 15000, description: "Thanh mát giải nhiệt" },
-      ],
-      amenities: ["Chỗ để xe máy an toàn", "Thanh toán chuyển khoản / QR", "Phục vụ thân thiện"],
-    };
-  }
-
-  if (cat === "coffee") {
-    return {
-      cuisineType: `Cà phê & Đồ uống Cố đô`,
-      priceRangeText: place.price ? `~${place.price.toLocaleString("vi-VN")} đ / ly` : "~20.000đ - 40.000đ / ly",
-      menu: [
-        { name: "Cà phê đặc sản quán", price: place.price || 28000, isSignature: true, description: "Cà phê pha phin thơm đượm nồng nàn" },
-        { name: "Trà thảo mộc cung đình", price: 32000, isSignature: true, description: "Trà sen long nhãn hoặc hoa cúc mật ong" },
-        { name: "Nước ép trái cây tươi", price: 35000, description: "Hoa quả tươi thanh nhiệt" },
-      ],
-      amenities: ["Không gian yên tĩnh chill", "Wifi miễn phí tốc độ cao", "Có chỗ ngồi ngoài trời ngắm phố"],
-    };
-  }
-
-  if (cat === "ancient" || cat === "cultural") {
-    const isFree = place.price === 0;
-    return {
-      tickets: isFree
-        ? [{ type: "Vé tham quan", price: 0, note: "Địa điểm mở cửa tự do" }]
-        : [
-            { type: "Vé người lớn", price: place.price || 150000, note: "Vé vào cửa tham quan di tích" },
-            { type: "Trẻ em (7 - 12 tuổi)", price: Math.round((place.price || 150000) * 0.2), note: "Giảm 80%" },
-            { type: "Trẻ em dưới 6 tuổi", price: 0, note: "Miễn phí vé" },
-          ],
-      dressCode: "Trang phục lịch sự, trang nhã, không mặc đồ phản cảm nơi di tích",
-      rules: ["Không sờ vào hiện vật", "Không xả rác bừa bãi", "Giữ gìn cảnh quan di sản"],
-      amenities: ["Bãi đỗ xe", "Thuyết minh hướng dẫn", "Khuôn viên chụp ảnh lưu niệm"],
-      activities: ["Tìm hiểu kiến trúc lịch sử", "Chụp ảnh lưu niệm hoài niệm"],
-    };
-  }
-
-  if (cat === "spiritual" || cat === "temple") {
-    return {
-      tickets: [{ type: "Vé viếng chùa", price: 0, note: "Miễn phí toàn bộ du khách" }],
-      dressCode: "Trang phục trang nghiêm kín đáo (quần dài, áo có tay), không mặc váy ngắn",
-      rules: [
-        "Tháo giày dép trước khi vào Chánh điện",
-        "Nói khẽ, đi nhẹ, giữ thanh tịnh cửa Phật",
-        "Không tự ý chạm vào tượng và đồ thờ cúng",
-      ],
-      amenities: ["Khuôn viên cây xanh thanh tịnh", "Bãi gửi xe máy", "Nước uống miễn phí"],
-      activities: ["Cầu an cho gia đình", "Chiêm bái cảnh chùa cổ kính bình yên"],
-    };
-  }
-
-  if (cat === "hotel") {
-    return {
-      hotel: {
-        checkInTime: "14:00",
-        checkOutTime: "12:00",
-        priceRange: place.price ? `~${place.price.toLocaleString("vi-VN")} đ / đêm` : "~500.000đ - 1.800.000đ / đêm",
-        roomTypes: ["Phòng tiêu chuẩn Standard", "Phòng cao cấp Deluxe City View", "Phòng Suite Gia đình"],
-      },
-      amenities: ["Wifi tốc độ cao miễn phí", "Lễ tân 24/7", "Bữa sáng ngon miệng", "Hỗ trợ thuê xe máy/ô tô"],
-    };
-  }
-
-  if (cat === "nature" || cat === "beach") {
-    return {
-      tickets: [{ type: "Vé vào cửa", price: place.price || 0, note: place.price ? "Vé bảo tồn sinh thái" : "Miễn phí tự do" }],
-      activities: ["Ngắm cảnh thiên nhiên tươi đẹp", "Check-in sống ảo", "Hít thở không khí trong lành", "Dã ngoại cắm trại"],
-      rules: ["Bảo vệ môi trường, không xả rác bừa bãi", "Đảm bảo an toàn khi bơi hoặc leo đồi"],
-      amenities: ["Bãi giữ xe", "Điểm ngắm cảnh có rào chắn"],
-    };
-  }
-
-  if (cat === "craft_village" || cat === "shopping") {
-    return {
-      tickets: [{ type: "Vé tham quan", price: 0, note: "Miễn phí" }],
-      activities: ["Trải nghiệm làm nghề truyền thống", "Giao lưu cùng nghệ nhân địa phương", "Chụp ảnh lưu niệm"],
-      specialtiesToBuy: ["Mè xửng Huế", "Nón bài thơ", "Tôm chua", "Trà sen Cung Đình", "Đồ thủ công mỹ nghệ"],
-      rules: ["Nên hỏi giá trước khi mua sắm", "Bảo quản tư trang cẩn thận"],
-    };
-  }
-
-  // Mặc định
   return {
-    tickets: [{ type: "Vé tham quan", price: place.price || 0, note: place.price ? "Vé vào cửa" : "Miễn phí" }],
-    amenities: ["Chỗ để xe máy", "Điểm chụp ảnh lưu niệm"],
+    menu: place.menu ?? curated?.menu,
+    tickets: place.tickets ?? curated?.tickets,
+    hotel: place.hotel ?? curated?.hotel,
+    activities: place.activities ?? curated?.activities,
+    specialtiesToBuy: place.specialtiesToBuy ?? curated?.specialtiesToBuy,
+    amenities: place.amenities ?? curated?.amenities,
+    dressCode: place.dressCode ?? curated?.dressCode,
+    rules: place.rules ?? curated?.rules,
+    cuisineType: place.cuisineType ?? curated?.cuisineType,
+    priceRangeText: place.priceRangeText ?? curated?.priceRangeText,
   };
 }

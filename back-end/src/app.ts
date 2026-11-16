@@ -19,6 +19,10 @@ import { requestLogger } from "./middleware/logger.middleware";
 
 const app = express();
 
+if (process.env.TRUSTED_PROXY_ADDRESSES) {
+  app.set("trust proxy", process.env.TRUSTED_PROXY_ADDRESSES);
+}
+
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 // Tile traffic does not belong in the application audit log.

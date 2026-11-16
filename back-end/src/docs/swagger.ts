@@ -170,12 +170,18 @@ export const swaggerDocument = {
       },
       RegisterRequest: {
         type: "object",
-        required: ["name", "email", "password"],
+        required: ["name", "email", "password", "otp"],
         properties: {
           name: { type: "string", example: "Nguyễn Văn A" },
           email: { type: "string", format: "email", example: "user@example.com" },
           password: { type: "string", minLength: 6, example: "MatKhau123@" },
+          otp: { type: "string", pattern: "^[0-9]{6}$" },
         },
+      },
+      EmailOtpRequest: {
+        type: "object",
+        required: ["email"],
+        properties: { email: { type: "string", format: "email" } },
       },
       LoginRequest: {
         type: "object",
@@ -227,7 +233,10 @@ export const swaggerDocument = {
           },
           address: { type: "string", example: "Đường 23 Tháng 8, Phường Thuận Hòa, TP. Huế" },
           opening_hours: { type: "string", example: "08:00 - 17:30" },
-          duration: { type: "string", example: "120 phút" },
+          estimated_duration_minutes: { type: "integer", nullable: true, minimum: 1, maximum: 2147483647, example: 120 },
+          dress_code: { type: "string", nullable: true, maxLength: 500 },
+          rules: { type: "array", nullable: true, maxItems: 20, items: { type: "string", maxLength: 200 } },
+          activities: { type: "array", nullable: true, maxItems: 20, items: { type: "string", maxLength: 200 } },
           best_time: { type: "string", example: "morning" },
           highlights: {
             type: "array",
@@ -257,7 +266,10 @@ export const swaggerDocument = {
           },
           address: { type: "string", example: "Xã Phú Hồ, Huyện Phú Vang, Thừa Thiên Huế" },
           openingHours: { type: "string", example: "07:00 - 18:00" },
-          duration: { type: "string", example: "1 - 2 giờ" },
+          estimated_duration_minutes: { type: "integer", nullable: true, minimum: 1, maximum: 2147483647, example: 90 },
+          dress_code: { type: "string", nullable: true, maxLength: 500 },
+          rules: { type: "array", nullable: true, maxItems: 20, items: { type: "string", maxLength: 200 } },
+          activities: { type: "array", nullable: true, maxItems: 20, items: { type: "string", maxLength: 200 } },
           bestTime: { type: "string", example: "morning" },
           highlights: { type: "array", items: { type: "string" }, example: ["Làm nón thủ công", "Check-in"] },
           notes: { type: "string", example: "Nên đến vào ban ngày để xem các nghệ nhân thao tác." },
@@ -472,6 +484,66 @@ export const swaggerDocument = {
         },
       },
     },
+    "/api/auth/register/otp": {
+      post: {
+        tags: ["Authentication"],
+        security: [],
+        summary: "Gửi mã xác nhận đăng ký đến email",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { $ref: "#/components/schemas/EmailOtpRequest" } } },
+        },
+        responses: {
+          "200": { description: "Đã gửi mã OTP" },
+          "409": { description: "Email đã được đăng ký" },
+          "422": { description: "Email không hợp lệ" },
+          "429": { description: "Vượt giới hạn yêu cầu gửi mã" },
+          "503": { description: "Dịch vụ gửi mã OTP không khả dụng" },
+        },
+      },
+    },
+    "/api/auth/password/reset/otp": {
+      post: {
+        tags: ["Authentication"],
+        security: [],
+        summary: "Yêu cầu mã đặt lại mật khẩu",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { $ref: "#/components/schemas/EmailOtpRequest" } } },
+        },
+        responses: {
+          "202": { description: "Đã tiếp nhận yêu cầu gửi mã" },
+          "422": { description: "Email không hợp lệ" },
+          "429": { description: "Vượt giới hạn yêu cầu gửi mã" },
+          "503": { description: "Máy chủ chưa cấu hình xác thực OTP" },
+        },
+      },
+    },
+    "/api/auth/password/reset": {
+      post: {
+        tags: ["Authentication"],
+        security: [],
+        summary: "Đặt lại mật khẩu bằng mã OTP",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: {
+            type: "object",
+            required: ["email", "otp", "newPassword", "confirmPassword"],
+            properties: {
+              email: { type: "string", format: "email" },
+              otp: { type: "string", pattern: "^[0-9]{6}$" },
+              newPassword: { type: "string", format: "password", minLength: 8 },
+              confirmPassword: { type: "string", format: "password" },
+            },
+          } } },
+        },
+        responses: {
+          "200": { description: "Đã đặt lại mật khẩu" },
+          "422": { description: "Email, mã OTP hoặc mật khẩu không hợp lệ" },
+          "503": { description: "Máy chủ chưa cấu hình xác thực OTP" },
+        },
+      },
+    },
     "/api/auth/register": {
       post: {
         tags: ["Authentication"],
@@ -503,7 +575,7 @@ export const swaggerDocument = {
             },
           },
           "422": {
-            description: "Dữ liệu không hợp lệ (sai định dạng email hoặc mật khẩu < 6 ký tự)",
+            description: "Thông tin đăng ký hoặc mã OTP không hợp lệ",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/ErrorResponse" },
@@ -707,6 +779,20 @@ export const swaggerDocument = {
         },
       },
     },
+    "/api/auth/password/otp": {
+      post: {
+        tags: ["Authentication"],
+        summary: "Gửi mã OTP đổi mật khẩu đến email tài khoản đang đăng nhập",
+        security: [{ BearerAuth: [] }],
+        responses: {
+          "200": { description: "Đã gửi mã OTP có hiệu lực trong 5 phút" },
+          "401": { description: "Yêu cầu đăng nhập" },
+          "403": { description: "Tài khoản không thể đổi mật khẩu HueDiMo" },
+          "429": { description: "Cần chờ 60 giây giữa hai lần yêu cầu mã" },
+          "503": { description: "Dịch vụ gửi mã OTP không khả dụng" },
+        },
+      },
+    },
     "/api/auth/password": {
       patch: {
         tags: ["Authentication"],
@@ -716,12 +802,12 @@ export const swaggerDocument = {
           required: true,
           content: { "application/json": { schema: {
             type: "object",
-            required: ["currentPassword", "newPassword", "confirmPassword", "captchaToken"],
+            required: ["currentPassword", "newPassword", "confirmPassword", "otp"],
             properties: {
               currentPassword: { type: "string", format: "password" },
               newPassword: { type: "string", format: "password", minLength: 8 },
               confirmPassword: { type: "string", format: "password" },
-              captchaToken: { type: "string" },
+              otp: { type: "string", pattern: "^[0-9]{6}$" },
             },
           } } },
         },
@@ -729,6 +815,7 @@ export const swaggerDocument = {
           "200": { description: "Đã đổi mật khẩu" },
           "401": { description: "Yêu cầu đăng nhập" },
           "422": { description: "Thông tin xác thực không hợp lệ" },
+          "503": { description: "Máy chủ chưa cấu hình xác thực OTP" },
         },
       },
     },

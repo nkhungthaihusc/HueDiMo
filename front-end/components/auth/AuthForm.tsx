@@ -2,16 +2,20 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, type FormEvent } from "react";
+import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { supabase } from "@/lib/supabase/client";
 import { getOAuthRedirectUrl } from "@/lib/auth/oauth";
+import { useOtpCooldown } from "@/lib/auth/useOtpCooldown";
 import { toast } from "@/components/ui/Toast";
+import { apiFetch } from "@/lib/api/client";
 import { Mail, Lock, User as UserIcon, Eye, EyeOff, ArrowRight } from "lucide-react";
 
 interface AuthFormProps {
-  mode: "login" | "register";
+  mode: "login" | "register" | "reset";
 }
+
+const backend = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
 
 export default function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
@@ -20,12 +24,40 @@ export default function AuthForm({ mode }: AuthFormProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const emailInput = useRef<HTMLInputElement>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
   const isLogin = mode === "login";
+  const isReset = mode === "reset";
+  const isRegister = mode === "register";
+  const { remaining, startCooldown } = useOtpCooldown(`${mode}:${email.trim().toLowerCase()}`);
+
+  const requestOtp = async () => {
+    if (sendingOtp || submitting || remaining > 0 || !emailInput.current?.reportValidity()) return;
+    setSendingOtp(true);
+    setError(null);
+    try {
+      await apiFetch(`${backend}/api/auth/${isReset ? "password/reset/otp" : "register/otp"}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      setOtp("");
+      setOtpSent(true);
+      startCooldown();
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "Không thể gửi mã OTP.");
+    } finally {
+      setSendingOtp(false);
+    }
+  };
 
   // Lắng nghe lỗi từ callback URL (nếu có)
   useEffect(() => {
@@ -50,6 +82,11 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (submitting || sendingOtp || (!isLogin && (!otpSent || otp.length !== 6))) return;
+    if (isReset && password !== confirmPassword) {
+      setError("Hai lần nhập mật khẩu mới phải khớp.");
+      return;
+    }
     setError(null);
     setSubmitting(true);
 
@@ -63,8 +100,17 @@ export default function AuthForm({ mode }: AuthFormProps) {
           return;
         }
         toast.success("Chào mừng bạn trở lại với HueDiMo!", "Đăng nhập thành công");
+      } else if (isReset) {
+        await apiFetch(`${backend}/api/auth/password/reset`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, otp, newPassword: password, confirmPassword }),
+        });
+        toast.success("Đã đặt lại mật khẩu. Vui lòng đăng nhập lại.");
+        router.push("/login");
+        return;
       } else {
-        const res = await register(name, email, password);
+        const res = await register(name, email, password, otp);
         if (!res.ok) {
           const err = res.error ?? "Đăng ký thất bại.";
           setError(err);
@@ -74,6 +120,8 @@ export default function AuthForm({ mode }: AuthFormProps) {
         toast.success("Tài khoản của bạn đã được khởi tạo!", "Đăng ký thành công");
       }
       router.push("/");
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "Không thể hoàn tất yêu cầu.");
     } finally {
       setSubmitting(false);
     }
@@ -124,7 +172,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
         <Link
           href="/register"
           className={`flex-1 rounded-xl py-3 text-center transition-ui ${
-            !isLogin
+              isRegister
               ? "bg-white text-brand-700 shadow-xs font-bold ring-1 ring-purple-200/60"
               : "hover:text-purple-900"
           }`}
@@ -136,16 +184,18 @@ export default function AuthForm({ mode }: AuthFormProps) {
       {/* Header tinh gọn, không rườm rà */}
       <div className="mb-6">
         <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-[26px]">
-          {isLogin ? "Mừng bạn trở lại" : "Tạo tài khoản mới"}
+          {isReset ? "Quên mật khẩu" : isLogin ? "Mừng bạn trở lại" : "Tạo tài khoản mới"}
         </h1>
         <p className="mt-1 text-xs text-slate-500 leading-relaxed">
-          {isLogin
+          {isReset
+            ? "Nhập email tài khoản HueDiMo để nhận mã đặt lại mật khẩu."
+            : isLogin
             ? "Đăng nhập để lưu lịch trình và đồng bộ điểm check-in"
             : "Bắt đầu trải nghiệm bản đồ du lịch số Cố đô Huế"}
         </p>
       </div>
 
-      <div className="grid">
+      {!isReset && <div className="grid">
         <button
           type="button"
           onClick={handleGoogleLogin}
@@ -177,21 +227,21 @@ export default function AuthForm({ mode }: AuthFormProps) {
           <span>Tiếp tục với Google</span>
         </button>
 
-      </div>
+      </div>}
 
       {/* Đường phân cách thanh lịch */}
-      <div className="relative my-5 flex items-center justify-center">
+      {!isReset && <div className="relative my-5 flex items-center justify-center">
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-purple-100" />
         </div>
         <span className="relative bg-white px-3 text-[11px] font-medium tracking-wider text-purple-400 uppercase">
           hoặc email
         </span>
-      </div>
+      </div>}
 
       {/* Form nhập thông tin */}
       <form onSubmit={handleSubmit} className="auth-form flex flex-col gap-3.5">
-        {!isLogin && (
+        {isRegister && (
           <div>
             <label className="mb-1.5 block text-xs font-semibold text-slate-700">
               Họ và tên
@@ -214,7 +264,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
         )}
 
         <div>
-          <label className="mb-1.5 block text-xs font-semibold text-slate-700">
+          <label htmlFor="auth-email" className="mb-1.5 block text-xs font-semibold text-slate-700">
             Địa chỉ Email
           </label>
           <div className="relative flex items-center rounded-2xl border border-purple-100/90 bg-purple-50/25 transition-ui focus-within:border-slate-400 focus-within:bg-white">
@@ -222,10 +272,18 @@ export default function AuthForm({ mode }: AuthFormProps) {
               <Mail className="h-4 w-4" />
             </span>
             <input
+              id="auth-email"
+              ref={emailInput}
               type="email"
               required
+              maxLength={254}
+              readOnly={sendingOtp || submitting}
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setOtp("");
+                setOtpSent(false);
+              }}
               placeholder="you@example.com"
               autoComplete="email"
               className="w-full bg-transparent px-3 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400"
@@ -235,13 +293,13 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
         <div>
           <div className="mb-1.5 flex items-center justify-between">
-            <label className="block text-xs font-semibold text-slate-700">
-              Mật khẩu
+            <label htmlFor="auth-password" className="block text-xs font-semibold text-slate-700">
+              {isReset ? "Mật khẩu mới" : "Mật khẩu"}
             </label>
             {isLogin && (
-              <span className="text-[11px] font-medium text-brand-600 hover:underline cursor-pointer">
+              <Link href="/forgot-password" className="text-[11px] font-medium text-brand-600 hover:underline">
                 Quên mật khẩu?
-              </span>
+              </Link>
             )}
           </div>
           <div className="relative flex items-center rounded-2xl border border-purple-100/90 bg-purple-50/25 transition-ui focus-within:border-slate-400 focus-within:bg-white">
@@ -249,11 +307,13 @@ export default function AuthForm({ mode }: AuthFormProps) {
               <Lock className="h-4 w-4" />
             </span>
             <input
+              id="auth-password"
               type={showPassword ? "text" : "password"}
               required
+              minLength={isReset ? 8 : isRegister ? 6 : undefined}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Tối thiểu 6 ký tự"
+              placeholder={isReset ? "Tối thiểu 8 ký tự" : isRegister ? "Tối thiểu 6 ký tự" : undefined}
               autoComplete={isLogin ? "current-password" : "new-password"}
               className="w-full bg-transparent px-3 py-2.5 pr-10 text-sm text-slate-900 outline-none placeholder:text-slate-400"
             />
@@ -268,9 +328,42 @@ export default function AuthForm({ mode }: AuthFormProps) {
           </div>
         </div>
 
+        {isReset && (
+          <label className="block text-xs font-semibold text-slate-700">
+            Nhập lại mật khẩu mới
+            <input type="password" required minLength={8} autoComplete="new-password"
+              value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)}
+              className="mt-1.5 w-full rounded-2xl border border-purple-100 bg-purple-50/25 px-3 py-2.5 text-sm" />
+          </label>
+        )}
+        {!isLogin && (
+          <>
+            <div className="flex flex-wrap items-end gap-2">
+              {otpSent && (
+                <label className="block min-w-36 flex-1 text-xs font-semibold text-slate-700">
+                  Mã OTP qua email
+                  <input name={isReset ? "reset-password-otp" : "register-otp"} type="text" inputMode="numeric"
+                    autoComplete={isReset ? "section-reset-otp one-time-code" : "section-register-otp one-time-code"}
+                    required maxLength={6} pattern="[0-9]{6}" value={otp}
+                    onChange={(event) => setOtp(event.target.value.replace(/\D/g, ""))}
+                    className="mt-1.5 w-full rounded-2xl border border-purple-100 bg-purple-50/25 px-3 py-2.5 text-sm" />
+                </label>
+              )}
+              <button type="button" onClick={requestOtp} disabled={sendingOtp || submitting || remaining > 0}
+                className="rounded-2xl border border-purple-200 px-3 py-2.5 text-xs font-semibold text-brand-700 disabled:opacity-60">
+                {sendingOtp ? "Đang gửi…" : remaining > 0 ? `Gửi lại mã (${remaining}s)` : otpSent ? "Gửi lại mã" : "Gửi mã OTP"}
+              </button>
+            </div>
+            {otpSent && <p role="status" className="text-xs text-slate-600">
+              {isReset ? "Nếu email có tài khoản dùng mật khẩu HueDiMo, bạn sẽ nhận được mã có hiệu lực trong 5 phút."
+                : "Mã đã được gửi tới email của bạn và có hiệu lực trong 5 phút."}
+            </p>}
+          </>
+        )}
+
         {/* Thông báo lỗi nội tuyến */}
         {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50/80 px-3 py-2 text-xs font-medium text-red-600">
+          <div role="alert" className="rounded-xl border border-red-200 bg-red-50/80 px-3 py-2 text-xs font-medium text-red-600">
             {error}
           </div>
         )}
@@ -278,7 +371,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
         {/* Nút gửi chính */}
         <button
           type="submit"
-          disabled={submitting || googleLoading}
+          disabled={submitting || googleLoading || sendingOtp || (!isLogin && (!otpSent || otp.length !== 6))}
           className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 py-3 text-xs font-semibold text-white shadow-md shadow-brand-600/20 transition-ui hover:bg-brand-700 hover:shadow-brand-600/30 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {submitting ? (
@@ -288,7 +381,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
             </>
           ) : (
             <>
-              <span>{isLogin ? "Đăng nhập" : "Tạo tài khoản"}</span>
+              <span>{isReset ? "Đặt lại mật khẩu" : isLogin ? "Đăng nhập" : "Tạo tài khoản"}</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </>
           )}
@@ -297,12 +390,12 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
       {/* Footer chuyển đổi */}
       <p className="mt-6 text-center text-xs text-slate-500">
-        {isLogin ? "Chưa có tài khoản HueDiMo?" : "Đã có tài khoản?"}{" "}
+        {!isReset && (isLogin ? "Chưa có tài khoản HueDiMo? " : "Đã có tài khoản? ")}
         <Link
           href={isLogin ? "/register" : "/login"}
           className="font-bold text-brand-600 hover:text-brand-700 hover:underline"
         >
-          {isLogin ? "Đăng ký ngay" : "Đăng nhập"}
+          {isReset ? "Quay lại đăng nhập" : isLogin ? "Đăng ký ngay" : "Đăng nhập"}
         </Link>
       </p>
 

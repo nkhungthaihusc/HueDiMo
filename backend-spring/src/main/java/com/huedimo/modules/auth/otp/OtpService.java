@@ -58,7 +58,7 @@ public class OtpService {
     public void verifyOtp(String email, String otpCode) {
         String normalizedEmail = email.toLowerCase().trim();
 
-        Otp otp = otpRepository.findTopByEmailOrderByCreatedAtDesc(normalizedEmail)
+        Otp otp = otpRepository.findTopByEmailAndPurposeIsNullOrderByCreatedAtDesc(normalizedEmail)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy mã OTP nào cho email này!"));
 
         if (Boolean.TRUE.equals(otp.getUsed())) {
@@ -85,7 +85,7 @@ public class OtpService {
     public void consumeVerifiedOtpForRegistration(String email) {
         String normalizedEmail = email.toLowerCase().trim();
 
-        Otp otp = otpRepository.findTopByEmailOrderByCreatedAtDesc(normalizedEmail)
+        Otp otp = otpRepository.findTopByEmailAndPurposeIsNullOrderByCreatedAtDesc(normalizedEmail)
                 .orElseThrow(() -> new RuntimeException("Email chưa được xác thực mã OTP!"));
 
         if (Boolean.TRUE.equals(otp.getUsed())) {
@@ -113,7 +113,7 @@ public class OtpService {
     public void validateOtp(String email, String otpCode) {
         String normalizedEmail = email.toLowerCase().trim();
 
-        Otp otp = otpRepository.findTopByEmailOrderByCreatedAtDesc(normalizedEmail)
+        Otp otp = otpRepository.findTopByEmailAndPurposeIsNullOrderByCreatedAtDesc(normalizedEmail)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy mã OTP nào cho email này!"));
 
         if (Boolean.TRUE.equals(otp.getUsed())) {

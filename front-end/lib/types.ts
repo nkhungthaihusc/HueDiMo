@@ -108,7 +108,7 @@ export interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ ok: boolean; user?: User; error?: string }>;
-  register: (name: string, email: string, password: string) => Promise<{ ok: boolean; user?: User; error?: string }>;
+  register: (name: string, email: string, password: string, otp: string) => Promise<{ ok: boolean; user?: User; error?: string }>;
   updateProfile: (data: { name?: string; avatarUrl?: string; avatar_url?: string }) => Promise<{ ok: boolean; user?: User; error?: string }>;
   refreshUser: () => Promise<User | null>;
   logout: () => void;

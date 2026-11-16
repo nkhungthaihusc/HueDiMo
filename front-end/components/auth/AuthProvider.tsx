@@ -87,10 +87,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (name: string, email: string, password: string, otp: string) => {
     setIsLoading(true);
     try {
-      const res = await registerUser(name, email, password);
+      const res = await registerUser(name, email, password, otp);
       if (res.ok) refreshSession();
       return res;
     } finally {

@@ -4,6 +4,8 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { UserModel, type SafeUser } from "../models/user.model";
 import { RefreshTokenModel } from "../models/refresh-token.model";
+import { sendEmailOtp, withVerifiedEmailOtp } from "./email-otp.service";
+import type { PoolClient } from "pg";
 
 const JWT_ACCESS_SECRET = process.env.JWT_SECRET || "huedimo_default_secret_key_change_in_production";
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "huedimo_default_refresh_secret_key_2026";
@@ -43,27 +45,82 @@ export interface RefreshTokenPayload extends JwtPayload {
   tokenId: string;
 }
 
-export const AuthService = {
-  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<boolean> {
-    const { rows: [user] } = await pool.query(
-      "SELECT password_hash FROM public.users WHERE id = $1 AND provider = 'local' AND status IS DISTINCT FROM 'banned'",
-      [userId],
-    );
-    if (!user?.password_hash || !await bcrypt.compare(currentPassword, user.password_hash)) return false;
+interface PasswordAccount {
+  id: string;
+  email: string;
+  password_hash: string;
+}
 
-    const nextHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
-    const result = await pool.query(
-      `WITH changed AS (
-         UPDATE public.users SET password_hash = $1, updated_at = NOW()
-         WHERE id = $2 AND password_hash = $3 AND status IS DISTINCT FROM 'banned' RETURNING id
-       ), revoked AS (
-         UPDATE public.refresh_tokens SET revoked = TRUE, updated_at = NOW()
-         WHERE user_id IN (SELECT id FROM changed)
-       )
-       SELECT id FROM changed`,
-      [nextHash, userId, user.password_hash],
+async function findPasswordAccount(id: string) {
+  const { rows: [user] } = await pool.query<PasswordAccount>(
+    `SELECT id, email, password_hash FROM public.users
+     WHERE id = $1 AND provider = 'local' AND password_hash IS NOT NULL AND status IS DISTINCT FROM 'banned'`,
+    [id],
+  );
+  return user;
+}
+
+function passwordOtpSubject(user: PasswordAccount): string {
+  return JSON.stringify([user.id, user.password_hash]);
+}
+
+async function replacePassword(client: PoolClient, user: PasswordAccount, nextHash: string): Promise<boolean> {
+  const result = await client.query(
+    `WITH changed AS (
+       UPDATE public.users SET password_hash = $1, updated_at = NOW()
+       WHERE id = $2 AND password_hash = $3 AND email = $4 AND provider = 'local'
+         AND status IS DISTINCT FROM 'banned'
+       RETURNING id
+     ), revoked AS (
+       UPDATE public.refresh_tokens SET revoked = TRUE, updated_at = NOW()
+       WHERE user_id IN (SELECT id FROM changed)
+     )
+     SELECT id FROM changed`,
+    [nextHash, user.id, user.password_hash, user.email],
+  );
+  return result.rowCount === 1;
+}
+
+export const AuthService = {
+  async requestPasswordOtp(userId: string, secret: string) {
+    const user = await findPasswordAccount(userId);
+    if (!user) return "ineligible";
+    return sendEmailOtp(user.email, "change_password", passwordOtpSubject(user), secret);
+  },
+
+  async queuePasswordResetOtp(email: string, secret: string) {
+    const user = await UserModel.findByEmail(email);
+    if (user?.provider === "local" && user.status !== "banned" && user.password_hash) {
+      void sendEmailOtp(user.email, "reset_password", passwordOtpSubject({ ...user, password_hash: user.password_hash }), secret)
+        .then((result) => {
+          if (result === "unconfigured" || result === "delivery_failed") {
+            console.warn("Không thể gửi email OTP đặt lại mật khẩu:", result);
+          }
+        })
+        .catch(() => console.error("Không thể xử lý yêu cầu OTP đặt lại mật khẩu."));
+    }
+  },
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string, otp: string, otpSecret: string) {
+    const user = await findPasswordAccount(userId);
+    if (!user || !await bcrypt.compare(currentPassword, user.password_hash)) return "invalid_password";
+
+    const changed = await withVerifiedEmailOtp(
+      user.email, "change_password", passwordOtpSubject(user), otp, otpSecret,
+      async (client) => replacePassword(client, user, await bcrypt.hash(newPassword, SALT_ROUNDS)),
     );
-    return result.rowCount === 1;
+    return changed ? "changed" : "invalid_otp";
+  },
+
+  async resetPassword(email: string, newPassword: string, otp: string, secret: string) {
+    const user = await UserModel.findByEmail(email);
+    if (!user?.password_hash || user.provider !== "local" || user.status === "banned") return false;
+
+    const account = { ...user, password_hash: user.password_hash };
+    return withVerifiedEmailOtp(
+      email, "reset_password", passwordOtpSubject(account), otp, secret,
+      async (client) => replacePassword(client, account, await bcrypt.hash(newPassword, SALT_ROUNDS)),
+    );
   },
 
   /**
@@ -149,7 +206,7 @@ export const AuthService = {
   /**
    * Đăng ký người dùng mới
    */
-  async register(name: string, email: string, password: string): Promise<AuthResult> {
+  async register(name: string, email: string, password: string, otp: string, secret: string): Promise<AuthResult | null> {
     const existing = await UserModel.findByEmail(email);
     if (existing) {
       const conflictError: any = new Error("Email này đã được đăng ký.");
@@ -157,13 +214,10 @@ export const AuthService = {
       throw conflictError;
     }
 
-    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
-
-    const user = await UserModel.create({
-      name,
-      email,
-      passwordHash,
-    });
+    const user = await withVerifiedEmailOtp(email, "register", "", otp, secret, async (client) =>
+      UserModel.create({ name, email, passwordHash: await bcrypt.hash(password, SALT_ROUNDS) }, client),
+    );
+    if (!user) return null;
 
     const tokens = await this.generateTokens(user);
 

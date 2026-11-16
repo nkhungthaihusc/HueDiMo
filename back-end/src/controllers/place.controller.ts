@@ -24,6 +24,16 @@ function removeAccents(str: string): string {
     .toLowerCase();
 }
 
+function isPlaceDetailText(value: unknown, maxLength: number): value is string {
+  return typeof value === "string" && value.length <= maxLength && !value.includes("\0");
+}
+
+function isPlaceDetailList(value: unknown): value is string[] {
+  return Array.isArray(value) && value.length <= 20 && value.every(
+    (item) => isPlaceDetailText(item, 200)
+  );
+}
+
 export const PlaceController = {
   /**
    * GET /api/places
@@ -130,7 +140,10 @@ export const PlaceController = {
         price = 0,
         opening_hours = "",
         openingHours = "",
-        estimated_duration_minutes = 60,
+        estimated_duration_minutes = null,
+        dress_code = null,
+        rules = null,
+        activities = null,
         best_time_to_visit = "",
         description = "",
         image_url = "",
@@ -148,6 +161,27 @@ export const PlaceController = {
       if (!category || typeof category !== "string") {
         sendError(res, "VALIDATION_ERROR", "Danh mục không hợp lệ.", 422, { field: "category" });
         return;
+      }
+
+      if (estimated_duration_minutes !== null && (
+        !Number.isInteger(estimated_duration_minutes) ||
+        estimated_duration_minutes < 1 ||
+        estimated_duration_minutes > 2147483647
+      )) {
+        sendError(res, "VALIDATION_ERROR", "Thời gian tham quan phải là số phút nguyên dương hợp lệ.", 422, { field: "estimated_duration_minutes" });
+        return;
+      }
+
+      if (dress_code !== null && !isPlaceDetailText(dress_code, 500)) {
+        sendError(res, "VALIDATION_ERROR", "Thông tin trang phục phải là văn bản tối đa 500 ký tự.", 422, { field: "dress_code" });
+        return;
+      }
+
+      for (const [field, value] of Object.entries({ rules, activities })) {
+        if (value !== null && !isPlaceDetailList(value)) {
+          sendError(res, "VALIDATION_ERROR", "Danh sách chỉ được có tối đa 20 dòng, mỗi dòng tối đa 200 ký tự.", 422, { field });
+          return;
+        }
       }
 
       const numLat = Number(lat);
@@ -171,12 +205,12 @@ export const PlaceController = {
           id, name, category, lat, lng, address, price, is_local,
           opening_hours, estimated_duration_minutes, best_time_to_visit,
           rating, description, image_url, images, highlights, notes,
-          status, created_by, created_at, updated_at
+          status, created_by, created_at, updated_at, dress_code, rules, activities
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7, true,
           $8, $9, $10,
           0.0, $11, $12, $13, $14, $15,
-          'pending', $16, NOW(), NOW()
+          'pending', $16, NOW(), NOW(), $17, $18, $19
         ) RETURNING *`,
         [
           id,
@@ -187,7 +221,7 @@ export const PlaceController = {
           (address || "").trim(),
           Number(price) || 0,
           finalOpeningHours,
-          Number(estimated_duration_minutes) || 60,
+          estimated_duration_minutes,
           (best_time_to_visit || "").trim(),
           (description || "").trim(),
           finalImageUrl,
@@ -195,6 +229,9 @@ export const PlaceController = {
           Array.isArray(highlights) ? highlights : [],
           (notes || "").trim(),
           created_by,
+          dress_code?.trim() || null,
+          rules?.map((item: string) => item.trim()).filter(Boolean) ?? null,
+          activities?.map((item: string) => item.trim()).filter(Boolean) ?? null,
         ]
       );
 

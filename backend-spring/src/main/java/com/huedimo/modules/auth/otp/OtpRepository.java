@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface OtpRepository extends JpaRepository<Otp, Long> {
-    Optional<Otp> findTopByEmailOrderByCreatedAtDesc(String email);
+    Optional<Otp> findTopByEmailAndPurposeIsNullOrderByCreatedAtDesc(String email);
 }

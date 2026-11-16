@@ -1,47 +1,76 @@
 import type { Request, Response, NextFunction } from "express";
 import { AuthService } from "../services/auth.service";
+import { sendEmailOtp } from "../services/email-otp.service";
+import { UserModel } from "../models/user.model";
 import { sendSuccess, sendError } from "../utils/response";
 import type { AuthenticatedRequest } from "../middleware/auth.middleware";
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_REGEX = /^[^\s@,<>:;"()\\]+@[a-z\d-]+(?:\.[a-z\d-]+)+$/i;
+const OTP_REGEX = /^\d{6}$/;
+
+function normalizeEmail(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const email = value.trim().toLowerCase();
+  return email.length <= 254 && EMAIL_REGEX.test(email) ? email : null;
+}
+
+function sendOtpResponse(res: Response, result: "sent" | "cooldown" | "unconfigured" | "delivery_failed"): void {
+  if (result === "sent") {
+    sendSuccess(res, { sent: true });
+  } else if (result === "cooldown") {
+    sendError(res, "RATE_LIMITED", "Vui lòng chờ ít nhất 60 giây giữa hai lần yêu cầu mã OTP.", 429);
+  } else {
+    sendError(res, "UPSTREAM_ERROR", "Không thể gửi mã OTP. Vui lòng thử lại sau.", 503);
+  }
+}
 
 export const AuthController = {
+  async requestPasswordOtp(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    const secret = process.env.AUTH_OTP_SECRET;
+    if (!secret) {
+      sendError(res, "UPSTREAM_ERROR", "Máy chủ chưa cấu hình gửi mã OTP.", 503);
+      return;
+    }
+
+    try {
+      const result = await AuthService.requestPasswordOtp(req.user!.id, secret);
+      if (result === "ineligible") {
+        sendError(res, "FORBIDDEN", "Tài khoản này không dùng mật khẩu HueDiMo.", 403);
+        return;
+      }
+      sendOtpResponse(res, result);
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async changePassword(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
-    const { currentPassword, newPassword, confirmPassword, captchaToken } = req.body ?? {};
+    const { currentPassword, newPassword, confirmPassword, otp } = req.body ?? {};
     if (typeof currentPassword !== "string" || !currentPassword || Buffer.byteLength(currentPassword) > 256 ||
         typeof newPassword !== "string" || newPassword.length < 8 || Buffer.byteLength(newPassword) > 72 ||
         newPassword !== confirmPassword || newPassword === currentPassword) {
       sendError(res, "VALIDATION_ERROR", "Mật khẩu mới phải khác mật khẩu hiện tại, từ 8 ký tự và tối đa 72 byte. Hai lần nhập phải khớp.", 422);
       return;
     }
-    if (typeof captchaToken !== "string" || !captchaToken || captchaToken.length > 2048) {
-      sendError(res, "VALIDATION_ERROR", "Vui lòng hoàn thành CAPTCHA.", 422);
+    if (typeof otp !== "string" || !OTP_REGEX.test(otp)) {
+      sendError(res, "VALIDATION_ERROR", "Vui lòng nhập mã OTP gồm 6 chữ số.", 422);
       return;
     }
 
-    const secret = process.env.TURNSTILE_SECRET_KEY;
+    const secret = process.env.AUTH_OTP_SECRET;
     if (!secret) {
-      sendError(res, "UPSTREAM_ERROR", "Máy chủ chưa cấu hình CAPTCHA.", 503);
+      sendError(res, "UPSTREAM_ERROR", "Máy chủ chưa cấu hình xác thực OTP.", 503);
       return;
     }
 
     try {
-      const verification = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-        method: "POST",
-        body: new URLSearchParams({ secret, response: captchaToken }),
-        signal: AbortSignal.timeout(5000),
-      });
-      if (!verification.ok) {
-        sendError(res, "UPSTREAM_ERROR", "Không thể xác minh CAPTCHA lúc này.", 503);
-        return;
-      }
-      const result = await verification.json() as { success?: boolean; action?: string };
-      if (!result.success || result.action !== "change_password") {
-        sendError(res, "VALIDATION_ERROR", "CAPTCHA không hợp lệ hoặc đã hết hạn.", 422);
+      const result = await AuthService.changePassword(req.user!.id, currentPassword, newPassword, otp, secret);
+      if (result === "invalid_otp") {
+        sendError(res, "VALIDATION_ERROR", "Mã OTP không đúng, đã hết hạn hoặc đã hết lượt thử.", 422);
         return;
       }
 
-      if (!await AuthService.changePassword(req.user!.id, currentPassword, newPassword)) {
+      if (result === "invalid_password") {
         sendError(res, "VALIDATION_ERROR", "Mật khẩu hiện tại không đúng hoặc tài khoản không dùng mật khẩu HueDiMo.", 422);
         return;
       }
@@ -87,14 +116,84 @@ export const AuthController = {
     }
   },
 
+  async requestRegistrationOtp(req: Request, res: Response, next: NextFunction): Promise<void> {
+    const email = normalizeEmail(req.body?.email);
+    if (!email) {
+      sendError(res, "VALIDATION_ERROR", "Email không hợp lệ.", 422);
+      return;
+    }
+    const secret = process.env.AUTH_OTP_SECRET;
+    if (!secret) {
+      sendError(res, "UPSTREAM_ERROR", "Máy chủ chưa cấu hình gửi mã OTP.", 503);
+      return;
+    }
 
+    try {
+      if (await UserModel.findByEmail(email)) {
+        sendError(res, "CONFLICT", "Email này đã được đăng ký.", 409);
+        return;
+      }
+      sendOtpResponse(res, await sendEmailOtp(email, "register", "", secret));
+    } catch (error) {
+      next(error);
+    }
+  },
 
+  async requestPasswordResetOtp(req: Request, res: Response, next: NextFunction): Promise<void> {
+    const email = normalizeEmail(req.body?.email);
+    if (!email) {
+      sendError(res, "VALIDATION_ERROR", "Email không hợp lệ.", 422);
+      return;
+    }
+    const secret = process.env.AUTH_OTP_SECRET;
+    if (!secret) {
+      sendError(res, "UPSTREAM_ERROR", "Máy chủ chưa cấu hình gửi mã OTP.", 503);
+      return;
+    }
+
+    try {
+      await AuthService.queuePasswordResetOtp(email, secret);
+      sendSuccess(res, { accepted: true }, 202);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    const email = normalizeEmail(req.body?.email);
+    const { newPassword, confirmPassword, otp } = req.body ?? {};
+    if (!email || typeof otp !== "string" || !OTP_REGEX.test(otp)) {
+      sendError(res, "VALIDATION_ERROR", "Vui lòng nhập email hợp lệ và mã OTP gồm 6 chữ số.", 422);
+      return;
+    }
+    if (typeof newPassword !== "string" || newPassword.length < 8 ||
+        Buffer.byteLength(newPassword) > 72 || newPassword !== confirmPassword) {
+      sendError(res, "VALIDATION_ERROR", "Mật khẩu mới phải có từ 8 ký tự và tối đa 72 byte. Hai lần nhập phải khớp.", 422);
+      return;
+    }
+    const secret = process.env.AUTH_OTP_SECRET;
+    if (!secret) {
+      sendError(res, "UPSTREAM_ERROR", "Máy chủ chưa cấu hình xác thực OTP.", 503);
+      return;
+    }
+
+    try {
+      if (!await AuthService.resetPassword(email, newPassword, otp, secret)) {
+        sendError(res, "VALIDATION_ERROR", "Mã OTP không đúng, đã hết hạn hoặc đã hết lượt thử.", 422);
+        return;
+      }
+      sendSuccess(res, { changed: true });
+    } catch (error) {
+      next(error);
+    }
+  },
   /**
    * POST /api/auth/register
    */
   async register(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { name, email, password } = req.body || {};
+      const { name, password, otp } = req.body ?? {};
+      const email = normalizeEmail(req.body?.email);
 
       // Validate boundary inputs
       if (!name || typeof name !== "string" || !name.trim()) {
@@ -102,21 +201,34 @@ export const AuthController = {
         return;
       }
 
-      if (!email || typeof email !== "string" || !EMAIL_REGEX.test(email.trim())) {
+      if (!email) {
         sendError(res, "VALIDATION_ERROR", "Email không hợp lệ.", 422, { field: "email" });
         return;
       }
 
-      if (!password || typeof password !== "string" || password.length < 6) {
-        sendError(res, "VALIDATION_ERROR", "Mật khẩu phải có ít nhất 6 ký tự.", 422, { field: "password" });
+      if (typeof password !== "string" || password.length < 6 || Buffer.byteLength(password) > 72) {
+        sendError(res, "VALIDATION_ERROR", "Mật khẩu phải có ít nhất 6 ký tự và tối đa 72 byte.", 422, { field: "password" });
+        return;
+      }
+      if (typeof otp !== "string" || !OTP_REGEX.test(otp)) {
+        sendError(res, "VALIDATION_ERROR", "Vui lòng nhập mã OTP gồm 6 chữ số.", 422, { field: "otp" });
+        return;
+      }
+      const secret = process.env.AUTH_OTP_SECRET;
+      if (!secret) {
+        sendError(res, "UPSTREAM_ERROR", "Máy chủ chưa cấu hình xác thực OTP.", 503);
         return;
       }
 
-      const result = await AuthService.register(name, email, password);
+      const result = await AuthService.register(name, email, password, otp, secret);
+      if (!result) {
+        sendError(res, "VALIDATION_ERROR", "Mã OTP không đúng, đã hết hạn hoặc đã hết lượt thử.", 422, { field: "otp" });
+        return;
+      }
       sendSuccess(res, result, 201);
     } catch (error: any) {
-      if (error.code === "CONFLICT") {
-        sendError(res, "CONFLICT", error.message, 409);
+      if (error.code === "CONFLICT" || error.code === "23505") {
+        sendError(res, "CONFLICT", "Email này đã được đăng ký.", 409);
         return;
       }
       next(error);
