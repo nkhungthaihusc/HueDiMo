@@ -101,6 +101,60 @@ body {
   touch-action: none;
 }
 
+.place-marker-label {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 132px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  pointer-events: auto;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #fff;
+  color: #0f172a;
+  box-shadow: 0 1px 5px rgb(15 23 42 / 22%);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 16px;
+}
+
+.show-place-labels .place-marker-label { display: block; }
+.place-marker-wrap[aria-disabled="true"] .place-marker-label { pointer-events: none; }
+
+.place-marker-connector {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  height: 1px;
+  background: #64748b;
+  transform-origin: left center;
+  pointer-events: none;
+  z-index: -1;
+}
+.place-marker-wrap:hover, .place-marker-wrap:focus-visible { z-index: 5; }
+
+.place-cluster {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 5px solid #c4b5fd;
+  border-radius: 50%;
+  background: #7c3aed;
+  color: white;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgb(76 29 149 / 25%);
+  cursor: pointer;
+}
+.place-cluster:hover { background: #5b21b6; }
+.place-cluster:focus-visible { outline: 3px solid #312e81; outline-offset: 3px; }
+
 /* Marker bên trong - Chứa visual, màu nền, border, icon và hiệu ứng hover */
 .place-marker-inner {
   position: relative;
@@ -312,8 +366,8 @@ button:disabled { cursor: not-allowed; }
 .home-panel-handle { display: none; }
 .home-panel-content { display: flex; flex-direction: column; }
 .home-panel-content > *, .home-panel-content .flex-1 { min-height: 0; }
-.map-controls { transform: translateY(-50%); }
-.home-weather { top: calc(156px + var(--safe-top)); left: max(16px, env(safe-area-inset-left)); }
+.map-controls { top: 50%; bottom: auto; left: max(16px, env(safe-area-inset-left)); right: auto; transform: translateY(-50%); }
+.home-weather { top: calc(208px + var(--safe-top)); left: max(16px, env(safe-area-inset-left)); }
 .app-menu { max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 32px); overflow-y: auto; }
 .mobile-navigation { display: none; }
 .admin-drawer { overflow-y: auto; padding-top: max(20px, var(--safe-top)); padding-bottom: max(20px, var(--safe-bottom)); }
@@ -348,7 +402,8 @@ button:disabled { cursor: not-allowed; }
 }
 
 @media (min-width: 768px) {
-  .home-shell[data-add-mode="true"] .home-weather { top: calc(204px + var(--safe-top)); }
+  .home-panel:has(.place-list-panel) { pointer-events: none; }
+  .home-shell[data-add-mode="true"] .home-weather { top: calc(256px + var(--safe-top)); }
   .map-permission-notice { top: auto; bottom: 24px; left: 104px; width: calc(100% - 560px); max-width: 560px; transform: none; translate: none; flex-wrap: wrap; background: #fffbeb; color: #92400e; border-color: #fde68a; box-shadow: 0 2px 8px rgb(15 23 42 / .08); }
   .map-permission-notice > div:first-of-type { flex: 1 1 calc(100% - 36px); }
   .map-permission-notice > div:last-of-type { margin-left: auto; }
@@ -376,12 +431,12 @@ button:disabled { cursor: not-allowed; }
   .home-panel-content [class*="overflow-y-auto"] { overscroll-behavior-y: contain; }
   .home-panel-content > div > .glass-strong { border-radius: 0; box-shadow: none; }
   .home-panel-content > div > .glass-strong:first-child { border-top: 0; }
-  .home-weather { top: calc(192px + var(--safe-top)); left: max(12px, env(safe-area-inset-left)); }
+  .home-weather { top: calc(244px + var(--safe-top)); left: max(12px, env(safe-area-inset-left)); }
   .weather-widget-desktop { display: none; }
   .mobile-navigation { position: absolute; inset: auto 0 0; z-index: 30; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); height: var(--mobile-nav-height); padding: 4px max(8px, env(safe-area-inset-right)) calc(4px + var(--safe-bottom)) max(8px, env(safe-area-inset-left)); border-top: 1px solid #e2e8f0; background: white; }
   .mobile-navigation button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 0; min-height: 48px; border-radius: 12px; color: #64748b; font-size: 11px; font-weight: 600; }
   .mobile-navigation button[aria-pressed="true"] { background: var(--color-brand-50); color: var(--color-brand-700); }
-  .map-controls { top: calc(192px + var(--safe-top)); left: auto; right: max(12px, env(safe-area-inset-right)); transform: none; translate: none; gap: 6px; }
+  .map-controls { top: calc(244px + var(--safe-top)); bottom: auto; left: auto; right: max(12px, env(safe-area-inset-right)); transform: none; translate: none; gap: 6px; }
   .map-controls button { height: 44px; width: 44px; border-radius: 12px; }
   .home-shell[data-panel-expanded="true"] .map-controls { visibility: hidden; pointer-events: none; }
   .map-follow-button { bottom: calc(var(--mobile-nav-height) + 80px); }
@@ -412,9 +467,6 @@ button:disabled { cursor: not-allowed; }
   .home-modal button[class*="w-8"], .home-modal button[class*="w-9"] { min-width: 44px; }
   .home-modal input:not([type="checkbox"]), .home-modal select, .home-modal textarea { font-size: 16px; }
   .home-modal > div > :first-child { flex-shrink: 0; }
-  .home-panel-content .place-detail-panel { overflow-y: auto; overscroll-behavior: contain; }
-  .place-detail-hero { height: 176px; }
-  .place-detail-content { flex: none; overflow: visible; }
   .home-panel-content input { min-width: 0; }
 }
 
@@ -423,8 +475,7 @@ button:disabled { cursor: not-allowed; }
   .home-panel { --home-panel-height: calc(100dvh - var(--safe-top) - var(--mobile-nav-height)); }
   .home-shell[data-panel-expanded="true"] .home-header { visibility: hidden; }
   .home-shell[data-panel-expanded="true"] .home-panel-position:not(:has(.place-pending-panel)) { top: var(--safe-top); }
-  .place-detail-hero { height: 112px; }
-  .map-controls { top: calc(132px + var(--safe-top)); flex-direction: row; }
+  .map-controls { top: calc(190px + var(--safe-top)); flex-direction: row; }
 }
 
 /* Auth fields use their container border as the focus indicator. */
@@ -459,4 +510,8 @@ button:disabled { cursor: not-allowed; }
   --admin-accent: #2e1b4b;
   --admin-accent-ink: #c4b5fd;
   --admin-hover: #1e293b;
+}
+.map-scope-notice { bottom: 104px; left: 12px; max-width: min(320px, calc(100% - 72px)); }
+@media (min-width: 768px) {
+  .map-scope-notice { bottom: 24px; left: 104px; }
 }

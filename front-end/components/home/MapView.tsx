@@ -7,19 +7,28 @@ import type { Place } from "@/lib/types";
 import { HUE_CENTER } from "@/lib/data/places";
 import { getCategory } from "@/lib/data/categories";
 import { getReverseGeocode } from "@/lib/api/reverse-geocode";
+import { hueBoundary, hueBounds, isInHue, outsideHuePlaceMessage } from "@/lib/data/hue-boundary";
+import { toast } from "@/components/ui/Toast";
+import { wardBounds, type HueWards } from "@/lib/data/hue-wards";
+import { clusterPlaces, layoutMarkerOffsets } from "@/lib/map/clusters";
 
 const GOONG_STYLE = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api/map/assets/goong_map_web.json`;
+const PLACE_LABEL_MIN_ZOOM = 15;
 
 
 interface UserLocationCoord {
   lat: number;
   lng: number;
+  timestamp: number;
   accuracy?: number;
   heading?: number;
   address?: string;
 }
 
 interface MapViewProps {
+  wards: HueWards | null;
+  wardCode: string;
+  onWardChange: (code: string) => void;
   selectedId: string | null;
   visiblePlaces: Place[];
   onSelect: (place: Place) => void;
@@ -28,7 +37,7 @@ interface MapViewProps {
   onMapClick?: (coord: { lat: number; lng: number }) => void;
   routePlaces?: Place[];
   focusRouteToken?: number;
-  onUserLocationChange?: (location: { lat: number; lng: number; accuracy?: number; address?: string } | null) => void;
+  onUserLocationChange?: (location: UserLocationCoord | null) => void;
   hideControls?: boolean;
 }
 
@@ -140,6 +149,9 @@ function createAddLocationMarkerElement(): HTMLDivElement {
 }
 
 export default function MapView({
+  wards,
+  wardCode,
+  onWardChange,
   selectedId,
   visiblePlaces,
   onSelect,
@@ -153,9 +165,17 @@ export default function MapView({
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
+  const onWardChangeRef = useRef(onWardChange);
+  useEffect(() => {
+    onWardChangeRef.current = onWardChange;
+  }, [onWardChange]);
+  const lastWardCodeRef = useRef("");
   const markersRef = useRef<Marker[]>([]);
+  const onSelectRef = useRef(onSelect);
+  useEffect(() => { onSelectRef.current = onSelect; }, [onSelect]);
   const addModeRef = useRef(false);
   const addMarkerRef = useRef<Marker | null>(null);
+  const addPositionRef = useRef(addPosition);
   const lastRouteFocusRef = useRef<string | null>(null);
 
   // Tracking Real-time Geolocation refs & states
@@ -169,11 +189,13 @@ export default function MapView({
   const userAddressRef = useRef<string | null>(null);
   const lastGeocodedCoordsRef = useRef<{ lat: number; lng: number } | null>(null);
   const isFetchingAddressRef = useRef<boolean>(false);
+  const locationEpochRef = useRef(0);
 
   const [userLocation, setUserLocation] = useState<UserLocationCoord | null>(null);
   const [isFollowing, setIsFollowing] = useState(true);
-  const [gpsStatus, setGpsStatus] = useState<"idle" | "requesting" | "active" | "denied" | "error" | "unsupported">("idle");
+  const [gpsStatus, setGpsStatus] = useState<"idle" | "requesting" | "active" | "denied" | "error" | "unsupported" | "outside">("idle");
   const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const [outsideHue, setOutsideHue] = useState(false);
 
   useEffect(() => {
     onMapClickRef.current = onMapClick;
@@ -204,9 +226,28 @@ export default function MapView({
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
         const { latitude, longitude, accuracy, heading } = pos.coords;
+        if (!isInHue({ lat: latitude, lng: longitude })) {
+          if (userCoordsRef.current) {
+            locationEpochRef.current++;
+            userCoordsRef.current = null;
+            userAddressRef.current = null;
+            lastGeocodedCoordsRef.current = null;
+            userMarkerRef.current?.remove();
+            userMarkerRef.current = null;
+            setUserLocation(null);
+            onUserLocationChangeRef.current?.(null);
+          }
+          isFirstFix = true;
+          setGpsStatus("outside");
+          setShowPermissionModal(false);
+          setOutsideHue(true);
+          return;
+        }
+        setOutsideHue(false);
         const coords: UserLocationCoord = {
           lat: latitude,
           lng: longitude,
+          timestamp: pos.timestamp,
           accuracy,
           heading: typeof heading === "number" && !isNaN(heading) ? heading : undefined,
           address: userAddressRef.current || undefined,
@@ -216,12 +257,7 @@ export default function MapView({
         setUserLocation(coords);
         setGpsStatus("active");
         setShowPermissionModal(false);
-        onUserLocationChangeRef.current?.({
-          lat: latitude,
-          lng: longitude,
-          accuracy,
-          address: userAddressRef.current || undefined,
-        });
+        onUserLocationChangeRef.current?.(coords);
 
         const map = mapRef.current;
         if (!map) return;
@@ -240,8 +276,10 @@ export default function MapView({
 
         if (shouldFetchAddress && !isFetchingAddressRef.current) {
           isFetchingAddressRef.current = true;
+          const locationEpoch = locationEpochRef.current;
           getReverseGeocode(latitude, longitude)
             .then((data) => {
+              if (locationEpoch !== locationEpochRef.current) return;
               if (data?.address) {
                 userAddressRef.current = data.address;
                 lastGeocodedCoordsRef.current = { lat: latitude, lng: longitude };
@@ -263,13 +301,13 @@ export default function MapView({
                 }
 
                 // Cập nhật coords và gọi callback
-                setUserLocation((prev) => (prev ? { ...prev, address: data.address } : prev));
-                onUserLocationChangeRef.current?.({
-                  lat: latitude,
-                  lng: longitude,
-                  accuracy,
-                  address: data.address,
-                });
+                const latestCoords = userCoordsRef.current;
+                if (latestCoords) {
+                  const updatedCoords = { ...latestCoords, address: data.address };
+                  userCoordsRef.current = updatedCoords;
+                  setUserLocation(updatedCoords);
+                  onUserLocationChangeRef.current?.(updatedCoords);
+                }
               }
             })
             .catch((err) => {
@@ -359,9 +397,16 @@ export default function MapView({
       container: containerRef.current,
       center: [HUE_CENTER.lng, HUE_CENTER.lat],
       zoom: 12,
+      maxBounds: hueBounds,
+      renderWorldCopies: false,
       attributionControl: false,
       style: GOONG_STYLE,
     });
+    const updatePlaceLabels = () => {
+      map.getContainer().classList.toggle("show-place-labels", map.getZoom() >= PLACE_LABEL_MIN_ZOOM);
+    };
+    updatePlaceLabels();
+    map.on("zoom", updatePlaceLabels);
 
     const hideDefaultGoongIcons = () => {
       try {
@@ -388,6 +433,22 @@ export default function MapView({
     map.on("load", () => {
       map.resize();
       hideDefaultGoongIcons();
+      // A rectangular camera limit still includes parts of neighboring provinces.
+      map.addLayer({
+        id: "outside-hue-mask",
+        type: "fill",
+        source: {
+          type: "geojson",
+          data: {
+            type: "Polygon",
+            coordinates: [
+              [[100, 10], [115, 10], [115, 23], [100, 23], [100, 10]],
+              [...hueBoundary].reverse(),
+            ],
+          },
+        },
+        paint: { "fill-color": "#e2e8f0", "fill-opacity": 0.18 },
+      });
     });
 
     map.once("styledata", () => {
@@ -401,7 +462,17 @@ export default function MapView({
     });
 
     map.on("click", (e: MapMouseEvent) => {
-      if (!addModeRef.current) return;
+      if (!isInHue(e.lngLat)) {
+        toast.error(outsideHuePlaceMessage);
+        return;
+      }
+      if (!addModeRef.current) {
+        if (map.getLayer("hue-ward-fill")) {
+          const ward = map.queryRenderedFeatures(e.point, { layers: ["hue-ward-fill"] })[0];
+          if (ward?.properties?.code) onWardChangeRef.current(String(ward.properties.code));
+        }
+        return;
+      }
       onMapClickRef.current?.({ lat: e.lngLat.lat, lng: e.lngLat.lng });
     });
 
@@ -504,6 +575,7 @@ export default function MapView({
 
   // Quản lý Marker cho vị trí thêm mới (addPosition)
   useEffect(() => {
+    addPositionRef.current = addPosition;
     const map = mapRef.current;
     if (!map) return;
 
@@ -522,6 +594,8 @@ export default function MapView({
 
         marker.on("dragend", () => {
           const lngLat = marker.getLngLat();
+          const lastPosition = addPositionRef.current;
+          if (!isInHue(lngLat) && lastPosition) marker.setLngLat(lastPosition);
           onMapClickRef.current?.({ lat: lngLat.lat, lng: lngLat.lng });
         });
 
@@ -598,93 +672,204 @@ export default function MapView({
     return () => { map.off("load", focusBounds); };
   }, [routePlaces, focusRouteToken]);
 
-  // Render marker theo danh sách đã lọc (có đánh số thứ tự chặng nếu thuộc lộ trình)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !wards) return;
+    const updateWards = () => {
+      if (!map.getSource("hue-wards")) {
+        map.addSource("hue-wards", { type: "geojson", data: wards });
+        map.addLayer({
+          id: "hue-ward-fill", type: "fill", source: "hue-wards",
+          paint: {
+            "fill-color": "#7c3aed",
+            "fill-opacity": ["case", ["==", ["get", "code"], wardCode], 0.12, 0.015],
+          },
+        });
+        map.addLayer({
+          id: "hue-ward-lines", type: "line", source: "hue-wards",
+          paint: {
+            "line-color": ["case", ["==", ["get", "code"], wardCode], "#6d28d9", "#64748b"],
+            "line-width": ["case", ["==", ["get", "code"], wardCode], 3, 1.2],
+            "line-opacity": 0.75,
+          },
+        });
+      } else {
+        map.setPaintProperty("hue-ward-fill", "fill-opacity", ["case", ["==", ["get", "code"], wardCode], 0.12, 0.015]);
+        map.setPaintProperty("hue-ward-lines", "line-color", ["case", ["==", ["get", "code"], wardCode], "#6d28d9", "#64748b"]);
+        map.setPaintProperty("hue-ward-lines", "line-width", ["case", ["==", ["get", "code"], wardCode], 3, 1.2]);
+      }
+    };
+    if (map.isStyleLoaded()) updateWards();
+    else map.once("load", updateWards);
+    return () => { map.off("load", updateWards); };
+  }, [wards, wardCode]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const ward = wards?.features.find((item) => item.properties.code === wardCode);
+    if (!map || (!ward && !lastWardCodeRef.current)) return;
+    lastWardCodeRef.current = wardCode;
+    isFollowingRef.current = false;
+    setIsFollowing(false);
+    map.fitBounds(ward ? wardBounds(ward) : hueBounds, {
+      padding: window.innerWidth >= 768
+        ? { left: 80, right: 440, top: 180, bottom: 60 }
+        : { left: 24, right: 64, top: Math.min(244, window.innerHeight * 0.3), bottom: Math.min(180, window.innerHeight * 0.22) },
+      maxZoom: 14, duration: 650,
+    });
+  }, [wards, wardCode]);
+
+  // Render individual markers and clusters again after the camera finishes zooming.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    markersRef.current.forEach((m) => m.remove());
-    markersRef.current = [];
+    const renderMarkers = () => {
+      markersRef.current.forEach((m) => m.remove());
+      markersRef.current = [];
 
-    // Tạo bản đồ số thứ tự trong lộ trình (1, 2, 3...)
-    const routeIndexMap = new Map<string, number>();
-    if (routePlaces && routePlaces.length > 0) {
-      routePlaces.forEach((p, idx) => {
-        if (!routeIndexMap.has(p.id)) {
-          routeIndexMap.set(p.id, idx + 1);
+      // Tạo bản đồ số thứ tự trong lộ trình (1, 2, 3...)
+      const routeIndexMap = new Map<string, number>();
+      if (routePlaces && routePlaces.length > 0) {
+        routePlaces.forEach((p, idx) => {
+          if (!routeIndexMap.has(p.id)) {
+            routeIndexMap.set(p.id, idx + 1);
+          }
+        });
+      }
+
+      const separateIds = new Set(routePlaces?.map((place) => place.id) ?? []);
+      if (selectedId) separateIds.add(selectedId);
+      const groups = clusterPlaces(visiblePlaces, map.getZoom(), separateIds);
+      const groupPoints = groups.map((group) => ({
+        id: group.places.map((place) => place.id).join("|"),
+        lat: group.lat,
+        lng: group.lng,
+      }));
+      const offsets = layoutMarkerOffsets(groupPoints, map.getZoom());
+      const addConnector = (element: HTMLElement, x: number, y: number) => {
+        if (!x && !y) return;
+        const connector = document.createElement("span");
+        connector.className = "place-marker-connector";
+        connector.style.width = `${Math.hypot(x, y)}px`;
+        connector.style.transform = `rotate(${Math.atan2(-y, -x)}rad)`;
+        element.appendChild(connector);
+      };
+      groups.forEach((group, index) => {
+        const offset = offsets.get(groupPoints[index].id)!;
+        if (group.places.length > 1) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "place-cluster";
+          button.textContent = String(group.places.length);
+          button.title = group.places.map((place) => place.name).join("\n");
+          button.setAttribute("aria-label", `Phóng to cụm ${group.places.length} địa điểm`);
+          button.disabled = isAddMode;
+          addConnector(button, offset.x, offset.y);
+          const marker = new Marker({ element: button })
+            .setLngLat([group.lng, group.lat]).setOffset([offset.x, offset.y]).addTo(map);
+          button.addEventListener("click", (event) => {
+            event.stopPropagation();
+            isFollowingRef.current = false;
+            setIsFollowing(false);
+            map.flyTo({ center: [group.lng, group.lat], zoom: Math.min(15, map.getZoom() + 2), duration: 500 });
+          });
+          markersRef.current.push(marker);
+          return;
         }
-      });
-    }
+        const place = group.places[0];
+        const category = getCategory(place.category);
+        const isSelected = selectedId === place.id;
+        const routeIndex = routeIndexMap.get(place.id);
+        const isRoute = routeIndex !== undefined;
+        const isPending = place.status === "pending";
 
-    visiblePlaces.forEach((place) => {
-      const category = getCategory(place.category);
-      const isSelected = selectedId === place.id;
-      const routeIndex = routeIndexMap.get(place.id);
-      const isRoute = routeIndex !== undefined;
-      const isPending = place.status === "pending";
+        const wrapEl = document.createElement("div");
+        wrapEl.className = "place-marker-wrap";
+        wrapEl.setAttribute("role", "button");
+        wrapEl.setAttribute("aria-label", place.name);
+        wrapEl.setAttribute("aria-disabled", String(isAddMode));
+        wrapEl.tabIndex = isAddMode ? -1 : 0;
+        wrapEl.title = place.name;
+        wrapEl.style.pointerEvents = isAddMode ? "none" : "auto";
+        if (isPending) {
+          wrapEl.title = `⏳ ${place.name} (Địa điểm đang chờ Ban Quản Trị duyệt)`;
+        }
 
-      const wrapEl = document.createElement("div");
-      wrapEl.className = "place-marker-wrap";
-      wrapEl.style.pointerEvents = isAddMode ? "none" : "auto";
-      if (isPending) {
-        wrapEl.title = `⏳ ${place.name} (Địa điểm đang chờ Ban Quản Trị duyệt)`;
-      }
-
-      const innerEl = document.createElement("div");
-      innerEl.className = `place-marker-inner ${isSelected ? "is-selected" : ""} ${isRoute ? "is-route" : ""} ${isPending ? "is-pending" : ""}`;
+        const innerEl = document.createElement("div");
+        innerEl.className = `place-marker-inner ${isSelected ? "is-selected" : ""} ${isRoute ? "is-route" : ""} ${isPending ? "is-pending" : ""}`;
       
-      // Nếu là điểm trong lộ trình hoặc địa điểm chờ duyệt, hiển thị badge trực quan
-      if (isRoute) {
-        innerEl.innerHTML = `
-          <div class="relative flex items-center justify-center">
-            <span>${category.emoji}</span>
-            <span class="absolute -top-2.5 -right-2.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-black text-white shadow-md ring-2 ring-white">
-              ${routeIndex}
-            </span>
-          </div>
-        `;
-      } else if (isPending) {
-        innerEl.innerHTML = `
-          <div class="relative flex items-center justify-center">
-            <span>${category.emoji}</span>
-            <span class="absolute -top-3 -right-3 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[11px] text-white shadow-md ring-2 ring-white" title="Chờ BQT duyệt">
-              ⏳
-            </span>
-          </div>
-        `;
-      } else {
-        innerEl.innerHTML = `<span>${category.emoji}</span>`;
-      }
+        // Nếu là điểm trong lộ trình hoặc địa điểm chờ duyệt, hiển thị badge trực quan
+        if (isRoute) {
+          innerEl.innerHTML = `
+            <div class="relative flex items-center justify-center">
+              <span>${category.emoji}</span>
+              <span class="absolute -top-2.5 -right-2.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-black text-white shadow-md ring-2 ring-white">
+                ${routeIndex}
+              </span>
+            </div>
+          `;
+        } else if (isPending) {
+          innerEl.innerHTML = `
+            <div class="relative flex items-center justify-center">
+              <span>${category.emoji}</span>
+              <span class="absolute -top-3 -right-3 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[11px] text-white shadow-md ring-2 ring-white" title="Chờ BQT duyệt">
+                ⏳
+              </span>
+            </div>
+          `;
+        } else {
+          innerEl.innerHTML = `<span>${category.emoji}</span>`;
+        }
 
-      innerEl.style.backgroundColor = isSelected
-        ? category.color
-        : isRoute
-        ? "#f5f3ff"
-        : isPending
-        ? "#fffbeb"
-        : "#ffffff";
-      innerEl.style.borderColor = isSelected
-        ? "#ffffff"
-        : isRoute
-        ? "#6366f1"
-        : isPending
-        ? "#f59e0b"
-        : category.color;
+        innerEl.style.backgroundColor = isSelected
+          ? category.color
+          : isRoute
+          ? "#f5f3ff"
+          : isPending
+          ? "#fffbeb"
+          : "#ffffff";
+        innerEl.style.borderColor = isSelected
+          ? "#ffffff"
+          : isRoute
+          ? "#6366f1"
+          : isPending
+          ? "#f59e0b"
+          : category.color;
 
-      wrapEl.appendChild(innerEl);
+        wrapEl.appendChild(innerEl);
 
-      const marker = new Marker({ element: wrapEl, anchor: "center" })
-        .setLngLat([place.lng, place.lat])
-        .addTo(map);
+        const label = document.createElement("span");
+        label.className = "place-marker-label";
+        label.textContent = place.name.replace(/(?:\s+\([^()]*\))+\s*$/, "").trim() || place.name;
+        label.setAttribute("aria-hidden", "true");
+        wrapEl.appendChild(label);
+        addConnector(wrapEl, offset.x, offset.y);
 
-      wrapEl.addEventListener("click", (event) => {
-        event.stopPropagation();
-        onSelect(place);
+        const marker = new Marker({ element: wrapEl, anchor: "center" })
+          .setLngLat([place.lng, place.lat])
+          .setOffset([offset.x, offset.y])
+          .addTo(map);
+
+        wrapEl.addEventListener("click", (event) => {
+          if (isAddMode) return;
+          event.stopPropagation();
+          onSelectRef.current(place);
+        });
+        wrapEl.addEventListener("keydown", (event) => {
+          if (!isAddMode && (event.key === "Enter" || event.key === " ")) {
+            event.preventDefault();
+            onSelectRef.current(place);
+          }
+        });
+
+        markersRef.current.push(marker);
       });
-
-      markersRef.current.push(marker);
-    });
-  }, [visiblePlaces, selectedId, onSelect, routePlaces, isAddMode]);
+    };
+    renderMarkers();
+    map.on("zoomend", renderMarkers);
+    return () => { map.off("zoomend", renderMarkers); };
+  }, [visiblePlaces, selectedId, routePlaces, isAddMode]);
 
 
   // List refreshes must not restart the camera for the same destination.
@@ -703,6 +888,12 @@ export default function MapView({
     <div className="relative h-full w-full isolate">
       {/* MapLibre Canvas Container */}
       <div ref={containerRef} className="h-full w-full" />
+
+      {outsideHue && (
+        <p role="status" className="map-scope-notice absolute z-30 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900 shadow-sm">
+          Bạn đang ở ngoài thành phố Huế, nên bản đồ vẫn hiển thị Huế.
+        </p>
+      )}
 
       {/* Thông báo hướng dẫn cấp quyền vị trí nếu người dùng từ chối */}
       {showPermissionModal && (

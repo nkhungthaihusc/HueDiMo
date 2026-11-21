@@ -147,9 +147,9 @@ export default function PlaceListPanel({
   }, [filteredPlaces, currentPage]);
 
   return (
-    <div className="pointer-events-auto flex h-full w-full max-w-[calc(100vw-1rem)] sm:w-[380px] sm:max-w-[380px] flex-col animate-in fade-in slide-in-from-left-4 duration-300 ease-out select-none">
+    <div className="place-list-panel pointer-events-none flex h-full w-full max-w-[calc(100vw-1rem)] sm:w-[380px] sm:max-w-[380px] flex-col animate-in fade-in slide-in-from-left-4 duration-300 ease-out select-none">
       {/* Header bar */}
-      <div className="place-list-header glass-strong mb-2.5 rounded-3xl border border-white/70 p-3 sm:p-3.5 shadow-xl backdrop-blur-xl">
+      <div className="place-list-header pointer-events-auto glass-strong mb-2.5 rounded-3xl border border-white/70 p-3 sm:p-3.5 shadow-xl backdrop-blur-xl">
         <div className="place-list-title flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
             <div className="flex h-8 sm:h-9 w-8 sm:w-9 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-brand-600 via-indigo-600 to-amber-500 text-white shadow-md shadow-brand-500/25 text-base">
@@ -301,7 +301,7 @@ export default function PlaceListPanel({
 
       {/* Danh sách địa điểm & Phân trang */}
       {!collapsed && (
-        <div className="glass-strong flex-1 flex flex-col min-h-0 rounded-3xl border border-white/70 shadow-2xl backdrop-blur-xl transition-ui duration-300 overflow-hidden">
+        <div className="pointer-events-auto glass-strong flex-1 flex flex-col min-h-0 rounded-3xl border border-white/70 shadow-2xl backdrop-blur-xl transition-ui duration-300 overflow-hidden">
           {filteredPlaces.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-8 text-center my-auto">
               <span className="text-3xl mb-2">🔍</span>

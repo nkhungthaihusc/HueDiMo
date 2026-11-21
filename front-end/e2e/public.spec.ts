@@ -6,15 +6,133 @@ async function openFeature(page: Page, name: string) {
   await page.getByRole("navigation", { name: "Tất cả chức năng" }).getByRole("button", { name, exact: true }).click();
 }
 
+test("hiện tên ngắn dưới ghim khi phóng tới mức 15", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const destination = { ...place, name: "Đại Nội Huế (Hoàng Thành)", lat: 16.47023, lng: 107.57725 };
+  const headers = { "access-control-allow-origin": "*" };
+  await page.route("**/api/places", (route) => route.fulfill({ headers, json: { data: [destination] } }));
+  await page.goto("/");
+
+  const label = page.locator(".place-marker-label");
+  await expect(label).toHaveText("Đại Nội Huế");
+  await expect(label).toBeHidden();
+  const zoomIn = page.getByRole("button", { name: "Phóng to", exact: true });
+  for (let step = 0; step < 3; step++) {
+    await zoomIn.click();
+  }
+  await expect(label).toBeVisible();
+  await page.getByRole("button", { name: "Thu nhỏ", exact: true }).click();
+  await expect(label).toBeHidden();
+});
+
 test("tìm địa điểm, xem chi tiết và xử lý truy vấn rỗng kết quả", async ({ page }) => {
   await page.goto("/");
   const search = page.getByPlaceholder(/Tìm kiếm danh lam/);
   await search.fill("Thiên Mụ");
-  await page.getByText(place.name, { exact: true }).filter({ visible: true }).click();
+  await page.getByRole("region", { name: "Kết quả tìm kiếm địa điểm" }).getByText(place.name, { exact: true }).click();
   await expect(page.getByRole("heading", { name: place.name, exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Quay lại danh sách" }).click();
   await search.fill("không tồn tại playwright");
   await expect(page.getByText(/Không tìm thấy địa điểm nào phù hợp/)).toBeVisible();
+});
+
+test("không đưa địa điểm ngoài Huế vào kết quả hoặc danh mục bản đồ", async ({ page }) => {
+  const outside = { ...place, id: "outside-hue", name: "Cầu Rồng", lat: 16.061, lng: 108.227 };
+  const headers = { "access-control-allow-origin": "*" };
+  await page.route("**/api/places", (route) => route.fulfill({ headers, json: { data: [place, outside] } }));
+  await page.route("**/api/places/search?*", (route) => route.fulfill({ headers, json: { data: [outside] } }));
+
+  await page.goto("/");
+  await page.getByRole("searchbox", { name: "Tìm địa điểm tại Huế" }).fill(outside.name);
+  await expect(page.getByText("Địa điểm này nằm ngoài thành phố Huế. Bản đồ vẫn hiển thị Huế.")).toBeVisible();
+  await expect(page.getByText(outside.name, { exact: true })).toHaveCount(0);
+});
+
+test("chi tiết chia đôi và báo quá xa ngay khi bấm check-in", async ({ page, context }, testInfo) => {
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ latitude: 16.50, longitude: 107.60 });
+  await page.addInitScript(() => {
+    navigator.geolocation.getCurrentPosition = () => {
+      document.documentElement.dataset.checkinRequestedGps = "true";
+    };
+  });
+  const checkins: unknown[] = [];
+  const headers = { "access-control-allow-origin": "*" };
+  await page.route("**/api/reverse-geocode?*", (route) =>
+    route.fulfill({ headers, json: { data: { address: "Huế" } } })
+  );
+  await page.route("**/api/checkins", (route) => {
+    if (route.request().method() !== "POST") return route.fallback();
+    checkins.push(route.request().postDataJSON());
+    return route.fulfill({ headers, json: { data: { pointsEarned: 100 } } });
+  });
+  await page.goto("/login");
+  await page.getByPlaceholder("you@example.com").fill(visitor.email);
+  await page.locator('input[type="password"]').fill(password);
+  await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
+  await expect(page.getByRole("button", { name: `Hồ sơ ${visitor.name}` })).toBeVisible();
+
+  await page.getByRole("searchbox", { name: "Tìm địa điểm tại Huế" }).fill("Thiên Mụ");
+  await page.getByRole("region", { name: "Kết quả tìm kiếm địa điểm" }).getByText(place.name, { exact: true }).click();
+  const preview = page.getByRole("region", { name: place.name, exact: true });
+  const dialog = page.getByRole("dialog", { name: place.name, exact: true });
+  const showDetails = preview.getByRole("button", { name: "Xem chi tiết", exact: true });
+  await expect(preview.getByRole("heading", { name: place.name, exact: true })).toBeVisible();
+  await expect(dialog).toHaveCount(0);
+  const desktop = testInfo.project.name === "desktop";
+  if (desktop) {
+    await showDetails.click();
+    await expect(dialog).toBeVisible();
+    const widths = await dialog.locator(":scope > div").evaluateAll((sections) =>
+      sections.map((section) => section.getBoundingClientRect().width)
+    );
+    expect(widths).toHaveLength(2);
+    expect(Math.abs(widths[0] - widths[1])).toBeLessThan(2);
+  } else {
+    await expect(showDetails).toHaveCount(0);
+  }
+  const detail = desktop ? dialog : preview;
+  await expect(detail.getByText(/Cách bạn:/)).toBeVisible();
+
+  await detail.getByRole("button", { name: /Check-in/ }).click();
+  await expect(detail.getByRole("status").filter({ hasText: /Hãy đến trong bán kính 500 m/ })).toBeVisible();
+  await expect(page.locator("html")).not.toHaveAttribute("data-checkin-requested-gps", "true");
+  expect(checkins).toEqual([]);
+
+  await context.setGeolocation({ latitude: place.lat, longitude: place.lng });
+  await expect(detail.getByText(/Đủ điều kiện check-in/)).toBeVisible();
+  await detail.getByRole("button", { name: /Check-in/ }).click();
+  await expect(detail.getByRole("status").filter({ hasText: /Check-in thành công/ })).toBeVisible();
+  expect(checkins).toEqual([{ placeId: place.id, userLat: place.lat, userLng: place.lng }]);
+  await expect(page.locator("html")).not.toHaveAttribute("data-checkin-requested-gps", "true");
+  if (desktop) {
+    await dialog.getByRole("button", { name: "Đóng chi tiết" }).press("Escape");
+    await expect(dialog).toHaveCount(0);
+    await expect(preview.getByRole("heading", { name: place.name, exact: true })).toBeVisible();
+  }
+});
+
+test("báo vị trí ngoài Huế và khôi phục định vị khi quay lại Huế", async ({ page, context }) => {
+  const marker = page.locator(".user-location-dot");
+  const geocodeRequests: string[] = [];
+  await page.route("**/api/reverse-geocode?*", (route) => {
+    geocodeRequests.push(route.request().url());
+    return route.fulfill({ headers: { "access-control-allow-origin": "*" }, json: { data: { address: "Huế" } } });
+  });
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ latitude: 16.061, longitude: 108.227 });
+  await page.goto("/");
+
+  const notice = page.getByText("Bạn đang ở ngoài thành phố Huế, nên bản đồ vẫn hiển thị Huế.");
+  await expect(notice).toBeVisible();
+  await expect(marker).toHaveCount(0);
+  expect(geocodeRequests).toHaveLength(0);
+  await context.setGeolocation({ latitude: 16.4637, longitude: 107.5907 });
+  await expect(notice).toHaveCount(0);
+  await expect(marker).toBeVisible();
+  await context.setGeolocation({ latitude: 16.061, longitude: 108.227 });
+  await expect(notice).toBeVisible();
+  await expect(marker).toHaveCount(0);
 });
 
 test("chi tiết địa điểm chỉ hiện thông tin tham quan đã được nhập", async ({ page }) => {

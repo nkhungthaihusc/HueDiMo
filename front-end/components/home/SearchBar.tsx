@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import type { Place } from "@/lib/types";
+import { isInHue, outsideHuePlaceMessage } from "@/lib/data/hue-boundary";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
 
@@ -10,6 +11,8 @@ interface SearchBarProps {
   onChange: (v: string) => void;
   onSelectPlace?: (place: Place) => void;
   debounceMs?: number;
+  areaPlaces?: Place[];
+  areaName?: string;
 }
 
 export default function SearchBar({
@@ -17,10 +20,14 @@ export default function SearchBar({
   onChange,
   onSelectPlace,
   debounceMs = 350,
+  areaPlaces,
+  areaName,
 }: SearchBarProps) {
   const [focused, setFocused] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState(value);
   const [results, setResults] = useState<Place[]>([]);
+  const [outsideMatches, setOutsideMatches] = useState(false);
+  const [searchError, setSearchError] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -36,8 +43,18 @@ export default function SearchBar({
 
   // Call API /api/places/search when debouncedQuery changes
   useEffect(() => {
+    setOutsideMatches(false);
+    setSearchError(false);
     if (!debouncedQuery.trim()) {
       setResults([]);
+      setIsSearching(false);
+      return;
+    }
+    if (areaPlaces) {
+      const fold = (value: string) => value.normalize("NFD").replace(/\p{Diacritic}/gu, "")
+        .replace(/[đĐ]/g, "d").toLocaleLowerCase("vi");
+      const query = fold(debouncedQuery.trim());
+      setResults(areaPlaces.filter((place) => fold(`${place.name} ${place.address ?? ""}`).includes(query)).slice(0, 5));
       setIsSearching(false);
       return;
     }
@@ -46,16 +63,24 @@ export default function SearchBar({
     setIsSearching(true);
 
     fetch(`${BACKEND_URL}/api/places/search?q=${encodeURIComponent(debouncedQuery.trim())}&limit=5`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then((json) => {
         if (isMounted) {
-          setResults(json.data || []);
+          const matches: Place[] = json.data || [];
+          const eligible = matches.filter(isInHue);
+          setResults(eligible);
+          setOutsideMatches(eligible.length < matches.length);
           setIsSearching(false);
         }
       })
       .catch((err) => {
         if (isMounted) {
           console.error("Lỗi khi tìm kiếm địa điểm:", err);
+          setResults([]);
+          setSearchError(true);
           setIsSearching(false);
         }
       });
@@ -63,7 +88,7 @@ export default function SearchBar({
     return () => {
       isMounted = false;
     };
-  }, [debouncedQuery]);
+  }, [debouncedQuery, areaPlaces]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -140,8 +165,8 @@ export default function SearchBar({
       </div>
 
       {/* Suggested 5 Places Dropdown */}
-      {showDropdown && debouncedQuery.trim().length > 0 && (
-        <div className="absolute left-0 right-0 top-full mt-2 max-h-[45dvh] overflow-y-auto rounded-2xl border border-white/40 bg-white/95 p-2 shadow-2xl backdrop-blur-xl z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+      {showDropdown && debouncedQuery === value && debouncedQuery.trim().length > 0 && (
+        <div role="region" aria-label="Kết quả tìm kiếm địa điểm" className="absolute left-0 right-0 top-full mt-2 max-h-[45dvh] overflow-y-auto rounded-2xl border border-white/40 bg-white/95 p-2 shadow-2xl backdrop-blur-xl z-50 animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-ink-500 flex items-center justify-between border-b border-gray-100">
             <span>Gợi ý địa điểm hàng đầu</span>
             <span className="text-[10px] text-brand-600 font-normal">Tối đa 5 kết quả</span>
@@ -153,8 +178,10 @@ export default function SearchBar({
               <span>Đang tìm kiếm...</span>
             </div>
           ) : results.length === 0 ? (
-            <div className="py-6 text-center text-xs text-ink-500">
-              Không tìm thấy địa điểm nào phù hợp với &quot;{debouncedQuery}&quot;.
+            <div role="status" className="py-6 text-center text-xs text-ink-500">
+              {searchError ? "Chưa tìm kiếm được. Vui lòng thử lại."
+                : outsideMatches ? outsideHuePlaceMessage
+                : <>Không tìm thấy địa điểm nào phù hợp với &quot;{debouncedQuery}&quot;. {areaName ? `Đang tìm trong ${areaName}.` : "Bản đồ chỉ hỗ trợ địa điểm tại Huế."}</>}
             </div>
           ) : (
             <div className="mt-1 space-y-1">

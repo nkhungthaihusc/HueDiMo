@@ -7,7 +7,7 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 import type { Place, Review } from "@/lib/types";
 import { getCategory } from "@/lib/data/categories";
 import { addReview } from "@/lib/review/logic";
-import { calculateDistanceKm } from "@/lib/itinerary/types";
+import { isInHue } from "@/lib/data/hue-boundary";
 import { getPlaceSpecifics } from "@/lib/data/placeSpecifics";
 import { ReviewAPI } from "@/lib/api/reviews";
 import { uploadMedia } from "@/lib/api/media";
@@ -19,8 +19,10 @@ import AuthPromptModal from "@/components/auth/AuthPromptModal";
 interface PlaceDetailPanelProps {
   place: Place;
   onBack: () => void;
+  expanded: boolean;
+  onExpandedChange: (expanded: boolean) => void;
   onAddToItinerary?: (place: Place) => void;
-  userLocation?: { lat: number; lng: number } | null;
+  userLocation?: { lat: number; lng: number; timestamp: number } | null;
 }
 
 function Stars({
@@ -86,6 +88,9 @@ function formatBestTime(val?: string): string {
   return map[val.toLowerCase().trim()] || val;
 }
 
+const MAX_CHECKIN_RADIUS_METERS = 500;
+const CHECKIN_LOCATION_MAX_AGE_MS = 60_000;
+
 function calculateDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371e3;
   const rad = Math.PI / 180;
@@ -125,6 +130,8 @@ export default function PlaceDetailPanel(props: PlaceDetailPanelProps) {
 function ApprovedPlaceDetails({
   place,
   onBack,
+  expanded,
+  onExpandedChange,
   onAddToItinerary,
   userLocation,
 }: PlaceDetailPanelProps) {
@@ -174,7 +181,19 @@ function ApprovedPlaceDetails({
         type: "error",
         text: "Vui lòng đăng nhập tài khoản để check-in nhận điểm thưởng!",
       });
-      setTimeout(() => setCheckinMessage(null), 4000);
+      return;
+    }
+
+    const showTooFar = (distance: number) => {
+      const label = distance >= 1000 ? `${(distance / 1000).toFixed(2)} km` : `${Math.round(distance)} m`;
+      setCheckinMessage({
+        type: "error",
+        text: `Bạn đang cách ${place.name} khoảng ${label}. Hãy đến trong bán kính 500 m để check-in.`,
+      });
+    };
+
+    if (distanceToUser !== null && distanceToUser > MAX_CHECKIN_RADIUS_METERS) {
+      showTooFar(distanceToUser);
       return;
     }
 
@@ -182,60 +201,38 @@ function ApprovedPlaceDetails({
       setIsCheckingIn(true);
       setCheckinMessage(null);
 
-      // 1. Xác định vị trí GPS thực tế hiện tại của du khách
-      let currentCoords: { lat: number; lng: number } | null = userLocation
-        ? { lat: userLocation.lat, lng: userLocation.lng }
-        : null;
+      const recentFix = userLocation && Date.now() - userLocation.timestamp <= CHECKIN_LOCATION_MAX_AGE_MS;
+      let currentCoords = recentFix ? userLocation : null;
+      let distMeters = recentFix ? distanceToUser : null;
 
-      // Cố gắng truy vấn GPS mới nhất từ trình duyệt
-      if (typeof navigator !== "undefined" && navigator.geolocation) {
-        try {
-          const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-              enableHighAccuracy: true,
-              timeout: 6000,
-              maximumAge: 10000,
-            });
+      if (!currentCoords && navigator.geolocation) {
+        const pos = await new Promise<GeolocationPosition | null>((resolve) => {
+          navigator.geolocation.getCurrentPosition(resolve, () => resolve(null), {
+            enableHighAccuracy: true,
+            timeout: 6000,
+            maximumAge: 10000,
           });
-          currentCoords = {
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-          };
-        } catch {
-          // Dùng userLocation fallback nếu navigator.geolocation timeout hoặc bị chặn
+        });
+        if (pos) {
+          currentCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude, timestamp: pos.timestamp };
+          if (!isInHue(currentCoords)) {
+            setCheckinMessage({ type: "error", text: "Bạn đang ở ngoài thành phố Huế." });
+            return;
+          }
+          distMeters = calculateDistanceMeters(currentCoords.lat, currentCoords.lng, place.lat, place.lng);
         }
       }
 
-      if (!currentCoords) {
+      if (!currentCoords || distMeters === null) {
         setCheckinMessage({
           type: "error",
-          text: "📍 Không thể xác định vị trí của bạn. Vui lòng bật định vị GPS trên trình duyệt để xác thực bạn đang ở địa điểm (bán kính 500m)!",
+          text: "Không xác định được vị trí. Hãy bật định vị để check-in trong bán kính 500 m.",
         });
-        setTimeout(() => setCheckinMessage(null), 6000);
         return;
       }
 
-      // 2. Tính khoảng cách đường chim bay đến địa điểm
-      const distMeters = calculateDistanceMeters(
-        currentCoords.lat,
-        currentCoords.lng,
-        place.lat,
-        place.lng
-      );
-
-      const MAX_CHECKIN_RADIUS_METERS = 500; // Bán kính tối đa 500m theo yêu cầu
-
       if (distMeters > MAX_CHECKIN_RADIUS_METERS) {
-        const distDisplay =
-          distMeters >= 1000
-            ? `${(distMeters / 1000).toFixed(1)} km`
-            : `${Math.round(distMeters)} mét`;
-
-        setCheckinMessage({
-          type: "error",
-          text: `📍 Bạn đang ở cách ${place.name} khoảng ${distDisplay}. Bạn cần có mặt trong bán kính 500m của địa điểm để có thể check-in nhận điểm!`,
-        });
-        setTimeout(() => setCheckinMessage(null), 7000);
+        showTooFar(distMeters);
         return;
       }
 
@@ -252,7 +249,7 @@ function ApprovedPlaceDetails({
           type: "success",
           text: `🎉 Check-in thành công tại ${place.name}! (Vị trí hợp lệ: cách ${roundedM}m). Bạn nhận được +${res.pointsEarned || 100} điểm!`,
         });
-        await refreshUser();
+        void refreshUser().catch(() => {});
       }
     } catch {
       setCheckinMessage({
@@ -261,7 +258,6 @@ function ApprovedPlaceDetails({
       });
     } finally {
       setIsCheckingIn(false);
-      setTimeout(() => setCheckinMessage(null), 7000);
     }
   };
 
@@ -310,11 +306,6 @@ function ApprovedPlaceDetails({
   const distanceToUser = useMemo(() => {
     if (!userLocation) return null;
     return calculateDistanceMeters(userLocation.lat, userLocation.lng, place.lat, place.lng);
-  }, [userLocation, place.lat, place.lng]);
-
-  const distanceToUserKM = useMemo(() => {
-    if (!userLocation) return null;
-    return calculateDistanceKm(userLocation.lat, userLocation.lng, place.lat, place.lng);
   }, [userLocation, place.lat, place.lng]);
 
   const specifics = useMemo(() => getPlaceSpecifics(place), [place]);
@@ -465,30 +456,57 @@ function ApprovedPlaceDetails({
   };
 
 
-  return (
-    <>
+  const panel = (
       <div
+        role={expanded ? "dialog" : undefined}
+        aria-modal={expanded && !isLightboxOpen && !authModal.isOpen ? true : undefined}
+        aria-label={expanded ? place.name : undefined}
         data-state={isClosing ? "closing" : "open"}
-        inert={isClosing}
-        className="motion-place-panel place-detail-panel glass-strong pointer-events-auto flex h-full w-full max-w-[calc(100vw-1rem)] sm:w-[410px] sm:max-w-[410px] flex-col overflow-hidden rounded-3xl border border-white/40 shadow-2xl backdrop-blur-xl"
+        inert={isClosing || isLightboxOpen || authModal.isOpen}
+        onKeyDown={(event) => {
+          if (!expanded) return;
+          if (event.key === "Escape") {
+            event.stopPropagation();
+            onExpandedChange(false);
+          }
+          if (event.key === "Tab") {
+            const focusable = Array.from(event.currentTarget.querySelectorAll<HTMLElement>(
+              'a[href], button, input, select, textarea, [tabindex]'
+            )).filter((element) => element.tabIndex >= 0 && !element.matches(":disabled") && element.getClientRects().length);
+            const first = focusable[0];
+            const last = focusable.at(-1);
+            if (event.shiftKey && document.activeElement === first && last) {
+              event.preventDefault();
+              last.focus();
+            } else if (!event.shiftKey && document.activeElement === last && first) {
+              event.preventDefault();
+              first.focus();
+            }
+          }
+        }}
+        className={expanded
+          ? "motion-place-panel grid h-[min(760px,calc(100dvh-3rem))] w-full max-w-6xl grid-cols-2 overflow-hidden rounded-3xl border border-white/40 bg-white shadow-2xl"
+          : "motion-place-panel glass-strong pointer-events-auto h-full w-full overflow-y-auto overscroll-contain rounded-3xl border border-white/40 shadow-2xl md:w-[410px]"}
       >
         {/* Top Hero: Image Slider hoặc Gradient Banner */}
-        <div className="place-detail-hero relative h-60 w-full shrink-0 overflow-hidden bg-ink-900 select-none">
+        <div className={`relative min-h-0 min-w-0 overflow-hidden bg-ink-900 select-none ${expanded ? "" : "h-44 md:h-60"}`}>
           {images.length > 0 && !heroImageError ? (
-            <div
-              className="group relative h-full w-full cursor-pointer"
-              onClick={() => setIsLightboxOpen(true)}
-              title="Nhấn để xem ảnh phóng to"
-            >
+            <div className="relative h-full w-full">
               <img
                 src={images[currentImageIndex]}
                 alt={`${place.name} - ảnh ${currentImageIndex + 1}`}
                 draggable={false}
                 onError={() => setHeroImageError(true)}
-                className="h-full w-full object-cover transition-transform duration-500 hover:scale-105 pointer-events-auto select-none"
+                className="h-full w-full object-cover select-none"
               />
 
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/40 pointer-events-none" />
+              <button
+                type="button"
+                aria-label="Xem ảnh phóng to"
+                onClick={() => setIsLightboxOpen(true)}
+                className="absolute inset-0 cursor-zoom-in focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-white"
+              />
 
               {/* Điều hướng chuyển ảnh */}
               {images.length > 1 && (
@@ -570,10 +588,12 @@ function ApprovedPlaceDetails({
               }}
               onClick={(e) => {
                 e.stopPropagation();
-                handleBack();
+                if (expanded) onExpandedChange(false);
+                else handleBack();
               }}
               className="pointer-events-auto flex h-10 items-center gap-2 rounded-full bg-slate-950/85 hover:bg-slate-950 px-4 text-xs font-bold text-white backdrop-blur-md transition-ui duration-200 hover:scale-105 active:scale-95 shadow-xl border border-white/30 cursor-pointer select-none"
-              aria-label="Quay lại danh sách"
+              aria-label={expanded ? "Đóng chi tiết" : "Quay lại danh sách"}
+              autoFocus={expanded}
             >
               <span className="text-base leading-none pointer-events-none select-none">←</span>
               <span className="pointer-events-none select-none">Quay lại</span>
@@ -581,6 +601,7 @@ function ApprovedPlaceDetails({
           </div>
         </div>
 
+        <div className={`min-h-0 min-w-0 bg-white ${expanded ? "overflow-y-auto overscroll-contain" : ""}`}>
         {/* Header Thông tin Địa điểm */}
         <div className="border-b border-ink-100 bg-white/80 p-4 pb-3">
           <div className="mb-2 flex flex-wrap items-center gap-1.5">
@@ -608,9 +629,18 @@ function ApprovedPlaceDetails({
             )}
           </div>
 
-          <h2 className="text-xl font-extrabold text-ink-900 leading-snug">
-            {place.name}
-          </h2>
+          <div className="flex items-start justify-between gap-2">
+            <h2 className="text-xl font-extrabold text-ink-900 leading-snug">{place.name}</h2>
+            {!expanded && (
+              <button
+                type="button"
+                onClick={() => onExpandedChange(true)}
+                className="hidden shrink-0 rounded-full border border-brand-200 px-3 py-1.5 text-xs font-bold text-brand-700 hover:bg-brand-50 md:inline-flex"
+              >
+                Xem chi tiết
+              </button>
+            )}
+          </div>
 
           <div className="mt-1.5 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
@@ -704,6 +734,7 @@ function ApprovedPlaceDetails({
           {/* Thông báo Check-in */}
           {checkinMessage && (
             <div
+              role="status"
               className={`mt-2.5 p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 animate-in fade-in slide-in-from-top-1 ${checkinMessage.type === "success"
                 ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
                 : "bg-rose-50 text-rose-800 border border-rose-200"
@@ -748,7 +779,7 @@ function ApprovedPlaceDetails({
         </div>
 
         {/* Nội dung cuộn mượt mà */}
-        <div className="place-detail-content flex-1 overflow-y-auto overscroll-contain no-scrollbar p-4 space-y-4">
+        <div className="p-4 space-y-4">
           {activeTab === "info" ? (
             <div key="tab-info" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out">
               {/* Mô tả giới thiệu */}
@@ -1292,8 +1323,24 @@ function ApprovedPlaceDetails({
             </div>
           )}
         </div>
+        </div>
       </div>
+  );
 
+  return (
+    <>
+      {expanded ? (
+        <ViewportDialog>
+          <div
+            className="fixed inset-0 z-40 grid place-items-center bg-slate-950/55 p-6"
+            onClick={(event) => {
+              if (event.target === event.currentTarget) onExpandedChange(false);
+            }}
+          >
+            {panel}
+          </div>
+        </ViewportDialog>
+      ) : panel}
       {/* Lightbox / Phóng to Thư viện ảnh Toàn màn hình */}
       {isLightboxOpen && (images.length > 0 || lightboxImage) && (
         <ViewportDialog>

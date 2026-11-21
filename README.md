@@ -73,6 +73,12 @@ HueDiMo/
   - **API Documentation**: [Swagger UI / OpenAPI 3.0](https://swagger.io/)
   - **Storage**: Supabase Storage
 
+### Phạm vi bản đồ
+
+Bản đồ web và Flutter hỗ trợ thành phố Huế trực thuộc trung ương, được thành lập trên toàn bộ địa bàn tỉnh Thừa Thiên Huế theo [Nghị quyết 175/2024/QH15](https://datafiles.chinhphu.vn/cpp/files/vbpq/2024/11/175-qh15.signed.pdf).
+
+Đường biên tham khảo lấy từ [Vietnamese Provinces Database v5.2.0](https://github.com/thanglequoc/vietnamese-provinces-database/blob/v5.2.0/json/geojson/46_hue/46_hue.geojson), mã Huế `46`, dựa trên Bản đồ tham chiếu các đơn vị hành chính Việt Nam. Dữ liệu được giản lược với sai số tối đa khoảng 11 m để hiển thị trên bản đồ. Khi cập nhật, dùng cùng một vòng tọa độ khép kín cho [web](front-end/lib/data/hue-boundary.json) và [Flutter](mobile/lib/features/map_places/hue_boundary_points.dart). Xem [giấy phép dữ liệu](THIRD_PARTY_NOTICES.md).
+
 ---
 
 ## 🚀 Hướng dẫn cài đặt & Khởi chạy

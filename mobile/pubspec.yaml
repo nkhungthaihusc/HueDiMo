@@ -72,6 +72,8 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  assets:
+    - assets/data/hue-wards.json
   fonts:
     - family: Geist
       fonts:

@@ -10,6 +10,7 @@ import ItineraryBuilderPanel from "@/components/home/ItineraryBuilderPanel";
 import ItineraryFormPanel from "@/components/home/ItineraryFormPanel";
 import ItineraryResultPanel from "@/components/home/ItineraryResultPanel";
 import MapView from "@/components/home/MapView";
+import { wardContains, type HueWards } from "@/lib/data/hue-wards";
 import PlaceDetailPanel from "@/components/home/PlaceDetailPanel";
 import PlaceListPanel from "@/components/home/PlaceListPanel";
 import RadialMenu from "@/components/home/RadialMenu";
@@ -25,6 +26,7 @@ import { getMyContributedPlaces, getPublicPlaces } from "@/lib/api/places";
 import { itineraryPlaceIds, saveItinerary, updateItineraryId } from "@/lib/itinerary/logic";
 import { ItineraryAPI } from "@/lib/api/itineraries";
 import { toast } from "@/components/ui/Toast";
+import { isInHue, outsideHuePlaceMessage } from "@/lib/data/hue-boundary";
 import type { SavedItinerary } from "@/lib/itinerary/logic";
 import type { Itinerary } from "@/lib/itinerary/types";
 import type { CategoryId, Place } from "@/lib/types";
@@ -37,9 +39,34 @@ export default function HomeClient() {
   const [panelExpanded, setPanelExpanded] = useState(false);
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<CategoryId | null>(null);
+  const [wards, setWards] = useState<HueWards | null>(null);
+  const [wardCode, setWardCode] = useState("");
+  const [wardLoadError, setWardLoadError] = useState(false);
+  const [wardLoadAttempt, setWardLoadAttempt] = useState(0);
+  useEffect(() => {
+    const controller = new AbortController();
+    setWardLoadError(false);
+    fetch("/data/hue-wards.geojson", { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error("Không tải được ranh giới");
+        return response.json() as Promise<HueWards>;
+      })
+      .then((data) => { if (!controller.signal.aborted) setWards(data); })
+      .catch(() => { if (!controller.signal.aborted) setWardLoadError(true); });
+    return () => controller.abort();
+  }, [wardLoadAttempt]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [expandedPlaceId, setExpandedPlaceId] = useState<string | null>(null);
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 768px)");
+    const closeOnMobile = () => {
+      if (!desktop.matches) setExpandedPlaceId(null);
+    };
+    desktop.addEventListener("change", closeOnMobile);
+    return () => desktop.removeEventListener("change", closeOnMobile);
+  }, []);
   const [placeListPage, setPlaceListPage] = useState<number>(1);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number; accuracy?: number; address?: string } | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number; timestamp: number; accuracy?: number; address?: string } | null>(null);
   const [addMode, setAddMode] = useState(false);
   const [addPosition, setAddPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [showItineraryForm, setShowItineraryForm] = useState(false);
@@ -95,7 +122,7 @@ export default function HomeClient() {
     const controller = new AbortController();
     getPublicPlaces(controller.signal)
       .then((data) => {
-        if (!controller.signal.aborted) setServerPlaces(data);
+        if (!controller.signal.aborted) setServerPlaces(data.filter(isInHue));
       })
       .catch(() => {
         if (!controller.signal.aborted) setLoadError(true);
@@ -108,7 +135,7 @@ export default function HomeClient() {
     let active = true;
     getMyContributedPlaces()
       .then((places) => {
-        if (active) setContributions({ userId, places });
+        if (active) setContributions({ userId, places: places.filter(isInHue) });
       })
       .catch(() => {
         if (active) setContributions({ userId, places: [] });
@@ -128,10 +155,21 @@ export default function HomeClient() {
     return [...byId.values()];
   }, [publicPlaces, userContributedPlaces]);
 
+  const areaPlaces = useMemo(() => {
+    const ward = wards?.features.find((item) => item.properties.code === wardCode);
+    return ward ? accessiblePlaces.filter((place) => wardContains(ward, place)) : accessiblePlaces;
+  }, [accessiblePlaces, wards, wardCode]);
   const visiblePlaces = useMemo(
-    () => activeCategory ? accessiblePlaces.filter((place) => place.category === activeCategory) : accessiblePlaces,
-    [accessiblePlaces, activeCategory],
+    () => activeCategory ? areaPlaces.filter((place) => place.category === activeCategory) : areaPlaces,
+    [areaPlaces, activeCategory],
   );
+  const handleWardChange = (code: string) => {
+    setWardCode(code);
+    setQuery("");
+    setSelectedId(null);
+    setExpandedPlaceId(null);
+    setPlaceListPage(1);
+  };
 
   const selectedPlace = useMemo(
     () => accessiblePlaces.find((p) => p.id === selectedId)
@@ -159,6 +197,12 @@ export default function HomeClient() {
   };
 
   const handleSelect = (place: Place) => {
+    const ward = wards?.features.find((item) => item.properties.code === wardCode);
+    if (ward && !wardContains(ward, place)) setWardCode("");
+    if (!isInHue(place)) {
+      toast.error(outsideHuePlaceMessage);
+      return;
+    }
     setPanelExpanded(true);
     setSelectedId(place.id);
     closeOverlays();
@@ -268,6 +312,10 @@ export default function HomeClient() {
   };
 
   const handleMapClick = (coord: { lat: number; lng: number }) => {
+    if (!isInHue(coord)) {
+      toast.error(outsideHuePlaceMessage);
+      return;
+    }
     setPanelExpanded(true);
     setAddPosition(coord);
   };
@@ -407,10 +455,13 @@ export default function HomeClient() {
   }
 
   return (
-    <main className="home-shell relative w-full overflow-hidden" data-panel-expanded={panelExpanded} data-add-mode={addMode}>
+    <main className="home-shell relative w-full overflow-hidden" inert={Boolean(expandedPlaceId && expandedPlaceId === selectedPlace?.id && !hasCustomOverlay)} data-panel-expanded={panelExpanded} data-add-mode={addMode}>
       {/* Bản đồ nền */}
       <div className="absolute inset-0 z-0 isolate">
         <MapView
+          wards={wards}
+          wardCode={wardCode}
+          onWardChange={handleWardChange}
           selectedId={selectedId}
           visiblePlaces={visiblePlaces}
           onSelect={handleSelect}
@@ -450,10 +501,31 @@ export default function HomeClient() {
           >
             <div className="home-search w-full pointer-events-auto">
               <SearchBar
+                areaPlaces={wardCode ? areaPlaces : undefined}
+                areaName={wards?.features.find((ward) => ward.properties.code === wardCode)?.properties.name}
                 value={query}
                 onChange={setQuery}
                 onSelectPlace={(place) => handleSelect(place)}
               />
+            </div>
+            <div className="home-search pointer-events-auto flex w-full items-center gap-2">
+              <label className="flex min-w-0 flex-1 items-center gap-2 rounded-2xl border border-slate-200 bg-white/95 px-3 py-2 text-xs text-slate-700 shadow-sm">
+                <span className="shrink-0 font-semibold">Xã / phường</span>
+                <select
+                  aria-label="Chọn xã hoặc phường"
+                  value={wardCode}
+                  disabled={!wards}
+                  onChange={(event) => handleWardChange(event.target.value)}
+                  className="min-w-0 flex-1 bg-transparent py-1 outline-none"
+                >
+                  <option value="">{wards ? "Toàn thành phố Huế" : wardLoadError ? "Chưa tải được ranh giới" : "Đang tải ranh giới…"}</option>
+                  {wards?.features.map((ward) => (
+                    <option key={ward.properties.code} value={ward.properties.code}>{ward.properties.name}</option>
+                  ))}
+                </select>
+              </label>
+              {wardCode && <span role="status" className="shrink-0 rounded-xl bg-white/95 px-2 py-2 text-xs font-semibold text-brand-700">{visiblePlaces.length} điểm</span>}
+              {wardLoadError && <button type="button" onClick={() => setWardLoadAttempt((attempt) => attempt + 1)} className="rounded-xl bg-white px-3 py-2 text-xs font-bold">Thử lại</button>}
             </div>
 
             <nav aria-label="Lọc loại địa điểm" className="home-categories pointer-events-auto flex w-full gap-2 overflow-x-auto no-scrollbar md:hidden">
@@ -495,12 +567,14 @@ export default function HomeClient() {
                   key={selectedPlace.id}
                   place={selectedPlace}
                   onBack={() => setSelectedId(null)}
+                  expanded={expandedPlaceId === selectedPlace.id}
+                  onExpandedChange={(expanded) => setExpandedPlaceId(expanded ? selectedPlace.id : null)}
                   userLocation={userLocation}
                 />
               )}
               <div className={`h-full w-full ${selectedPlace !== null ? "hidden" : "flex flex-col"}`}>
                 <PlaceListPanel
-                  places={accessiblePlaces}
+                  places={areaPlaces}
                   activeCategory={activeCategory}
                   onCategoryChange={setActiveCategory}
                   selectedId={selectedId}
